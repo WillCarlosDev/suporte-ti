@@ -1825,9 +1825,7 @@ let generatedKBItem = null;
 
 // loadCustomKBItems e saveCustomKBItems agora usam Supabase (definidas acima)
 
-function getAllKBItems() {
-  return [...kbItems, ...loadCustomKBItems()];
-}
+// getAllKBItems usa window._customKB (definida acima)
 
 async function generateKBItem() {
   if (bloquearLeitor('gerar procedimentos')) return;
