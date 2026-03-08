@@ -914,8 +914,9 @@ document.querySelector('.main').insertAdjacentHTML('beforeend', `
       <div class="wa-setup">
         <h3>⚙ Configuração</h3>
         <div class="form-group">
-          <label class="form-label">Chave API Anthropic (Claude)</label>
-          <input class="form-input" id="wa-api-key" placeholder="sk-ant-..." type="password"/>
+          <div style="font-size:12px;color:var(--accent);background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.2);border-radius:8px;padding:10px 12px;">
+            🔒 IA configurada via servidor (Groq) — nenhuma chave necessária aqui.
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Nome do Agente</label>
@@ -1865,7 +1866,19 @@ Use entre 5 e 10 passos. Seja específico. Não inclua markdown ou texto fora do
     });
 
     const raw   = data.content?.[0]?.text || '';
-    const clean = raw.replace(/```json|```/g, '').trim();
+    // Limpa markdown e extrai só o JSON
+    let clean = raw.replace(/```json|```/g, '').trim();
+    // Extrai o primeiro objeto JSON encontrado
+    const jsonMatch = clean.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('A IA não retornou um JSON válido. Tente novamente.');
+    clean = jsonMatch[0];
+    // Remove caracteres de controle que quebram o JSON
+    clean = clean.replace(/[ -]/g, (c) => {
+      if (c === '
+' || c === '
+' || c === '	') return c;
+      return '';
+    });
     const parsed = JSON.parse(clean);
 
     generatedKBItem = { ...parsed, isCustom: true, createdAt: new Date().toLocaleDateString('pt-BR'), sistema, nivel };
@@ -2582,7 +2595,7 @@ function updateWAStats() {
 
 async function processWAMessage(fromNumber, messageText) {
   const config = loadWAConfig();
-  if (!config?.apiKey) { waLog('error', 'Agente não configurado — sem chave API.'); return; }
+  if (!config) { waLog('error', 'Agente WhatsApp não configurado.'); return; }
 
   waLog('incoming', `📲 <strong>${fromNumber}</strong>: ${messageText}`);
   waStats.today++;
