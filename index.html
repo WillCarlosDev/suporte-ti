@@ -1869,12 +1869,10 @@ Use entre 5 e 10 passos. Seja específico. Não inclua markdown ou texto fora do
     // Limpa markdown e extrai só o JSON
     let clean = raw.replace(/```json|```/g, '').trim();
     // Extrai o primeiro objeto JSON encontrado
-    const jsonMatch = clean.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('A IA não retornou um JSON válido. Tente novamente.');
-    clean = jsonMatch[0];
-    // Remove caracteres de controle que quebram o JSON
-    clean = clean.replace(/[ -
--]/g, '');
+    const start = clean.indexOf('{');
+    const end = clean.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error('A IA não retornou um JSON válido. Tente novamente.');
+    clean = clean.slice(start, end + 1);
     const parsed = JSON.parse(clean);
 
     generatedKBItem = { ...parsed, isCustom: true, createdAt: new Date().toLocaleDateString('pt-BR'), sistema, nivel };
