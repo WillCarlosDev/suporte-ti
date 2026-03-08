@@ -1622,7 +1622,7 @@ const kbItems = [
 // ─── Anthropic API helper ─────────────────────────────────────────────────────
 async function anthropicFetch(body) {
   // Chama o proxy Netlify (evita CORS e mantém a chave segura no servidor)
-  const response = await fetch('/.netlify/functions/anthropic-proxy', {
+  const response = await fetch('/api/anthropic-proxy', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
