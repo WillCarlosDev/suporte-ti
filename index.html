@@ -1823,16 +1823,7 @@ function renderTicketCard(t) {
 const KB_STORAGE_KEY = 'suporte_ti_kb_custom';
 let generatedKBItem = null;
 
-function loadCustomKBItems() {
-  try {
-    const saved = localStorage.getItem(KB_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch { return []; }
-}
-
-function saveCustomKBItems(items) {
-  localStorage.setItem(KB_STORAGE_KEY, JSON.stringify(items));
-}
+// loadCustomKBItems e saveCustomKBItems agora usam Supabase (definidas acima)
 
 function getAllKBItems() {
   return [...kbItems, ...loadCustomKBItems()];
