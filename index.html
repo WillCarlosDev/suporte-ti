@@ -740,16 +740,16 @@
         <div class="page-sub">Chave de IA, Trello e WhatsApp</div>
       </div>
 
-      <!-- Chave API Anthropic — agora via variável de ambiente no Netlify -->
+      <!-- IA via Groq no Vercel -->
       <div class="config-box" style="border-color:rgba(0,229,160,0.3);background:rgba(0,229,160,0.03)">
         <h3 style="color:var(--accent)">✨ Inteligência Artificial — Configuração</h3>
         <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.8">
-          As funções de IA agora rodam via <strong>proxy seguro no servidor Netlify</strong> — a chave API não fica exposta no browser.<br><br>
-          ✅ Para ativar, acesse o painel do Netlify → <strong>Site configuration → Environment variables</strong> e adicione:<br>
-          <code style="background:var(--surface3);padding:3px 10px;border-radius:6px;color:var(--accent);font-size:13px;display:inline-block;margin-top:6px">ANTHROPIC_API_KEY = sk-ant-...</code><br><br>
-          Após salvar, clique em <strong>Deploys → Trigger deploy</strong> para aplicar.
+          As funções de IA rodam via <strong>proxy seguro no servidor Vercel</strong> usando o <strong>Groq (LLaMA)</strong> — gratuito e sem exposição de chaves.<br><br>
+          ✅ Para atualizar a chave, acesse o painel do Vercel → <strong>Settings → Environment Variables</strong> e edite:<br>
+          <code style="background:var(--surface3);padding:3px 10px;border-radius:6px;color:var(--accent);font-size:13px;display:inline-block;margin-top:6px">GROQ_API_KEY = gsk_...</code><br><br>
+          Obtenha sua chave gratuita em <a href="https://console.groq.com" target="_blank" style="color:var(--accent)">console.groq.com</a>
         </div>
-        <div id="api-key-status" style="font-size:12px;color:var(--accent)">🔒 Chave configurada no servidor (segura)</div>
+        <div id="api-key-status" style="font-size:12px;color:var(--accent)">🔒 IA configurada no servidor (Groq — gratuito)</div>
       </div>
 
       <div class="config-box">
@@ -783,7 +783,7 @@
         <h3>📱 Integração WhatsApp (Baileys)</h3>
         <div style="font-size:13px;color:var(--text2);line-height:1.7">
           Para conectar ao WhatsApp, use o código do bot gerado anteriormente.<br>
-          Configure a variável <code style="background:var(--surface3);padding:1px 6px;border-radius:4px;color:var(--accent)">ANTHROPIC_API_KEY</code> no arquivo <code style="background:var(--surface3);padding:1px 6px;border-radius:4px;color:var(--accent)">.env</code>.
+          Configure a variável <code style="background:var(--surface3);padding:1px 6px;border-radius:4px;color:var(--accent)">GROQ_API_KEY</code> no arquivo <code style="background:var(--surface3);padding:1px 6px;border-radius:4px;color:var(--accent)">.env</code>.
         </div>
       </div>
     </div>
