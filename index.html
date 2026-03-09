@@ -895,7 +895,13 @@
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn-primary" onclick="submitReply(false)">💬 Registrar Resposta</button>
         <button class="btn-ghost" onclick="generateAIReply()" id="ai-reply-btn">✨ Sugerir com IA</button>
-        <button class="btn-primary" onclick="finalizeTicket()" style="background:var(--accent);margin-left:auto">✅ Finalizar Chamado</button>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-ghost" onclick="moveTicketTo('pendencia')" style="border-color:#ff6b35;color:#ff6b35" title="Mover para Pendência">⏳ Pendência</button>
+          <button class="btn-ghost" onclick="moveTicketTo('nao-atendido')" style="border-color:var(--text3);color:var(--text3)" title="Mover para Não Atendido">🚫 Não Atendido</button>
+          <button class="btn-ghost" onclick="reativarTicket()" id="btn-reativar" style="display:none;border-color:var(--accent2);color:var(--accent2)">🔄 Reativar</button>
+          <button class="btn-ghost" onclick="deleteTicket()" style="border-color:var(--danger);color:var(--danger)">🗑️ Excluir</button>
+          <button class="btn-primary" onclick="finalizeTicket()" style="background:var(--accent)">✅ Finalizar</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1780,12 +1786,14 @@ function renderKanban(containerId, data) {
   } else {
     // Colunas padrão para tickets criados pelo painel
     const cols = [
-      { key:'aberto',       label:'Aberto',       color:'#ff4757' },
-      { key:'em-andamento', label:'Em Andamento',  color:'#ffcc00' },
-      { key:'aguardando',   label:'Aguardando',    color:'#0090ff' },
-      { key:'resolvido',    label:'Resolvido',     color:'#00e5a0' },
+      { key:'aberto',        label:'Aberto',        color:'#ff4757' },
+      { key:'em-andamento',  label:'Em Andamento',   color:'#ffcc00' },
+      { key:'aguardando',    label:'Aguardando',     color:'#0090ff' },
+      { key:'pendencia',     label:'Pendência',      color:'#ff6b35' },
+      { key:'nao-atendido',  label:'Não Atendido',   color:'#8a90a0' },
+      { key:'resolvido',     label:'Resolvido',      color:'#00e5a0' },
     ];
-    container.style.gridTemplateColumns = 'repeat(4, 1fr)';
+    container.style.gridTemplateColumns = 'repeat(6, 1fr)';
     container.innerHTML = cols.map(col => {
       const colTickets = sortByPriority(data.filter(t => t.status === col.key));
       return `
@@ -1807,16 +1815,23 @@ function renderTicketCard(t) {
   // Indicador visual de prioridade no topo do card
   const prioColor = { contrato: 'var(--accent)', garantia: 'var(--accent2)', avulso: 'var(--text3)' }[t.prioridade] || 'var(--text3)';
   return `
-  <div class="ticket-card" onclick="showTicketDetail('${t.id}')" style="border-left: 3px solid ${prioColor}">
-    <div class="tc-id">${t.id} ${t.fromTrello ? '<span style="font-size:9px;background:rgba(0,144,255,0.15);color:var(--accent2);padding:1px 5px;border-radius:3px">🟦</span>' : ''} ${t.fromWhatsApp ? '<span style="font-size:9px;background:rgba(0,229,160,0.15);color:var(--accent);padding:1px 5px;border-radius:3px">📲</span>' : ''}</div>
-    <div class="tc-title">${getCategoryLabel(t.categoria)}</div>
-    <div class="tc-company">${t.empresa}</div>
-    <div class="tc-tags">
-      <span class="tag ${t.prioridade}">${getPrioLabel(t.prioridade)}</span>
-      <span class="tag ${t.nivel}">${t.nivel.toUpperCase()}</span>
-      <span class="tag ${t.sistema}">${t.sistema}</span>
+  <div class="ticket-card" style="border-left: 3px solid ${prioColor}">
+    <div onclick="showTicketDetail('${t.id}')">
+      <div class="tc-id">${t.id} ${t.fromTrello ? '<span style="font-size:9px;background:rgba(0,144,255,0.15);color:var(--accent2);padding:1px 5px;border-radius:3px">🟦</span>' : ''} ${t.fromWhatsApp ? '<span style="font-size:9px;background:rgba(0,229,160,0.15);color:var(--accent);padding:1px 5px;border-radius:3px">📲</span>' : ''}</div>
+      <div class="tc-title">${getCategoryLabel(t.categoria)}</div>
+      <div class="tc-company">${t.empresa}</div>
+      <div class="tc-tags">
+        <span class="tag ${t.prioridade}">${getPrioLabel(t.prioridade)}</span>
+        <span class="tag ${t.nivel}">${t.nivel.toUpperCase()}</span>
+        <span class="tag ${t.sistema}">${t.sistema}</span>
+      </div>
+      <div class="tc-time">${timeAgo(t.time)}</div>
     </div>
-    <div class="tc-time">${timeAgo(t.time)}</div>
+    <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">
+      <button onclick="event.stopPropagation();quickMove('${t.id}','pendencia')" style="flex:1;font-size:10px;padding:3px 6px;border-radius:5px;border:1px solid #ff6b35;color:#ff6b35;background:rgba(255,107,53,0.08);cursor:pointer;font-family:var(--sans)">⏳ Pendência</button>
+      <button onclick="event.stopPropagation();quickMove('${t.id}','nao-atendido')" style="flex:1;font-size:10px;padding:3px 6px;border-radius:5px;border:1px solid var(--text3);color:var(--text3);background:rgba(138,144,160,0.08);cursor:pointer;font-family:var(--sans)">🚫 N. Atendido</button>
+      <button onclick="event.stopPropagation();quickDelete('${t.id}')" style="font-size:10px;padding:3px 6px;border-radius:5px;border:1px solid var(--danger);color:var(--danger);background:rgba(255,71,87,0.08);cursor:pointer;font-family:var(--sans)">🗑️</button>
+    </div>
   </div>`;
 }
 
@@ -2311,6 +2326,8 @@ function showTicketDetail(id) {
   // Status buttons
   const statuses = [
     { key:'aberto', label:'🔴 Aberto' },
+    { key:'pendencia', label:'⏳ Pendência' },
+    { key:'nao-atendido', label:'🚫 Não Atendido' },
     { key:'em-andamento', label:'🟡 Em Andamento' },
     { key:'aguardando', label:'🔵 Aguardando' },
     { key:'resolvido', label:'🟢 Resolvido' },
@@ -2331,6 +2348,13 @@ function showTicketDetail(id) {
   document.getElementById('modal-reply-text').value = '';
   document.getElementById('ticket-modal').classList.remove('hidden');
   document.getElementById('ticket-modal')._currentId = id;
+
+  // Mostra botão Reativar apenas para chamados resolvidos
+  const t = tickets.find(x => x.id === id);
+  const btnReativar = document.getElementById('btn-reativar');
+  if (btnReativar) {
+    btnReativar.style.display = (t?.status === 'resolvido') ? 'inline-flex' : 'none';
+  }
 }
 
 function renderModalReplies(t) {
@@ -2524,6 +2548,85 @@ async function finalizeTicket() {
   renderAll();
   closeModal();
   showNotif(`✅ Chamado ${t.id} finalizado${listaFinalId ? ` → "${listaFinalNome}"` : ''}!`);
+}
+
+
+
+async function quickMove(ticketId, status) {
+  if (bloquearLeitor('mover chamados')) return;
+  const t = tickets.find(x => x.id === ticketId);
+  if (!t) return;
+  const labels = { 'pendencia': '⏳ Pendência', 'nao-atendido': '🚫 Não Atendido' };
+  t.status = status;
+  t.currentStatus = status;
+  await updateTicketInDB(t);
+  renderAll();
+  showNotif(`${labels[status]} — Chamado ${t.id} movido!`);
+}
+
+async function quickDelete(ticketId) {
+  if (bloquearLeitor('excluir chamados')) return;
+  const t = tickets.find(x => x.id === ticketId);
+  if (!t) return;
+  if (!confirm(`Excluir o chamado ${t.id}? Esta ação não pode ser desfeita.`)) return;
+  try {
+    await sbFetch(`tickets?id=eq.${t.dbId}`, 'DELETE');
+    tickets = tickets.filter(x => x.id !== ticketId);
+    renderAll();
+    showNotif(`🗑️ Chamado ${t.id} excluído!`);
+  } catch(e) {
+    showNotif('❌ Erro ao excluir: ' + e.message, 'warn');
+  }
+}
+
+async function deleteTicket() {
+  if (bloquearLeitor('excluir chamados')) return;
+  const modalId = document.getElementById('ticket-modal')._currentId;
+  const t = tickets.find(x => x.id === modalId);
+  if (!t) return;
+  if (!confirm(`Tem certeza que deseja excluir o chamado ${t.id}? Esta ação não pode ser desfeita.`)) return;
+  try {
+    await sbFetch(`tickets?id=eq.${t.dbId}`, 'DELETE');
+    tickets = tickets.filter(x => x.id !== modalId);
+    closeModal();
+    renderAll();
+    showNotif(`🗑️ Chamado ${t.id} excluído!`);
+  } catch(e) {
+    showNotif('❌ Erro ao excluir: ' + e.message, 'warn');
+  }
+}
+
+async function moveTicketTo(status) {
+  if (bloquearLeitor('mover chamados')) return;
+  const modalId = document.getElementById('ticket-modal')._currentId;
+  const t = tickets.find(x => x.id === modalId);
+  if (!t) return;
+  const labels = {
+    'pendencia': '⏳ Pendência',
+    'nao-atendido': '🚫 Não Atendido',
+    'aberto': '🔴 Aberto',
+    'em-andamento': '🟡 Em Andamento',
+  };
+  t.status = status;
+  t.currentStatus = status;
+  await updateTicketInDB(t);
+  renderAll();
+  closeModal();
+  showNotif(`${labels[status] || status} — Chamado ${t.id} movido!`);
+}
+
+async function reativarTicket() {
+  if (bloquearLeitor('reativar chamados')) return;
+  const modalId = document.getElementById('ticket-modal')._currentId;
+  const t = tickets.find(x => x.id === modalId);
+  if (!t) return;
+  t.status = 'aberto';
+  t.currentStatus = 'aberto';
+  t.finalizadoEm = null;
+  await updateTicketInDB(t);
+  renderAll();
+  closeModal();
+  showNotif(`🔄 Chamado ${t.id} reativado!`);
 }
 
 function closeModal() {
