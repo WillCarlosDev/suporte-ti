@@ -2350,7 +2350,6 @@ function showTicketDetail(id) {
   document.getElementById('ticket-modal')._currentId = id;
 
   // Mostra botão Reativar apenas para chamados resolvidos
-  const t = tickets.find(x => x.id === id);
   const btnReativar = document.getElementById('btn-reativar');
   if (btnReativar) {
     btnReativar.style.display = (t?.status === 'resolvido') ? 'inline-flex' : 'none';
