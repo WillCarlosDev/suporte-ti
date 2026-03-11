@@ -503,6 +503,21 @@
         <div class="page-title">Novo Chamado</div>
         <div class="page-sub">Registre um novo atendimento</div>
       </div>
+
+      <!-- PAINEL DE HISTÓRICO DO CLIENTE -->
+      <div id="client-history-panel" style="display:none;background:rgba(0,229,160,0.04);border:1px solid rgba(0,229,160,0.2);border-radius:12px;padding:16px 20px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:700;color:var(--accent)">📋 Cliente Encontrado</div>
+          <div id="client-history-chamados-count" style="font-size:11px;color:var(--text3);font-family:var(--mono)"></div>
+        </div>
+        <div id="client-history-info" style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.8"></div>
+        <div id="client-history-list" style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto"></div>
+        <div id="client-wa-history" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:6px">HISTÓRICO WHATSAPP</div>
+          <div id="client-wa-messages" style="font-size:12px;color:var(--text2);max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:4px"></div>
+        </div>
+      </div>
+
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label">Nome do Solicitante *</label>
@@ -513,8 +528,8 @@
           <input class="form-input" id="f-empresa" placeholder="Ex: Empresa Ltda."/>
         </div>
         <div class="form-group">
-          <label class="form-label">CNPJ *</label>
-          <input class="form-input" id="f-cnpj" placeholder="00.000.000/0000-00" maxlength="18"/>
+          <label class="form-label">CNPJ * <span style="font-size:10px;color:var(--accent);font-weight:400">— digite para buscar cliente</span></label>
+          <input class="form-input" id="f-cnpj" placeholder="00.000.000/0000-00" maxlength="18" oninput="onCnpjInput(this.value)"/>
         </div>
         <div class="form-group">
           <label class="form-label">Sistema *</label>
@@ -2026,6 +2041,156 @@ function selectPriority(p) {
   });
 }
 
+
+// ─── Histórico de Clientes por CNPJ ─────────────────────────────────────────
+
+let cnpjSearchTimer = null;
+
+function onCnpjInput(raw) {
+  // Formata CNPJ automaticamente
+  let v = raw.replace(/\D/g,'');
+  if (v.length > 14) v = v.slice(0,14);
+  let fmt = v;
+  if (v.length > 12) fmt = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12);
+  else if (v.length > 8) fmt = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8);
+  else if (v.length > 5) fmt = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5);
+  else if (v.length > 2) fmt = v.slice(0,2)+'.'+v.slice(2);
+  document.getElementById('f-cnpj').value = fmt;
+
+  clearTimeout(cnpjSearchTimer);
+  if (v.length < 11) { hideClientHistory(); return; }
+  cnpjSearchTimer = setTimeout(() => buscarClientePorCNPJ(v), 500);
+}
+
+function hideClientHistory() {
+  document.getElementById('client-history-panel').style.display = 'none';
+}
+
+async function buscarClientePorCNPJ(cnpjNumeros) {
+  // Busca chamados anteriores com esse CNPJ
+  const cnpjFormatado = cnpjNumeros.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  const cnpjVariants = [cnpjNumeros, cnpjFormatado];
+
+  // Busca nos tickets locais primeiro
+  const ticketsCliente = tickets.filter(t =>
+    t.cnpj && cnpjVariants.some(v => t.cnpj.replace(/\D/g,'') === cnpjNumeros)
+  ).sort((a,b) => b.time - a.time);
+
+  if (ticketsCliente.length > 0) {
+    const ultimo = ticketsCliente[0];
+    // Preenche automaticamente os campos
+    if (!document.getElementById('f-nome').value) document.getElementById('f-nome').value = ultimo.nome || '';
+    if (!document.getElementById('f-empresa').value) document.getElementById('f-empresa').value = ultimo.empresa || '';
+    if (!document.getElementById('f-sistema').value && ultimo.sistema) document.getElementById('f-sistema').value = ultimo.sistema;
+
+    mostrarHistoricoCliente(ticketsCliente, cnpjNumeros);
+  } else {
+    // Busca no Supabase se não achou localmente
+    try {
+      const rows = await sbFetch(`chamados?cnpj=ilike.*${cnpjNumeros}*&order=created_at.desc&limit=10`);
+      if (rows && rows.length > 0) {
+        const ultimo = rows[0];
+        if (!document.getElementById('f-nome').value) document.getElementById('f-nome').value = ultimo.nome || '';
+        if (!document.getElementById('f-empresa').value) document.getElementById('f-empresa').value = ultimo.empresa || '';
+        if (!document.getElementById('f-sistema').value && ultimo.sistema) document.getElementById('f-sistema').value = ultimo.sistema;
+        mostrarHistoricoCliente(rows.map(r => ({
+          id: r.id, nome: r.nome, empresa: r.empresa, cnpj: r.cnpj,
+          sistema: r.sistema, status: r.status, categoria: r.categoria,
+          time: new Date(r.created_at).getTime(), desc: r.descricao
+        })), cnpjNumeros);
+      } else {
+        hideClientHistory();
+      }
+    } catch(e) { hideClientHistory(); }
+  }
+
+  // Busca histórico WhatsApp
+  buscarHistoricoWA(cnpjNumeros);
+}
+
+function mostrarHistoricoCliente(lista, cnpj) {
+  const panel = document.getElementById('client-history-panel');
+  const info = document.getElementById('client-history-info');
+  const listEl = document.getElementById('client-history-list');
+  const count = document.getElementById('client-history-chamados-count');
+
+  const primeiro = lista[0];
+  info.innerHTML = `
+    <strong>${primeiro.empresa || '—'}</strong> &nbsp;·&nbsp; CNPJ: ${primeiro.cnpj || cnpj}
+    ${primeiro.sistema ? ` &nbsp;·&nbsp; Sistema: <span class="tag ${primeiro.sistema}" style="font-size:10px">${primeiro.sistema.toUpperCase()}</span>` : ''}
+  `;
+  count.textContent = `${lista.length} chamado${lista.length > 1 ? 's' : ''} anterior${lista.length > 1 ? 'es' : ''}`;
+
+  const statusColors = { aberto:'#ff4757', 'em-andamento':'#ffa502', aguardando:'#0090ff', resolvido:'#00e5a0', pendencia:'#ff6b35', 'nao-atendido':'#8a90a0' };
+  listEl.innerHTML = lista.slice(0, 5).map(t => `
+    <div style="background:var(--surface2);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:10px;font-size:11px">
+      <span style="font-family:var(--mono);color:var(--text3);min-width:36px">${t.id}</span>
+      <span style="flex:1;color:var(--text1)">${getCategoryLabel(t.categoria) || t.desc?.slice(0,40) || '—'}</span>
+      <span style="color:${statusColors[t.status]||'var(--text3)'}">● ${t.status}</span>
+      <span style="color:var(--text3)">${new Date(t.time).toLocaleDateString('pt-BR')}</span>
+    </div>
+  `).join('');
+
+  panel.style.display = 'block';
+}
+
+async function buscarHistoricoWA(cnpjNumeros) {
+  try {
+    const rows = await sbFetch(`wa_conversations?cnpj=eq.${cnpjNumeros}&order=created_at.desc&limit=1`);
+    if (!rows || rows.length === 0) return;
+
+    const conv = rows[0];
+    const msgs = conv.messages || [];
+    if (msgs.length === 0) return;
+
+    const waDiv = document.getElementById('client-wa-history');
+    const waMsgs = document.getElementById('client-wa-messages');
+
+    waMsgs.innerHTML = msgs.slice(-6).map(m => `
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <span style="font-size:10px;color:${m.role==='user'?'var(--accent2)':'var(--accent)'};min-width:40px;margin-top:1px">${m.role==='user'?'👤 Cliente':'🤖 Bot'}</span>
+        <span style="color:var(--text2);flex:1">${m.content?.slice(0,120)}${m.content?.length>120?'...':''}</span>
+      </div>
+    `).join('');
+
+    waDiv.style.display = 'block';
+  } catch(e) { /* sem histórico WA */ }
+}
+
+// ─── Histórico WhatsApp no Supabase ──────────────────────────────────────────
+
+async function loadWAConversation(phoneNumber) {
+  try {
+    const rows = await sbFetch(`wa_conversations?phone=eq.${encodeURIComponent(phoneNumber)}&order=created_at.desc&limit=1`);
+    if (rows && rows.length > 0) return rows[0];
+  } catch(e) {}
+  return null;
+}
+
+async function saveWAConversation(phoneNumber, cnpj, empresa, messages) {
+  try {
+    // Verifica se já existe
+    const existing = await loadWAConversation(phoneNumber);
+    if (existing) {
+      await sbFetch(`wa_conversations?id=eq.${existing.id}`, 'PATCH', {
+        messages: messages,
+        cnpj: cnpj || existing.cnpj,
+        empresa: empresa || existing.empresa,
+        updated_at: new Date().toISOString()
+      });
+    } else {
+      await sbFetch('wa_conversations', 'POST', {
+        phone: phoneNumber,
+        cnpj: cnpj || null,
+        empresa: empresa || null,
+        messages: messages,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+    }
+  } catch(e) { console.error('Erro ao salvar conversa WA:', e); }
+}
+
 function createTicket() {
   if (bloquearLeitor('criar chamados')) return;
   const nome = document.getElementById('f-nome').value.trim();
@@ -2697,6 +2862,18 @@ async function processWAMessage(fromNumber, messageText) {
   waStats.today++;
   updateWAStats();
 
+  // Carrega histórico da conversa do Supabase
+  const existingConv = await loadWAConversation(fromNumber);
+  const conversationHistory = existingConv?.messages || [];
+
+  // Extrai CNPJ e empresa do histórico se existir
+  let clienteCNPJ = existingConv?.cnpj || null;
+  let clienteEmpresa = existingConv?.empresa || null;
+
+  // Tenta extrair CNPJ da mensagem atual
+  const cnpjMatch = messageText.match(/\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}/);
+  if (cnpjMatch) clienteCNPJ = cnpjMatch[0].replace(/\D/g,'');
+
   const kbContext = getAllKBItems().map(k =>
     `${k.title} (${k.badge}): ${k.steps.map(s => s.text).join(' | ')}`
   ).join('\n');
@@ -2707,20 +2884,27 @@ async function processWAMessage(fromNumber, messageText) {
     'triage': 'Faça triagem: colete nome, empresa, CNPJ, sistema e problema. Registre e informe que um técnico responderá em breve.',
   }[config.mode] || '';
 
+  // Monta mensagens com histórico
+  const messages = [
+    ...conversationHistory.slice(-10), // últimas 10 mensagens para contexto
+    { role: 'user', content: messageText }
+  ];
+
   try {
     const data = await anthropicFetch({
-      model: 'claude-sonnet-4-20250514',
       max_tokens: 600,
       system: `Você é ${config.agentName}, assistente de suporte técnico de ponto eletrônico (RHID, iPonto, Atecsoft) via WhatsApp.
 ${modeInstructions}
 Sempre colete: nome, razão social, CNPJ e sistema ao iniciar.
+${clienteCNPJ ? `CNPJ já identificado: ${clienteCNPJ}` : ''}
+${clienteEmpresa ? `Empresa já identificada: ${clienteEmpresa}` : ''}
 Prioridades: Contrato > Garantia > Avulso.
 Responda em português, de forma concisa e amigável para WhatsApp.
 Base de conhecimento:\n${kbContext}
 
 Ao final da resposta, se identificar um novo chamado, adicione uma linha:
-CHAMADO: <categoria>|<sistema>|<n1 ou n2>|<empresa se informada>`,
-      messages: [{ role: 'user', content: messageText }]
+CHAMADO: <categoria>|<sistema>|<n1 ou n2>|<empresa>|<cnpj>|<nome do cliente>`,
+      messages
     });
 
     const fullText = data.content?.[0]?.text || '';
@@ -2732,15 +2916,25 @@ CHAMADO: <categoria>|<sistema>|<n1 ou n2>|<empresa se informada>`,
 
     waLog('outgoing', `🤖 <strong>Agente</strong>: ${replyText.substring(0, 200)}${replyText.length > 200 ? '...' : ''}`);
 
-    // Cria chamado automaticamente no painel
+    // Atualiza histórico com a nova troca
+    const updatedHistory = [
+      ...conversationHistory,
+      { role: 'user', content: messageText },
+      { role: 'assistant', content: replyText }
+    ].slice(-20); // mantém apenas as 20 últimas mensagens
+
+    // Extrai empresa da linha de chamado se disponível
     if (chamadoLine) {
       const parts = chamadoLine.replace('CHAMADO:', '').trim().split('|');
-      const [cat, sis, niv, emp] = parts;
+      const [cat, sis, niv, emp, cnpj, nomeCliente] = parts;
+      if (emp?.trim()) clienteEmpresa = emp.trim();
+      if (cnpj?.trim()) clienteCNPJ = cnpj.trim().replace(/\D/g,'');
+
       const newTicket = {
         id: '#W' + String(tickets.length + 1).padStart(3, '0'),
-        nome: fromNumber,
-        empresa: emp?.trim() || 'Via WhatsApp',
-        cnpj: '—',
+        nome: nomeCliente?.trim() || fromNumber,
+        empresa: clienteEmpresa || 'Via WhatsApp',
+        cnpj: clienteCNPJ ? clienteCNPJ.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : '—',
         sistema: sis?.trim().toLowerCase() || 'rhid',
         prioridade: 'avulso',
         categoria: cat?.trim() || 'outro',
@@ -2749,14 +2943,19 @@ CHAMADO: <categoria>|<sistema>|<n1 ou n2>|<empresa se informada>`,
         desc: messageText,
         time: Date.now(),
         fromWhatsApp: true,
+        whatsappPhone: fromNumber,
         replies: [{ author: 'IA', time: new Date().toLocaleString('pt-BR'), text: replyText, isAI: true }]
       };
       tickets.unshift(newTicket);
+      saveTicketToDB(newTicket);
       renderAll();
       waStats.resolved++;
       updateWAStats();
-      waLog('system', `📋 Chamado ${newTicket.id} criado automaticamente no painel`);
+      waLog('system', `📋 Chamado ${newTicket.id} criado — ${clienteEmpresa || fromNumber}`);
     }
+
+    // Salva histórico atualizado no Supabase
+    await saveWAConversation(fromNumber, clienteCNPJ, clienteEmpresa, updatedHistory);
 
     return replyText;
   } catch(e) {
