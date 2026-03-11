@@ -504,6 +504,16 @@
         <div class="page-sub">Registre um novo atendimento</div>
       </div>
 
+      <!-- BUSCA RÁPIDA DE CLIENTE -->
+      <div style="margin-bottom:16px">
+        <div style="position:relative">
+          <input class="form-input" id="f-busca-cliente" placeholder="🔍 Buscar cliente por razão social ou CNPJ..." oninput="onBuscaClienteInput(this.value)" autocomplete="off" style="padding-right:40px"/>
+          <div id="f-busca-spinner" style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:14px">⏳</div>
+        </div>
+        <!-- Dropdown de sugestões -->
+        <div id="client-suggestions" style="display:none;position:absolute;z-index:999;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-top:4px;width:calc(100% - 48px);max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4)"></div>
+      </div>
+
       <!-- PAINEL DE HISTÓRICO DO CLIENTE -->
       <div id="client-history-panel" style="display:none;background:rgba(0,229,160,0.04);border:1px solid rgba(0,229,160,0.2);border-radius:12px;padding:16px 20px;margin-bottom:20px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -525,7 +535,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Razão Social *</label>
-          <input class="form-input" id="f-empresa" placeholder="Ex: Empresa Ltda."/>
+          <input class="form-input" id="f-empresa" placeholder="Ex: Empresa Ltda." oninput="onEmpresaInput(this.value)"/>
         </div>
         <div class="form-group">
           <label class="form-label">CNPJ * <span style="font-size:10px;color:var(--accent);font-weight:400">— digite para buscar cliente</span></label>
@@ -2041,6 +2051,134 @@ function selectPriority(p) {
   });
 }
 
+
+
+// ─── Busca unificada por razão social ou CNPJ ────────────────────────────────
+
+let buscaClienteTimer = null;
+
+function onBuscaClienteInput(val) {
+  clearTimeout(buscaClienteTimer);
+  const v = val.trim();
+  if (v.length < 2) { fecharSugestoes(); return; }
+  document.getElementById('f-busca-spinner').style.display = 'block';
+  buscaClienteTimer = setTimeout(() => buscarClienteUnificado(v), 400);
+}
+
+function onEmpresaInput(val) {
+  clearTimeout(buscaClienteTimer);
+  const v = val.trim();
+  if (v.length < 3) { fecharSugestoes(); return; }
+  buscaClienteTimer = setTimeout(() => buscarClienteUnificado(v), 400);
+}
+
+async function buscarClienteUnificado(termo) {
+  const isNumero = /^[\d.\/\-]+$/.test(termo.replace(/\s/g,''));
+  let resultados = [];
+
+  // Busca local nos tickets em memória
+  if (isNumero) {
+    const nums = termo.replace(/\D/g,'');
+    resultados = tickets.filter(t => t.cnpj && t.cnpj.replace(/\D/g,'').includes(nums));
+  } else {
+    const lower = termo.toLowerCase();
+    resultados = tickets.filter(t => t.empresa && t.empresa.toLowerCase().includes(lower));
+  }
+
+  // Remove duplicatas por empresa+cnpj, pega a mais recente de cada
+  const map = new Map();
+  resultados.forEach(t => {
+    const key = (t.cnpj || '') + '|' + (t.empresa || '');
+    if (!map.has(key) || t.time > map.get(key).time) map.set(key, t);
+  });
+  let unicos = [...map.values()].sort((a,b) => b.time - a.time).slice(0, 8);
+
+  // Se não achou localmente, busca no Supabase
+  if (unicos.length === 0) {
+    try {
+      let rows;
+      if (isNumero) {
+        const nums = termo.replace(/\D/g,'');
+        rows = await sbFetch(`chamados?cnpj=ilike.*${nums}*&order=created_at.desc&limit=8`);
+      } else {
+        rows = await sbFetch(`chamados?empresa=ilike.*${encodeURIComponent(termo)}*&order=created_at.desc&limit=8`);
+      }
+      if (rows && rows.length > 0) {
+        const mapDB = new Map();
+        rows.forEach(r => {
+          const key = (r.cnpj||'') + '|' + (r.empresa||'');
+          if (!mapDB.has(key)) mapDB.set(key, {
+            id: r.id, nome: r.nome, empresa: r.empresa, cnpj: r.cnpj,
+            sistema: r.sistema, prioridade: r.prioridade,
+            time: new Date(r.created_at).getTime()
+          });
+        });
+        unicos = [...mapDB.values()];
+      }
+    } catch(e) {}
+  }
+
+  document.getElementById('f-busca-spinner').style.display = 'none';
+
+  if (unicos.length === 0) {
+    fecharSugestoes();
+    return;
+  }
+
+  mostrarSugestoes(unicos, termo);
+}
+
+function mostrarSugestoes(lista, termo) {
+  const el = document.getElementById('client-suggestions');
+  el.innerHTML = lista.map((t, i) => `
+    <div onclick="selecionarCliente(${i})" data-idx="${i}"
+      style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;transition:background 0.1s"
+      onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background=''">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.empresa || '—'}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${t.cnpj || 'CNPJ não informado'} &nbsp;·&nbsp; ${t.nome || ''}</div>
+      </div>
+      <span class="tag ${t.sistema}" style="font-size:10px;flex-shrink:0">${(t.sistema||'').toUpperCase()}</span>
+    </div>
+  `).join('') + `<div style="padding:6px 14px;font-size:10px;color:var(--text3);font-family:var(--mono)">${lista.length} resultado${lista.length>1?'s':''} encontrado${lista.length>1?'s':''}</div>`;
+
+  // Guarda os dados para uso no clique
+  el._resultados = lista;
+  el.style.display = 'block';
+}
+
+function selecionarCliente(idx) {
+  const el = document.getElementById('client-suggestions');
+  const t = el._resultados?.[idx];
+  if (!t) return;
+
+  // Preenche os campos do formulário
+  if (t.nome) document.getElementById('f-nome').value = t.nome;
+  if (t.empresa) document.getElementById('f-empresa').value = t.empresa;
+  if (t.cnpj) document.getElementById('f-cnpj').value = t.cnpj;
+  if (t.sistema) document.getElementById('f-sistema').value = t.sistema;
+  if (t.prioridade) selectPriority(t.prioridade);
+
+  // Limpa o campo de busca e fecha sugestões
+  document.getElementById('f-busca-cliente').value = '';
+  fecharSugestoes();
+
+  // Mostra histórico completo
+  const cnpjNums = (t.cnpj || '').replace(/\D/g,'');
+  if (cnpjNums.length >= 11) buscarClientePorCNPJ(cnpjNums);
+}
+
+function fecharSugestoes() {
+  document.getElementById('client-suggestions').style.display = 'none';
+  document.getElementById('f-busca-spinner').style.display = 'none';
+}
+
+// Fecha sugestões ao clicar fora
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#f-busca-cliente') && !e.target.closest('#client-suggestions')) {
+    fecharSugestoes();
+  }
+});
 
 // ─── Histórico de Clientes por CNPJ ─────────────────────────────────────────
 
