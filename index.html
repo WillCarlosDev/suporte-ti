@@ -332,6 +332,8 @@
   .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
   .bar-label { font-size: 12px; min-width: 140px; color: var(--text2); }
   .bar-track { flex: 1; background: var(--surface3); border-radius: 4px; height: 8px; overflow: hidden; }
+  .rep-period { font-size:12px; padding:5px 14px; }
+  .rep-period.active { background:rgba(0,229,160,0.15); border-color:var(--accent); color:var(--accent); }
   .bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
   .bar-val { font-family: var(--mono); font-size: 11px; color: var(--text3); min-width: 24px; text-align: right; }
   .pie-row { display: flex; gap: 20px; align-items: center; }
@@ -567,9 +569,37 @@
     <!-- CHAMADOS (KANBAN) -->
     <div class="view" id="view-chamados">
       <div class="page-header">
-        <div class="page-title">Chamados</div>
-        <div class="page-sub">Gerencie e acompanhe todos os atendimentos</div>
+        <div>
+          <div class="page-title">Chamados</div>
+          <div class="page-sub">Gerencie e acompanhe todos os atendimentos</div>
+        </div>
+        <button class="btn-ghost" onclick="toggleGerenciarColunas()" id="btn-gerenciar-cols" style="font-size:12px">⚙ Gerenciar Colunas</button>
       </div>
+
+      <!-- Painel de gerenciar colunas -->
+      <div id="painel-colunas" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:700">⚙ Gerenciar Colunas do Kanban</div>
+          <button onclick="toggleGerenciarColunas()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px">✕</button>
+        </div>
+        <div id="colunas-lista" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--border);padding-top:14px">
+          <input class="form-input" id="nova-col-nome" placeholder="Nome da nova coluna" style="flex:1;min-width:160px;font-size:13px"/>
+          <div id="nova-col-swatches" style="display:flex;gap:4px">
+            <div onclick="selectColColor('#ff4757')" style="width:20px;height:20px;border-radius:4px;background:#ff4757;cursor:pointer;border:2px solid transparent" title="Vermelho"></div>
+            <div onclick="selectColColor('#ffcc00')" style="width:20px;height:20px;border-radius:4px;background:#ffcc00;cursor:pointer;border:2px solid transparent" title="Amarelo"></div>
+            <div onclick="selectColColor('#0090ff')" style="width:20px;height:20px;border-radius:4px;background:#0090ff;cursor:pointer;border:2px solid transparent" title="Azul"></div>
+            <div onclick="selectColColor('#ff6b35')" style="width:20px;height:20px;border-radius:4px;background:#ff6b35;cursor:pointer;border:2px solid transparent" title="Laranja"></div>
+            <div onclick="selectColColor('#8a90a0')" style="width:20px;height:20px;border-radius:4px;background:#8a90a0;cursor:pointer;border:2px solid transparent" title="Cinza"></div>
+            <div onclick="selectColColor('#00e5a0')" style="width:20px;height:20px;border-radius:4px;background:#00e5a0;cursor:pointer;border:2px solid transparent" title="Verde"></div>
+            <div onclick="selectColColor('#a855f7')" style="width:20px;height:20px;border-radius:4px;background:#a855f7;cursor:pointer;border:2px solid transparent" title="Roxo"></div>
+            <div onclick="selectColColor('#f472b6')" style="width:20px;height:20px;border-radius:4px;background:#f472b6;cursor:pointer;border:2px solid transparent" title="Rosa"></div>
+          </div>
+          <input type="hidden" id="nova-col-cor" value="#0090ff"/>
+          <button class="btn-primary" onclick="adicionarColuna()" style="font-size:12px">＋ Adicionar Coluna</button>
+        </div>
+      </div>
+
       <div class="kanban" id="full-kanban"></div>
     </div>
 
@@ -799,9 +829,29 @@
     <!-- REPORTS -->
     <div class="view" id="view-reports">
       <div class="page-header">
-        <div class="page-title">Relatórios</div>
-        <div class="page-sub">Análise dos atendimentos</div>
+        <div style="flex:1">
+          <div class="page-title">Relatórios</div>
+          <div class="page-sub">Análise real dos atendimentos</div>
+        </div>
+        <button class="btn-primary" onclick="exportReport()">⬇ Exportar CSV</button>
       </div>
+
+      <!-- Filtro de período -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+        <button class="btn-ghost rep-period active" onclick="setReportPeriod('mes')"  id="rp-mes">Este mês</button>
+        <button class="btn-ghost rep-period"         onclick="setReportPeriod('sem')"  id="rp-sem">Esta semana</button>
+        <button class="btn-ghost rep-period"         onclick="setReportPeriod('todos')" id="rp-todos">Todos</button>
+      </div>
+
+      <!-- Relatório da equipe -->
+      <div class="report-card" style="margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <h3 style="margin:0">👥 Desempenho da Equipe</h3>
+          <span id="report-team-total" style="font-size:12px;color:var(--text3);font-family:var(--mono)"></span>
+        </div>
+        <div id="report-team"></div>
+      </div>
+
       <div class="report-grid">
         <div class="report-card">
           <h3>Problemas mais frequentes</h3>
@@ -809,34 +859,17 @@
         </div>
         <div class="report-card">
           <h3>Distribuição por contrato</h3>
-          <div class="pie-row">
-            <div class="pie-chart-placeholder"></div>
-            <div class="pie-legend">
-              <div class="pie-item"><div class="pie-dot" style="background:var(--accent)"></div>Contrato — 52%</div>
-              <div class="pie-item"><div class="pie-dot" style="background:var(--accent2)"></div>Garantia — 26%</div>
-              <div class="pie-item"><div class="pie-dot" style="background:var(--accent3)"></div>Avulso — 22%</div>
-            </div>
-          </div>
+          <div id="report-contrato"></div>
         </div>
         <div class="report-card">
-          <h3>Chamados por sistema</h3>
+          <h3>Chamados por sistema / equipamento</h3>
           <div id="report-systems"></div>
         </div>
         <div class="report-card">
           <h3>N1 vs N2</h3>
-          <div style="display:flex;flex-direction:column;gap:14px;margin-top:8px">
-            <div>
-              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span>N1 — Suporte Básico</span><span style="font-family:var(--mono);color:var(--accent)">68%</span></div>
-              <div class="bar-track"><div class="bar-fill" style="width:68%;background:var(--accent)"></div></div>
-            </div>
-            <div>
-              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span>N2 — Suporte Avançado</span><span style="font-family:var(--mono);color:var(--warn)">32%</span></div>
-              <div class="bar-track"><div class="bar-fill" style="width:32%;background:var(--warn)"></div></div>
-            </div>
-          </div>
+          <div id="report-nivel"></div>
         </div>
       </div>
-      <button class="btn-primary" onclick="exportReport()">⬇ Exportar Relatório CSV</button>
     </div>
 
     <!-- CONFIG -->
@@ -1896,16 +1929,9 @@ function renderKanban(containerId, data) {
       </div>`;
     }).join('');
   } else {
-    // Colunas padrão para tickets criados pelo painel
-    const cols = [
-      { key:'aberto',        label:'Aberto',        color:'#ff4757' },
-      { key:'em-andamento',  label:'Em Andamento',   color:'#ffcc00' },
-      { key:'aguardando',    label:'Aguardando',     color:'#0090ff' },
-      { key:'pendencia',     label:'Pendência',      color:'#ff6b35' },
-      { key:'nao-atendido',  label:'Não Atendido',   color:'#8a90a0' },
-      { key:'resolvido',     label:'Resolvido',      color:'#00e5a0' },
-    ];
-    container.style.gridTemplateColumns = 'repeat(6, 1fr)';
+    // Colunas customizáveis (padrão ou salvas pelo usuário)
+    const cols = getKanbanCols();
+    container.style.gridTemplateColumns = `repeat(${Math.min(cols.length, 7)}, 1fr)`;
     container.innerHTML = cols.map(col => {
       const colTickets = sortByPriority(data.filter(t => t.status === col.key));
       return `
@@ -2096,39 +2122,245 @@ function toggleKB(i) {
   if (el) el.classList.toggle('open');
 }
 
+let reportPeriod = 'mes';
+
+function setReportPeriod(p) {
+  reportPeriod = p;
+  document.querySelectorAll('.rep-period').forEach(b => b.classList.remove('active'));
+  document.getElementById('rp-' + p)?.classList.add('active');
+  renderReports();
+}
+
+function filtrarTicketsPeriodo() {
+  const now = Date.now();
+  const semana = 7 * 24 * 3600 * 1000;
+  const mesAtual = new Date().getMonth();
+  const anoAtual = new Date().getFullYear();
+  return tickets.filter(t => {
+    if (reportPeriod === 'todos') return true;
+    if (reportPeriod === 'sem') return (now - t.time) <= semana;
+    if (reportPeriod === 'mes') {
+      const d = new Date(t.time);
+      return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+    }
+    return true;
+  });
+}
+
+function barHtml(label, val, total, color, extra) {
+  const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+  return `<div class="bar-row">
+    <span class="bar-label">${label}</span>
+    <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+    <span class="bar-val" style="font-family:var(--mono)">${val} <span style="color:var(--text3);font-size:10px">(${pct}%)</span></span>
+    ${extra||''}
+  </div>`;
+}
+
+const MEMBER_COLORS = ['#00e5a0','#0090ff','#a855f7','#ff6b35','#f472b6','#ffcc00','#2dd4bf','#ff4757'];
+
 function renderReports() {
+  const data = filtrarTicketsPeriodo();
+  const total = data.length;
+
+  // ── Equipe ────────────────────────────────────────────────────────
+  const teamEl = document.getElementById('report-team');
+  const teamTotalEl = document.getElementById('report-team-total');
+  if (teamEl) {
+    // Agrupa por coluna/membro (trelloList ou assignedTo)
+    const memberMap = new Map();
+    data.forEach(t => {
+      const membro = t.assignedTo || t.trelloList || 'Não atribuído';
+      if (!memberMap.has(membro)) memberMap.set(membro, { total: 0, resolvidos: 0 });
+      const m = memberMap.get(membro);
+      m.total++;
+      if (t.status === 'resolvido') m.resolvidos++;
+    });
+
+    // Ordena por total desc
+    const membros = [...memberMap.entries()].sort((a,b) => b[1].total - a[1].total);
+
+    if (membros.length === 0) {
+      teamEl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px">Nenhum chamado no período.</div>';
+    } else {
+      teamEl.innerHTML = membros.map(([nome, m], i) => {
+        const pct = total > 0 ? Math.round((m.total / total) * 100) : 0;
+        const color = MEMBER_COLORS[i % MEMBER_COLORS.length];
+        const taxaResolucao = m.total > 0 ? Math.round((m.resolvidos / m.total) * 100) : 0;
+        return `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="width:32px;height:32px;border-radius:50%;background:${color}22;border:2px solid ${color};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:${color};flex-shrink:0">
+            ${nome.trim().charAt(0).toUpperCase()}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px">
+              <span style="font-size:13px;font-weight:600">${nome}</span>
+              <span style="font-size:11px;color:var(--text3)">${m.total} chamado${m.total!==1?'s':''}</span>
+              <span style="font-size:11px;color:${color};font-family:var(--mono);margin-left:auto">${pct}%</span>
+            </div>
+            <div style="background:var(--surface3);border-radius:4px;height:6px;overflow:hidden">
+              <div style="width:${pct}%;height:100%;background:${color};border-radius:4px;transition:width 0.4s"></div>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:4px;font-size:10px;color:var(--text3)">
+              <span>✅ ${m.resolvidos} resolvidos</span>
+              <span>📊 ${taxaResolucao}% taxa de resolução</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    if (teamTotalEl) teamTotalEl.textContent = `${total} chamado${total!==1?'s':''} no período`;
+  }
+
+  // ── Problemas frequentes ──────────────────────────────────────────
   const issuesEl = document.getElementById('report-issues');
+  if (issuesEl) {
+    const catMap = new Map();
+    data.forEach(t => { catMap.set(t.categoria, (catMap.get(t.categoria)||0) + 1); });
+    const cats = [...catMap.entries()].sort((a,b) => b[1]-a[1]).slice(0,6);
+    const catColors = ['var(--accent)','var(--accent2)','var(--warn)','var(--accent3)','#a855f7','#2dd4bf'];
+    issuesEl.innerHTML = cats.length
+      ? cats.map(([cat, n], i) => barHtml(getCategoryLabel(cat)||cat, n, total, catColors[i%catColors.length])).join('')
+      : '<div style="color:var(--text3);font-size:12px">Sem dados</div>';
+  }
+
+  // ── Contrato ──────────────────────────────────────────────────────
+  const contrEl = document.getElementById('report-contrato');
+  if (contrEl) {
+    const prioMap = { contrato:0, garantia:0, avulso:0 };
+    data.forEach(t => { if (prioMap[t.prioridade]!==undefined) prioMap[t.prioridade]++; });
+    contrEl.innerHTML = [
+      barHtml('Contrato',  prioMap.contrato, total, 'var(--accent)'),
+      barHtml('Garantia',  prioMap.garantia, total, 'var(--accent2)'),
+      barHtml('Sem garantia', prioMap.avulso, total, 'var(--accent3)'),
+    ].join('');
+  }
+
+  // ── Sistemas ──────────────────────────────────────────────────────
   const sysEl = document.getElementById('report-systems');
-  if (!issuesEl || !sysEl) return;
+  if (sysEl) {
+    const sysMap = new Map();
+    data.forEach(t => { const s = t.sistema||'outros'; sysMap.set(s, (sysMap.get(s)||0)+1); });
+    const syss = [...sysMap.entries()].sort((a,b) => b[1]-a[1]).slice(0,8);
+    const sysColors = ['#c084fc','#4ade80','#fb923c','#0090ff','#f472b6','#2dd4bf','#ffcc00','#ff4757'];
+    sysEl.innerHTML = syss.length
+      ? syss.map(([s, n], i) => barHtml(s.toUpperCase(), n, total, sysColors[i%sysColors.length])).join('')
+      : '<div style="color:var(--text3);font-size:12px">Sem dados</div>';
+  }
 
-  const issues = [
-    { label:'Relógio offline', val: 45, color:'var(--accent)' },
-    { label:'Ponto manual', val: 28, color:'var(--accent2)' },
-    { label:'Relatório errado', val: 15, color:'var(--warn)' },
-    { label:'Integração folha', val: 8, color:'var(--accent3)' },
-    { label:'Login/Acesso', val: 4, color:'var(--text3)' },
-  ];
-  issuesEl.innerHTML = issues.map(i => `
-    <div class="bar-row">
-      <span class="bar-label">${i.label}</span>
-      <div class="bar-track"><div class="bar-fill" style="width:${i.val}%;background:${i.color}"></div></div>
-      <span class="bar-val">${i.val}%</span>
-    </div>
-  `).join('');
+  // ── N1 vs N2 ──────────────────────────────────────────────────────
+  const nivelEl = document.getElementById('report-nivel');
+  if (nivelEl) {
+    const n1 = data.filter(t => t.nivel==='n1').length;
+    const n2 = data.filter(t => t.nivel==='n2').length;
+    nivelEl.innerHTML = [
+      barHtml('N1 — Suporte Básico',   n1, total, 'var(--accent)'),
+      barHtml('N2 — Suporte Avançado', n2, total, 'var(--warn)'),
+    ].join('');
+  }
+}
 
-  const systems = [
-    { label:'RHID', val:48, color:'#c084fc' },
-    { label:'iPonto', val:32, color:'#4ade80' },
-    { label:'Atecsoft', val:20, color:'#fb923c' },
+// ─── Gerenciar Colunas do Kanban ─────────────────────────────────────────────
+
+let customCols = null; // null = usa padrão
+let selectedColColor = '#0090ff';
+
+function getKanbanCols() {
+  if (customCols) return customCols;
+  const saved = localStorage.getItem('suporte_ti_cols');
+  if (saved) { customCols = JSON.parse(saved); return customCols; }
+  customCols = [
+    { key:'aberto',       label:'Aberto',       color:'#ff4757' },
+    { key:'em-andamento', label:'Em Andamento',  color:'#ffcc00' },
+    { key:'aguardando',   label:'Aguardando',    color:'#0090ff' },
+    { key:'pendencia',    label:'Pendência',     color:'#ff6b35' },
+    { key:'nao-atendido', label:'Não Atendido',  color:'#8a90a0' },
+    { key:'resolvido',    label:'Resolvido',     color:'#00e5a0' },
   ];
-  sysEl.innerHTML = systems.map(s => `
-    <div class="bar-row">
-      <span class="bar-label">${s.label}</span>
-      <div class="bar-track"><div class="bar-fill" style="width:${s.val}%;background:${s.color}"></div></div>
-      <span class="bar-val">${s.val}%</span>
+  return customCols;
+}
+
+function saveKanbanCols() {
+  localStorage.setItem('suporte_ti_cols', JSON.stringify(customCols));
+}
+
+function toggleGerenciarColunas() {
+  const p = document.getElementById('painel-colunas');
+  const open = p.style.display !== 'none';
+  p.style.display = open ? 'none' : 'block';
+  if (!open) renderColunasLista();
+}
+
+function renderColunasLista() {
+  const cols = getKanbanCols();
+  const lista = document.getElementById('colunas-lista');
+  lista.innerHTML = cols.map((col, i) => `
+    <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:8px;padding:8px 12px">
+      <div style="width:14px;height:14px;border-radius:3px;background:${col.color};flex-shrink:0"></div>
+      <input class="form-input" value="${col.label}" onchange="renomearColuna(${i}, this.value)"
+        style="flex:1;font-size:13px;padding:4px 8px;height:32px"/>
+      <div style="display:flex;gap:3px">
+        ${i > 0 ? `<button onclick="moverColuna(${i},-1)" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:4px;padding:2px 7px;cursor:pointer;font-size:12px">↑</button>` : '<div style="width:28px"></div>'}
+        ${i < cols.length-1 ? `<button onclick="moverColuna(${i},1)" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:4px;padding:2px 7px;cursor:pointer;font-size:12px">↓</button>` : '<div style="width:28px"></div>'}
+      </div>
+      ${cols.length > 2 ? `<button onclick="removerColuna(${i})" style="background:rgba(255,71,87,0.1);border:1px solid rgba(255,71,87,0.3);color:var(--danger);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px">✕</button>` : ''}
     </div>
   `).join('');
 }
+
+function selectColColor(c) {
+  selectedColColor = c;
+  document.getElementById('nova-col-cor').value = c;
+  document.querySelectorAll('#nova-col-swatches div').forEach(el => {
+    el.style.border = el.title && el.getAttribute('onclick').includes(c) ? '2px solid white' : '2px solid transparent';
+    el.style.transform = el.getAttribute('onclick')?.includes(c) ? 'scale(1.2)' : '';
+  });
+}
+
+function adicionarColuna() {
+  const nome = document.getElementById('nova-col-nome').value.trim();
+  if (!nome) { showNotif('⚠️ Digite o nome da coluna.','warn'); return; }
+  const cols = getKanbanCols();
+  const key = nome.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  if (cols.find(c => c.key === key)) { showNotif('⚠️ Já existe uma coluna com esse nome.','warn'); return; }
+  cols.splice(cols.length - 1, 0, { key, label: nome, color: selectedColColor }); // insere antes de Resolvido
+  saveKanbanCols();
+  document.getElementById('nova-col-nome').value = '';
+  renderColunasLista();
+  renderAll();
+  showNotif(`✅ Coluna "${nome}" criada!`);
+}
+
+function removerColuna(idx) {
+  const cols = getKanbanCols();
+  const col = cols[idx];
+  if (!confirm(`Remover a coluna "${col.label}"? Os chamados nela voltam para "Aberto".`)) return;
+  tickets.forEach(t => { if (t.status === col.key) t.status = 'aberto'; });
+  cols.splice(idx, 1);
+  saveKanbanCols();
+  renderColunasLista();
+  renderAll();
+  showNotif(`🗑️ Coluna "${col.label}" removida.`);
+}
+
+function renomearColuna(idx, novoNome) {
+  const cols = getKanbanCols();
+  if (!novoNome.trim()) return;
+  cols[idx].label = novoNome.trim();
+  saveKanbanCols();
+  renderAll();
+}
+
+function moverColuna(idx, dir) {
+  const cols = getKanbanCols();
+  const novoIdx = idx + dir;
+  if (novoIdx < 0 || novoIdx >= cols.length) return;
+  [cols[idx], cols[novoIdx]] = [cols[novoIdx], cols[idx]];
+  saveKanbanCols();
+  renderColunasLista();
+  renderAll();
+}
+
 
 // ─── Ticket Form ──────────────────────────────────────────────────────────────
 function selectPriority(p) {
