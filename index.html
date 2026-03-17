@@ -1324,6 +1324,10 @@ async function loadTicketsFromDB() {
         trelloCardId: r.trello_card_id,
         trelloList:   r.trello_list,
         trelloListId: r.trello_list_id,
+        assignedTo:   r.assigned_to   || null,
+        labels:       r.labels        || [],
+        tipoChamado:  r.tipo_chamado  || 'normal',
+        whatsappPhone: r.whatsapp_phone || null,
         fromTrello:   r.from_trello,
         fromWhatsApp: r.from_whatsapp,
         replies:      r.replies || [],
@@ -1351,12 +1355,16 @@ async function saveTicketToDB(t) {
       nivel:          t.nivel,
       status:         t.status,
       descricao:      t.desc,
-      trello_card_id: t.trelloCardId || null,
-      trello_list:    t.trelloList   || null,
-      trello_list_id: t.trelloListId || null,
-      from_trello:    t.fromTrello   || false,
-      from_whatsapp:  t.fromWhatsApp || false,
-      replies:        t.replies      || [],
+      trello_card_id: t.trelloCardId   || null,
+      trello_list:    t.trelloList     || null,
+      trello_list_id: t.trelloListId   || null,
+      from_trello:    t.fromTrello     || false,
+      from_whatsapp:  t.fromWhatsApp   || false,
+      whatsapp_phone: t.whatsappPhone  || null,
+      assigned_to:    t.assignedTo     || null,
+      labels:         t.labels         || [],
+      tipo_chamado:   t.tipoChamado    || 'normal',
+      replies:        t.replies        || [],
     }, { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
   } catch(e) {
     console.warn('Erro ao salvar chamado:', e.message);
@@ -1366,9 +1374,12 @@ async function saveTicketToDB(t) {
 async function updateTicketInDB(t) {
   try {
     await sbFetch(`chamados?id=eq.${encodeURIComponent(t.id)}`, 'PATCH', {
-      status:   t.status,
-      replies:  t.replies || [],
-      updated_at: new Date().toISOString(),
+      status:      t.status,
+      replies:     t.replies     || [],
+      labels:      t.labels      || [],
+      assigned_to: t.assignedTo  || null,
+      tipo_chamado: t.tipoChamado|| 'normal',
+      updated_at:  new Date().toISOString(),
     });
   } catch(e) {
     console.warn('Erro ao atualizar chamado:', e.message);
