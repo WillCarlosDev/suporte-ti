@@ -1873,7 +1873,7 @@ function showView(name) {
 
 function renderAll() {
   renderStats();
-  renderKanban('dashboard-kanban', tickets.slice(0,4));
+  renderKanban('dashboard-kanban', tickets.filter(t => t.status !== 'resolvido').slice(0, 8));
   renderKanban('full-kanban', tickets);
   renderKB();
   renderReports();
