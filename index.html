@@ -879,6 +879,21 @@
         <div class="page-sub">Chave de IA, Trello e WhatsApp</div>
       </div>
 
+      <!-- Membros da Equipe -->
+      <div class="config-box" style="border-color:rgba(0,144,255,0.2);background:rgba(0,144,255,0.03)">
+        <h3 style="color:var(--accent2)">👥 Membros da Equipe</h3>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:14px">
+          Defina quem são os membros da equipe. O relatório de desempenho usará apenas esses nomes,
+          ignorando colunas como "Finalizados", "Não Atende", etc.
+        </div>
+        <div id="membros-lista" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" id="novo-membro-nome" placeholder="Nome do membro" style="flex:1;font-size:13px"
+            onkeydown="if(event.key==='Enter') adicionarMembro()"/>
+          <button class="btn-primary" onclick="adicionarMembro()" style="font-size:12px">＋ Adicionar</button>
+        </div>
+      </div>
+
       <!-- IA via Groq no Vercel -->
       <div class="config-box" style="border-color:rgba(0,229,160,0.3);background:rgba(0,229,160,0.03)">
         <h3 style="color:var(--accent)">✨ Inteligência Artificial — Configuração</h3>
@@ -1853,6 +1868,7 @@ function showView(name) {
   event?.currentTarget?.classList.add('active');
   renderAll();
   if (name === 'users') renderUsersTable();
+  if (name === 'config') renderMembrosConfig();
 }
 
 function renderAll() {
@@ -2170,6 +2186,78 @@ function barHtml(label, val, total, color, extra) {
 
 const MEMBER_COLORS = ['#00e5a0','#0090ff','#a855f7','#ff6b35','#f472b6','#ffcc00','#2dd4bf','#ff4757'];
 
+// ─── Gerenciamento de Membros da Equipe ──────────────────────────────────────
+function getMembros() {
+  const saved = localStorage.getItem('suporte_ti_membros');
+  if (saved) return JSON.parse(saved);
+  // Membros padrão iniciais
+  return ['Willian', 'Lucas', 'Alex', 'Julio'];
+}
+
+function saveMembros(lista) {
+  localStorage.setItem('suporte_ti_membros', JSON.stringify(lista));
+}
+
+function renderMembrosConfig() {
+  const lista = getMembros();
+  const el = document.getElementById('membros-lista');
+  if (!el) return;
+  if (lista.length === 0) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text3)">Nenhum membro cadastrado.</div>';
+    return;
+  }
+  el.innerHTML = lista.map((nome, i) => `
+    <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:8px;padding:8px 12px">
+      <div style="width:28px;height:28px;border-radius:50%;background:${MEMBER_COLORS[i%MEMBER_COLORS.length]}22;border:2px solid ${MEMBER_COLORS[i%MEMBER_COLORS.length]};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${MEMBER_COLORS[i%MEMBER_COLORS.length]}">
+        ${nome.charAt(0).toUpperCase()}
+      </div>
+      <span style="flex:1;font-size:13px;font-weight:500">${nome}</span>
+      <button onclick="removerMembro(${i})" style="background:rgba(255,71,87,0.1);border:1px solid rgba(255,71,87,0.3);color:var(--danger);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px">✕</button>
+    </div>
+  `).join('');
+}
+
+function adicionarMembro() {
+  const input = document.getElementById('novo-membro-nome');
+  const nome = input.value.trim();
+  if (!nome) { showNotif('⚠️ Digite o nome do membro.', 'warn'); return; }
+  const lista = getMembros();
+  if (lista.find(m => m.toLowerCase() === nome.toLowerCase())) {
+    showNotif('⚠️ Membro já cadastrado.', 'warn'); return;
+  }
+  lista.push(nome);
+  saveMembros(lista);
+  input.value = '';
+  renderMembrosConfig();
+  showNotif(`✅ ${nome} adicionado à equipe!`);
+}
+
+function removerMembro(idx) {
+  const lista = getMembros();
+  const nome = lista[idx];
+  if (!confirm(`Remover ${nome} da equipe?`)) return;
+  lista.splice(idx, 1);
+  saveMembros(lista);
+  renderMembrosConfig();
+  showNotif(`🗑️ ${nome} removido.`);
+}
+
+// Identifica se um nome de coluna/string é um membro real da equipe
+function isMembro(nome) {
+  if (!nome) return false;
+  const membros = getMembros();
+  const lower = nome.toLowerCase().trim();
+  return membros.some(m => lower.includes(m.toLowerCase()) || m.toLowerCase().includes(lower));
+}
+
+function getNomeMembro(nome) {
+  if (!nome) return null;
+  const membros = getMembros();
+  const lower = nome.toLowerCase().trim();
+  const found = membros.find(m => lower.includes(m.toLowerCase()) || m.toLowerCase().includes(lower));
+  return found || null;
+}
+
 function renderReports() {
   const data = filtrarTicketsPeriodo();
   const total = data.length;
@@ -2178,49 +2266,55 @@ function renderReports() {
   const teamEl = document.getElementById('report-team');
   const teamTotalEl = document.getElementById('report-team-total');
   if (teamEl) {
-    // Agrupa por coluna/membro (trelloList ou assignedTo)
+    const membros = getMembros();
     const memberMap = new Map();
+
+    // Inicializa todos os membros com zero
+    membros.forEach(m => memberMap.set(m, { total: 0, resolvidos: 0, pendentes: 0 }));
+
     data.forEach(t => {
-      const membro = t.assignedTo || t.trelloList || 'Não atribuído';
-      if (!memberMap.has(membro)) memberMap.set(membro, { total: 0, resolvidos: 0 });
-      const m = memberMap.get(membro);
-      m.total++;
-      if (t.status === 'resolvido') m.resolvidos++;
+      // Tenta identificar o membro pelo assignedTo ou pelo nome da coluna do Trello
+      const candidato = t.assignedTo || t.trelloList || '';
+      const membroReal = getNomeMembro(candidato);
+      if (membroReal) {
+        const m = memberMap.get(membroReal);
+        m.total++;
+        if (t.status === 'resolvido') m.resolvidos++;
+        else m.pendentes++;
+      }
     });
 
-    // Ordena por total desc
-    const membros = [...memberMap.entries()].sort((a,b) => b[1].total - a[1].total);
+    const totalAtribuido = [...memberMap.values()].reduce((s, m) => s + m.total, 0);
 
-    if (membros.length === 0) {
-      teamEl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px">Nenhum chamado no período.</div>';
-    } else {
-      teamEl.innerHTML = membros.map(([nome, m], i) => {
-        const pct = total > 0 ? Math.round((m.total / total) * 100) : 0;
-        const color = MEMBER_COLORS[i % MEMBER_COLORS.length];
-        const taxaResolucao = m.total > 0 ? Math.round((m.resolvidos / m.total) * 100) : 0;
-        return `
-        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
-          <div style="width:32px;height:32px;border-radius:50%;background:${color}22;border:2px solid ${color};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:${color};flex-shrink:0">
-            ${nome.trim().charAt(0).toUpperCase()}
+    teamEl.innerHTML = membros.map((nome, i) => {
+      const m = memberMap.get(nome);
+      const pct = totalAtribuido > 0 ? Math.round((m.total / totalAtribuido) * 100) : 0;
+      const color = MEMBER_COLORS[i % MEMBER_COLORS.length];
+      const taxaResolucao = m.total > 0 ? Math.round((m.resolvidos / m.total) * 100) : 0;
+      return `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+        <div style="width:36px;height:36px;border-radius:50%;background:${color}22;border:2px solid ${color};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:${color};flex-shrink:0">
+          ${nome.charAt(0).toUpperCase()}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px">
+            <span style="font-size:13px;font-weight:600">${nome}</span>
+            <span style="font-size:11px;color:var(--text3)">${m.total} chamado${m.total!==1?'s':''}</span>
+            <span style="font-size:12px;color:${color};font-family:var(--mono);margin-left:auto;font-weight:700">${pct}%</span>
           </div>
-          <div style="flex:1;min-width:0">
-            <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px">
-              <span style="font-size:13px;font-weight:600">${nome}</span>
-              <span style="font-size:11px;color:var(--text3)">${m.total} chamado${m.total!==1?'s':''}</span>
-              <span style="font-size:11px;color:${color};font-family:var(--mono);margin-left:auto">${pct}%</span>
-            </div>
-            <div style="background:var(--surface3);border-radius:4px;height:6px;overflow:hidden">
-              <div style="width:${pct}%;height:100%;background:${color};border-radius:4px;transition:width 0.4s"></div>
-            </div>
-            <div style="display:flex;gap:12px;margin-top:4px;font-size:10px;color:var(--text3)">
-              <span>✅ ${m.resolvidos} resolvidos</span>
-              <span>📊 ${taxaResolucao}% taxa de resolução</span>
-            </div>
+          <div style="background:var(--surface3);border-radius:4px;height:7px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${color};border-radius:4px;transition:width 0.5s ease"></div>
           </div>
-        </div>`;
-      }).join('');
-    }
-    if (teamTotalEl) teamTotalEl.textContent = `${total} chamado${total!==1?'s':''} no período`;
+          <div style="display:flex;gap:14px;margin-top:5px;font-size:10px;color:var(--text3)">
+            <span style="color:#00e5a0">✅ ${m.resolvidos} resolvidos</span>
+            <span style="color:#ff6b35">⏳ ${m.pendentes} em aberto</span>
+            <span>📊 ${taxaResolucao}% resolução</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    if (teamTotalEl) teamTotalEl.textContent = `${totalAtribuido} atribuídos · ${total} total no período`;
   }
 
   // ── Problemas frequentes ──────────────────────────────────────────
