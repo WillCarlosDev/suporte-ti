@@ -430,6 +430,9 @@
     <div class="nav-item" onclick="showView('novo')">
       <span class="icon">＋</span> Novo Chamado
     </div>
+    <div class="nav-item" onclick="showView('desbloqueio')">
+      <span class="icon">🔓</span> Desbloqueio REP
+    </div>
     <div class="nav-section">Ferramentas</div>
     <div class="nav-item" onclick="showView('chat')">
       <span class="icon">◎</span> Simulador Bot
@@ -454,6 +457,79 @@
 
   <!-- MAIN -->
   <main class="main">
+
+
+    <!-- DESBLOQUEIO REP -->
+    <div class="view" id="view-desbloqueio">
+      <div class="page-header">
+        <div>
+          <div class="page-title">🔓 Desbloqueio de REP</div>
+          <div class="page-sub">Abertura rápida de chamados de senha e desbloqueio</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:28px">
+        <!-- Card 1 -->
+        <div onclick="abrirDesbloqueio('senha-sistema')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;cursor:pointer;transition:all 0.2s;hover:border-color:var(--accent)" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform=''">
+          <div style="font-size:28px;margin-bottom:12px">🔑</div>
+          <div style="font-weight:700;font-size:15px;margin-bottom:6px">Contrasenha de Sistema</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">Recuperação de senha de acesso a sistemas (RHID, iPonto, Atecsoft etc.)</div>
+        </div>
+        <!-- Card 2 -->
+        <div onclick="abrirDesbloqueio('senha-relogio')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--accent2)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform=''">
+          <div style="font-size:28px;margin-bottom:12px">⏱️</div>
+          <div style="font-weight:700;font-size:15px;margin-bottom:6px">Contrasenha de Relógio</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">Desbloqueio de senha de acesso ao menu do relógio de ponto</div>
+        </div>
+        <!-- Card 3 -->
+        <div onclick="abrirDesbloqueio('desbloqueio-adm')" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--warn)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform=''">
+          <div style="font-size:28px;margin-bottom:12px">🛡️</div>
+          <div style="font-weight:700;font-size:15px;margin-bottom:6px">Desbloqueio ADM</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">Desbloqueio administrativo de relógios (ex: IDClass, IDFace, iDX)</div>
+        </div>
+      </div>
+
+      <!-- Formulário de desbloqueio -->
+      <div id="desbloqueio-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;max-width:640px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+          <div id="desb-icon" style="font-size:24px"></div>
+          <div>
+            <div id="desb-titulo" style="font-weight:700;font-size:15px"></div>
+            <div id="desb-sub" style="font-size:12px;color:var(--text2)"></div>
+          </div>
+          <button onclick="fecharDesbloqueio()" style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px">✕ Fechar</button>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Nome do Solicitante *</label>
+            <input class="form-input" id="desb-nome" placeholder="Ex: João Silva"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Razão Social *</label>
+            <input class="form-input" id="desb-empresa" placeholder="Ex: Empresa Ltda." oninput="onDEmpresaInput(this.value)"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">CNPJ *</label>
+            <input class="form-input" id="desb-cnpj" placeholder="00.000.000/0000-00" maxlength="18" oninput="onDCnpjInput(this.value)"/>
+          </div>
+          <div class="form-group" id="desb-equip-group">
+            <label class="form-label" id="desb-equip-label">Equipamento / Sistema *</label>
+            <select class="form-select" id="desb-equip">
+              <option value="">Selecione...</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Observação</label>
+            <textarea class="form-textarea" id="desb-obs" placeholder="Ex: Serial do equipamento, número da nota, informações adicionais..." style="min-height:80px"></textarea>
+          </div>
+          <div class="form-group full">
+            <div class="btn-row">
+              <button class="btn-primary" onclick="criarChamadoDesbloqueio()">🔓 Abrir Chamado</button>
+              <button class="btn-ghost" onclick="fecharDesbloqueio()">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
@@ -542,12 +618,17 @@
           <input class="form-input" id="f-cnpj" placeholder="00.000.000/0000-00" maxlength="18" oninput="onCnpjInput(this.value)"/>
         </div>
         <div class="form-group">
-          <label class="form-label">Sistema *</label>
+          <label class="form-label">Suporte *</label>
+          <select class="form-select" id="f-tipo-suporte" onchange="onTipoSuporteChange(this.value)">
+            <option value="">Selecione o tipo...</option>
+            <option value="equipamento">🖥️ Equipamentos</option>
+            <option value="sistema">💻 Sistemas</option>
+          </select>
+        </div>
+        <div class="form-group" id="f-sistema-group" style="display:none">
+          <label class="form-label" id="f-sistema-label">Equipamento / Sistema *</label>
           <select class="form-select" id="f-sistema">
             <option value="">Selecione...</option>
-            <option value="rhid">RHID</option>
-            <option value="iponto">iPonto</option>
-            <option value="atecsoft">Atecsoft</option>
           </select>
         </div>
         <div class="form-group full">
@@ -883,24 +964,30 @@
         <div id="modal-labels-chips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
         <button onclick="toggleLabelPicker()" style="background:rgba(255,255,255,0.06);border:1px dashed var(--border);color:var(--text2);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">＋ Etiqueta</button>
       </div>
-      <!-- Label Picker -->
-      <div id="label-picker" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;max-width:360px">
-        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px">Selecionar etiquetas</div>
-        <div id="label-picker-list" style="display:flex;flex-direction:column;gap:6px"></div>
+      <!-- Label Picker melhorado -->
+      <div id="label-picker" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;max-width:400px;box-shadow:0 8px 24px rgba(0,0,0,0.3)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-size:11px;font-weight:700;color:var(--text2)">ETIQUETAS</span>
+          <input id="label-search" class="form-input" placeholder="🔍 Buscar etiqueta..." oninput="filtrarEtiquetas(this.value)" style="flex:1;font-size:12px;padding:4px 8px;height:28px"/>
+        </div>
+        <div id="label-picker-list" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto"></div>
         <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Nova etiqueta personalizada:</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono);letter-spacing:1px">CRIAR NOVA ETIQUETA</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
             <input id="new-label-name" class="form-input" placeholder="Nome da etiqueta" style="flex:1;min-width:120px;font-size:12px;padding:5px 8px"/>
-            <select id="new-label-color" class="form-select" style="font-size:12px;padding:5px 8px">
-              <option value="green">🟢 Verde (Contrato)</option>
-              <option value="blue">🔵 Azul (Garantia)</option>
-              <option value="orange">🟠 Laranja (Sem garantia)</option>
-              <option value="red">🔴 Vermelho</option>
-              <option value="yellow">🟡 Amarelo</option>
-              <option value="purple">🟣 Roxo</option>
-            </select>
-            <button onclick="createAndAddLabel()" class="btn-primary" style="font-size:12px;padding:5px 12px">Criar</button>
+            <div style="display:flex;gap:4px;flex-wrap:wrap" id="color-swatches">
+              <div onclick="selectLabelColor('green')"  id="swatch-green"  title="Verde"   style="width:20px;height:20px;border-radius:4px;background:#00e5a0;cursor:pointer;border:2px solid transparent"></div>
+              <div onclick="selectLabelColor('blue')"   id="swatch-blue"   title="Azul"    style="width:20px;height:20px;border-radius:4px;background:#0090ff;cursor:pointer;border:2px solid transparent"></div>
+              <div onclick="selectLabelColor('purple')" id="swatch-purple" title="Roxo"    style="width:20px;height:20px;border-radius:4px;background:#a855f7;cursor:pointer;border:2px solid transparent"></div>
+              <div onclick="selectLabelColor('red')"    id="swatch-red"    title="Vermelho" style="width:20px;height:20px;border-radius:4px;background:#ff4757;cursor:pointer;border:2px solid transparent"></div>
+              <div onclick="selectLabelColor('yellow')" id="swatch-yellow" title="Amarelo"  style="width:20px;height:20px;border-radius:4px;background:#ffcc00;cursor:pointer;border:2px solid transparent"></div>
+              <div onclick="selectLabelColor('orange')" id="swatch-orange" title="Laranja"  style="width:20px;height:20px;border-radius:4px;background:#ff6b35;cursor:pointer;border:2px solid transparent"></div>
+              <div onclick="selectLabelColor('pink')"   id="swatch-pink"   title="Rosa"     style="width:20px;height:20px;border-radius:4px;background:#f472b6;cursor:pointer;border:2px solid transparent"></div>
+              <div onclick="selectLabelColor('teal')"   id="swatch-teal"   title="Teal"     style="width:20px;height:20px;border-radius:4px;background:#2dd4bf;cursor:pointer;border:2px solid transparent"></div>
+            </div>
+            <button onclick="createAndAddLabel()" class="btn-primary" style="font-size:12px;padding:5px 12px">＋ Criar</button>
           </div>
+          <input type="hidden" id="new-label-color" value="blue"/>
         </div>
       </div>
 
@@ -2180,6 +2267,121 @@ document.addEventListener('click', function(e) {
   }
 });
 
+
+// ─── Desbloqueio REP ──────────────────────────────────────────────────────────
+
+const DESB_CONFIGS = {
+  'senha-sistema': {
+    icon: '🔑', titulo: 'Contrasenha de Sistema',
+    sub: 'Recuperação de acesso a sistemas de ponto eletrônico',
+    tipo: 'sistema', equipLabel: 'Sistema',
+    categoria: 'login', nivel: 'n1'
+  },
+  'senha-relogio': {
+    icon: '⏱️', titulo: 'Contrasenha de Relógio',
+    sub: 'Desbloqueio de senha do menu do relógio de ponto',
+    tipo: 'equipamento', equipLabel: 'Modelo do Relógio',
+    categoria: 'relogio-offline', nivel: 'n1'
+  },
+  'desbloqueio-adm': {
+    icon: '🛡️', titulo: 'Desbloqueio Administrativo',
+    sub: 'Desbloqueio ADM de relógios (IDClass, IDFace, iDX etc.)',
+    tipo: 'equipamento', equipLabel: 'Modelo do Relógio',
+    categoria: 'relogio-offline', nivel: 'n2'
+  },
+};
+
+let currentDesbloqueioTipo = null;
+
+function abrirDesbloqueio(tipo) {
+  currentDesbloqueioTipo = tipo;
+  const cfg = DESB_CONFIGS[tipo];
+  document.getElementById('desb-icon').textContent = cfg.icon;
+  document.getElementById('desb-titulo').textContent = cfg.titulo;
+  document.getElementById('desb-sub').textContent = cfg.sub;
+  document.getElementById('desb-equip-label').textContent = cfg.equipLabel + ' *';
+
+  // Popula select de equipamentos/sistemas
+  const sel = document.getElementById('desb-equip');
+  sel.innerHTML = '<option value="">Selecione...</option>';
+  (SUPORTE_OPCOES[cfg.tipo] || []).forEach(g => {
+    const og = document.createElement('optgroup');
+    og.label = g.group;
+    g.items.forEach(it => {
+      const o = document.createElement('option');
+      o.value = it.value; o.textContent = it.label;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+
+  document.getElementById('desbloqueio-form').style.display = 'block';
+  document.getElementById('desbloqueio-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function fecharDesbloqueio() {
+  document.getElementById('desbloqueio-form').style.display = 'none';
+  ['desb-nome','desb-empresa','desb-cnpj','desb-obs'].forEach(id => document.getElementById(id).value = '');
+  currentDesbloqueioTipo = null;
+}
+
+function onDCnpjInput(raw) {
+  let v = raw.replace(/\D/g,'');
+  if (v.length > 14) v = v.slice(0,14);
+  let fmt = v;
+  if (v.length > 12) fmt = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12);
+  else if (v.length > 8) fmt = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8);
+  else if (v.length > 5) fmt = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5);
+  else if (v.length > 2) fmt = v.slice(0,2)+'.'+v.slice(2);
+  document.getElementById('desb-cnpj').value = fmt;
+  if (v.length >= 11) {
+    const t = tickets.filter(tk => tk.cnpj && tk.cnpj.replace(/\D/g,'') === v).sort((a,b) => b.time - a.time)[0];
+    if (t) {
+      if (!document.getElementById('desb-nome').value) document.getElementById('desb-nome').value = t.nome || '';
+      if (!document.getElementById('desb-empresa').value) document.getElementById('desb-empresa').value = t.empresa || '';
+    }
+  }
+}
+
+function onDEmpresaInput(val) {
+  if (val.length < 3) return;
+  const lower = val.toLowerCase();
+  const t = tickets.filter(tk => tk.empresa && tk.empresa.toLowerCase().includes(lower)).sort((a,b) => b.time - a.time)[0];
+  if (t && !document.getElementById('desb-cnpj').value) document.getElementById('desb-cnpj').value = t.cnpj || '';
+}
+
+async function criarChamadoDesbloqueio() {
+  if (bloquearLeitor('criar chamados')) return;
+  const cfg = DESB_CONFIGS[currentDesbloqueioTipo];
+  if (!cfg) return;
+  const nome    = document.getElementById('desb-nome').value.trim();
+  const empresa = document.getElementById('desb-empresa').value.trim();
+  const cnpj    = document.getElementById('desb-cnpj').value.trim();
+  const equip   = document.getElementById('desb-equip').value;
+  const obs     = document.getElementById('desb-obs').value.trim();
+  if (!nome || !empresa || !cnpj || !equip) {
+    showNotif('⚠️ Preencha todos os campos obrigatórios.', 'warn'); return;
+  }
+  const newTicket = {
+    id: '#' + String(tickets.length + 1).padStart(3, '0'),
+    nome, empresa, cnpj,
+    sistema: equip,
+    prioridade: 'avulso',
+    categoria: cfg.categoria,
+    nivel: cfg.nivel,
+    status: 'aberto',
+    desc: `${cfg.titulo}${obs ? ' — ' + obs : ''}`,
+    time: Date.now(),
+    labels: [{ name: cfg.titulo, color: cfg.titulo.includes('Senha') ? 'yellow' : 'red', trelloId: null }]
+  };
+  tickets.unshift(newTicket);
+  saveTicketToDB(newTicket);
+  fecharDesbloqueio();
+  renderAll();
+  showNotif(`🔓 Chamado ${newTicket.id} aberto — ${cfg.titulo}`);
+  showView('chamados');
+}
+
 // ─── Histórico de Clientes por CNPJ ─────────────────────────────────────────
 
 let cnpjSearchTimer = null;
@@ -2471,7 +2673,117 @@ const LABEL_COLORS = {
   red:    { bg:'rgba(255,71,87,0.18)',  text:'#ff4757', dot:'🔴' },
   yellow: { bg:'rgba(255,200,0,0.18)',  text:'#ffc800', dot:'🟡' },
   purple: { bg:'rgba(160,100,255,0.18)',text:'#a064ff', dot:'🟣' },
+  pink:   { bg:'rgba(244,114,182,0.18)',text:'#f472b6', dot:'🩷' },
+  teal:   { bg:'rgba(45,212,191,0.18)', text:'#2dd4bf', dot:'🩵' },
 };
+
+// Dados de equipamentos e sistemas
+const SUPORTE_OPCOES = {
+  equipamento: [
+    { group: 'Catracas', items: [
+      { value: 'catraca-henry-8x',   label: 'Catraca Henry 8X' },
+      { value: 'catraca-ihm-slim',   label: 'Catraca IHM Slim' },
+      { value: 'catraca-proveu',     label: 'Catraca Proveu' },
+      { value: 'catraca-top-fit',    label: 'Catraca Top Fit' },
+    ]},
+    { group: 'Relógios de Ponto', items: [
+      { value: 'cid-idclass-bio',    label: 'Control ID IDClass Biométrico' },
+      { value: 'cid-idclass-facial', label: 'Control ID IDClass Facial' },
+      { value: 'cid-idface',         label: 'Control ID IDFace' },
+      { value: 'cid-idx',            label: 'Control ID iDX' },
+      { value: 'rw-ipointline',      label: 'RW iPointLine' },
+      { value: 'rw-pointline',       label: 'RW PointLine' },
+      { value: 'rw-blue',            label: 'RW Blue' },
+      { value: 'dixi-bio',           label: 'Dixi Biométrico' },
+      { value: 'dixi-facial',        label: 'Dixi Facial' },
+      { value: 'kp-1510',            label: 'KP 1510' },
+      { value: 'topdata-inner',      label: 'Topdata Inner Rep' },
+      { value: 'henry-prisma-sf',    label: 'Henry Prisma Super Fácil' },
+      { value: 'henry-prisma-adv',   label: 'Henry Prisma SF Advanced' },
+      { value: 'trix-rep520',        label: 'Trix X REP-520' },
+      { value: 'proveu-kurumim',     label: 'Proveu Kurumim' },
+      { value: 'cartografico',       label: 'Cartográfico' },
+    ]},
+  ],
+  sistema: [
+    { group: 'Sistemas', items: [
+      { value: 'atecsoft',      label: 'Atecsoft' },
+      { value: 'rhid',          label: 'RHID' },
+      { value: 'iponto',        label: 'iPonto' },
+      { value: 'idsecure',      label: 'IDSecure' },
+      { value: 'atec-web',      label: 'Atec Web' },
+      { value: 'iponto-mobile', label: 'iPonto Mobile' },
+      { value: 'gerenciador-rep', label: 'Gerenciador REP' },
+      { value: 'ifitness',      label: 'iFitness' },
+      { value: 'sapwin',        label: 'Sapwin' },
+      { value: 'top-ronda',     label: 'Top Ronda' },
+      { value: 'ref-control',   label: 'Ref Control' },
+      { value: 'icontrol',      label: 'iControl' },
+    ]},
+  ],
+};
+
+let selectedLabelColor = 'blue';
+
+function selectLabelColor(color) {
+  selectedLabelColor = color;
+  document.getElementById('new-label-color').value = color;
+  // Atualiza visual dos swatches
+  document.querySelectorAll('[id^="swatch-"]').forEach(el => {
+    el.style.border = '2px solid transparent';
+    el.style.transform = '';
+  });
+  const sw = document.getElementById('swatch-' + color);
+  if (sw) { sw.style.border = '2px solid white'; sw.style.transform = 'scale(1.2)'; }
+}
+
+function onTipoSuporteChange(tipo) {
+  const group = document.getElementById('f-sistema-group');
+  const select = document.getElementById('f-sistema');
+  const label = document.getElementById('f-sistema-label');
+  if (!tipo) { group.style.display = 'none'; return; }
+  group.style.display = '';
+  label.textContent = tipo === 'equipamento' ? 'Equipamento *' : 'Sistema *';
+  select.innerHTML = '<option value="">Selecione...</option>';
+  (SUPORTE_OPCOES[tipo] || []).forEach(g => {
+    const og = document.createElement('optgroup');
+    og.label = g.group;
+    g.items.forEach(it => {
+      const o = document.createElement('option');
+      o.value = it.value; o.textContent = it.label;
+      og.appendChild(o);
+    });
+    select.appendChild(og);
+  });
+}
+
+function filtrarEtiquetas(termo) {
+  const lower = termo.toLowerCase();
+  const list = document.getElementById('label-picker-list');
+  if (!list._todas) return;
+  const filtradas = termo
+    ? list._todas.filter(l => (l.name||'').toLowerCase().includes(lower))
+    : list._todas;
+  renderLabelPickerItens(filtradas, list._todas);
+}
+
+function renderLabelPickerItens(lista, todas) {
+  const modalId = document.getElementById('ticket-modal')._currentId;
+  const t = tickets.find(x => x.id === modalId);
+  const current = (t?.labels||[]).map(l => l.trelloId||l.name);
+  const list = document.getElementById('label-picker-list');
+  list.innerHTML = lista.map((l, i) => {
+    const realIdx = todas.indexOf(l);
+    const c = LABEL_COLORS[l.color]||LABEL_COLORS.blue;
+    const sel = current.includes(l.trelloId||l.name);
+    return `<div onclick="toggleLabel(${realIdx})" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;background:${sel?c.bg:'transparent'};border:1px solid ${sel?c.text:'transparent'};transition:all 0.1s" onmouseover="if(!${sel})this.style.background='var(--surface2)'" onmouseout="if(!${sel})this.style.background='transparent'">
+      <span style="width:12px;height:12px;background:${c.text};border-radius:3px;display:inline-block;flex-shrink:0"></span>
+      <span style="font-size:12px;color:var(--text1);flex:1">${l.name||l.color}</span>
+      ${sel?`<span style="color:${c.text};font-size:11px;font-weight:700">✓</span>`:''}
+    </div>`;
+  }).join('') || '<div style="font-size:12px;color:var(--text3);padding:8px">Nenhuma etiqueta encontrada</div>';
+}
+
 let boardLabels = [];
 
 async function loadBoardLabels() {
@@ -2501,26 +2813,26 @@ function toggleLabelPicker() {
 }
 
 function renderLabelPicker() {
-  const modalId = document.getElementById('ticket-modal')._currentId;
-  const t = tickets.find(x => x.id === modalId);
-  const current = (t?.labels||[]).map(l => l.trelloId||l.name);
   const padrao = [
-    {name:'Contrato',color:'green',trelloId:null},{name:'Garantia',color:'blue',trelloId:null},
-    {name:'Sem garantia',color:'orange',trelloId:null},{name:'RHID',color:'purple',trelloId:null},
-    {name:'iPonto',color:'blue',trelloId:null},{name:'Atecsoft',color:'yellow',trelloId:null},
+    {name:'Contrato',    color:'green',  trelloId:null},
+    {name:'Garantia',    color:'blue',   trelloId:null},
+    {name:'Sem garantia',color:'orange', trelloId:null},
+    {name:'RHID',        color:'purple', trelloId:null},
+    {name:'iPonto',      color:'teal',   trelloId:null},
+    {name:'Atecsoft',    color:'yellow', trelloId:null},
+    {name:'IDSecure',    color:'blue',   trelloId:null},
+    {name:'Urgente',     color:'red',    trelloId:null},
+    {name:'Aguardando',  color:'pink',   trelloId:null},
+    {name:'N1',          color:'green',  trelloId:null},
+    {name:'N2',          color:'yellow', trelloId:null},
   ];
   const todas = [...boardLabels, ...padrao.filter(p => !boardLabels.find(b => b.name.toLowerCase()===p.name.toLowerCase()))];
   const list = document.getElementById('label-picker-list');
-  list.innerHTML = todas.map((l,i) => {
-    const c = LABEL_COLORS[l.color]||LABEL_COLORS.blue;
-    const sel = current.includes(l.trelloId||l.name);
-    return `<div onclick="toggleLabel(${i})" style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;cursor:pointer;background:${sel?c.bg:'transparent'};border:1px solid ${sel?c.text:'transparent'}">
-      <span style="width:14px;height:14px;background:${c.text};border-radius:3px;display:inline-block;opacity:0.8"></span>
-      <span style="font-size:12px;color:var(--text)">${l.name||l.color}</span>
-      ${sel?'<span style="margin-left:auto;color:var(--accent);font-size:11px">✓</span>':''}
-    </div>`;
-  }).join('');
   list._todas = todas;
+  // Limpa busca
+  const srch = document.getElementById('label-search');
+  if (srch) srch.value = '';
+  renderLabelPickerItens(todas, todas);
 }
 
 async function toggleLabel(idx) {
