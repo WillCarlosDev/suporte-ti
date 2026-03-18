@@ -4329,7 +4329,7 @@ document.getElementById('ticket-modal').addEventListener('click', function(e) {
 const WA_CONFIG_KEY = 'suporte_ti_wa_config';
 let waStats = { today: 0, resolved: 0, escalated: 0 };
 
-function saveWAConfig() {
+async function saveWAConfig() {
   if (bloquearLeitor('alterar configurações')) return;
   const config = {
     apiKey:      document.getElementById('wa-api-key').value,
@@ -4337,7 +4337,6 @@ function saveWAConfig() {
     welcomeMsg:  document.getElementById('wa-welcome').value,
     mode:        document.getElementById('wa-mode').value,
   };
-  if (!config.apiKey) { showNotif('⚠️ Insira a chave API da Anthropic.', 'warn'); return; }
   localStorage.setItem(WA_CONFIG_KEY, JSON.stringify(config));
   window._waConfigCache = config;
   await setConfig('wa_config', config);
@@ -4791,7 +4790,7 @@ function formatarCnpjCliente(input) {
   input.value = v;
 }
 
-function salvarCliente() {
+async function salvarCliente() {
   const empresa = document.getElementById('fc-empresa').value.trim();
   const cnpj    = document.getElementById('fc-cnpj').value.trim();
   if (!empresa || !cnpj) { showNotif('⚠️ Razão Social e CNPJ são obrigatórios.','warn'); return; }
@@ -4830,7 +4829,7 @@ function salvarCliente() {
   showNotif('✅ Cliente "' + empresa + '" salvo!');
 }
 
-function excluirCliente(id) {
+async function excluirCliente(id) {
   const c = getClientes().find(x => x.id === id);
   if (!c || !confirm(`Excluir o cliente "${c.empresa}"?`)) return;
   try {
@@ -4948,6 +4947,33 @@ async function salvarACL() {
   });
   await saveACL(acl);
   showNotif('✅ Permissões salvas com sucesso!');
+}
+
+
+// ─── Export / Import Usuários ─────────────────────────────────────────────────
+async function exportUsers() {
+  try {
+    const users = await sbFetch('rpc/listar_usuarios', 'POST', {});
+    const safe = users.map(u => ({ username: u.username, role: u.role }));
+    const blob = new Blob([JSON.stringify(safe, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'usuarios_suporte_ti.json';
+    a.click();
+  } catch(e) { showNotif('❌ Erro ao exportar: ' + e.message, 'warn'); }
+}
+
+function importUsers(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const lista = JSON.parse(e.target.result);
+      showNotif('📥 Importação: ' + lista.length + ' usuários encontrados. Crie-os manualmente ou peça ao ADM.', 'warn');
+    } catch { showNotif('❌ Arquivo inválido.', 'warn'); }
+  };
+  reader.readAsText(file);
 }
 
 // Verifica sessão ativa
