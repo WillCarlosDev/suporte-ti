@@ -3835,11 +3835,8 @@ async function initApp(user) {
     document.getElementById('nav-config').style.display = 'none';
   }
   if (user.role === 'leitor') {
-    // Esconde menus de ação para leitor
-    const navNovo     = document.querySelector('.nav-item[onclick*="novo"]');
-    const navWA       = document.querySelector('.nav-item[onclick*="whatsapp"]');
-    if (navNovo) navNovo.style.display = 'none';
-    if (navWA)   navWA.style.display   = 'none';
+    // Leitor vê todos os menus exceto Configurações e Usuários (já ocultos acima)
+    // Ações são bloqueadas via bloquearLeitor() em cada função
   }
   // Carrega KB customizada do Supabase
   window._customKB = await loadCustomKBItems();
