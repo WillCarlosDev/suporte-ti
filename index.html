@@ -1432,10 +1432,19 @@
         </div>
       </div>
 
-      <!-- Status -->
-      <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:16px">
-        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px;margin-bottom:10px">STATUS DO CHAMADO</div>
-        <div class="status-select-row" id="modal-status-row"></div>
+      <!-- Status + Atribuição lado a lado -->
+      <div style="display:grid;grid-template-columns:1fr auto;gap:12px;margin-bottom:16px;align-items:start">
+        <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;">
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px;margin-bottom:10px">STATUS DO CHAMADO</div>
+          <div class="status-select-row" id="modal-status-row"></div>
+        </div>
+        <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;min-width:180px">
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px;margin-bottom:10px">ATRIBUÍDO A</div>
+          <div id="modal-atribuido-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px"></div>
+          <select id="modal-atribuir-select" onchange="atribuirChamado(this.value)" class="form-select" style="font-size:12px;padding:5px 8px">
+            <option value="">— Atribuir para...</option>
+          </select>
+        </div>
       </div>
 
       <!-- Histórico de respostas -->
@@ -2399,12 +2408,21 @@ function renderKanban(containerId, data) {
 }
 
 function renderTicketCard(t) {
-  // Indicador visual de prioridade no topo do card
   const prioColor = { contrato: 'var(--accent)', garantia: 'var(--accent2)', avulso: 'var(--text3)' }[t.prioridade] || 'var(--text3)';
+  const idx = t.assignedTo ? getMembros().indexOf(t.assignedTo) : -1;
+  const memberColor = idx >= 0 ? MEMBER_COLORS[idx % MEMBER_COLORS.length] : 'var(--text3)';
+  const isLeitorRole = currentUser?.role === 'leitor';
+  const meuNome = currentUser?.username || '';
+  // Verifica se o nome do usuário logado bate com algum membro da equipe
+  const meuMembro = getMembros().find(m => m.toLowerCase() === meuNome.toLowerCase()) || meuNome;
+
   return `
   <div class="ticket-card" style="border-left: 3px solid ${prioColor}">
     <div onclick="showTicketDetail('${t.id}')">
-      <div class="tc-id">${t.id} ${t.fromTrello ? '<span style="font-size:9px;background:rgba(0,144,255,0.15);color:var(--accent2);padding:1px 5px;border-radius:3px">🟦</span>' : ''} ${t.fromWhatsApp ? '<span style="font-size:9px;background:rgba(0,229,160,0.15);color:var(--accent);padding:1px 5px;border-radius:3px">📲</span>' : ''}</div>
+      <div class="tc-id">${t.id}
+        ${t.fromTrello ? '<span style="font-size:9px;background:rgba(0,144,255,0.12);color:var(--accent2);padding:1px 5px;border-radius:3px;font-family:var(--mono)">TRL</span>' : ''}
+        ${t.fromWhatsApp ? '<span style="font-size:9px;background:rgba(0,229,160,0.12);color:var(--accent);padding:1px 5px;border-radius:3px;font-family:var(--mono)">WA</span>' : ''}
+      </div>
       <div class="tc-title">${getCategoryLabel(t.categoria)}</div>
       <div class="tc-company">${t.empresa}</div>
       <div class="tc-tags">
@@ -2412,12 +2430,37 @@ function renderTicketCard(t) {
         <span class="tag ${t.nivel}">${t.nivel.toUpperCase()}</span>
         <span class="tag ${t.sistema}">${t.sistema}</span>
       </div>
-      <div class="tc-time">${timeAgo(t.time)}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+        <div class="tc-time">${timeAgo(t.time)}</div>
+        ${t.assignedTo
+          ? `<div style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:var(--mono);color:${memberColor}">
+               <div style="width:16px;height:16px;border-radius:50%;background:${memberColor}22;border:1.5px solid ${memberColor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">${t.assignedTo.charAt(0).toUpperCase()}</div>
+               ${t.assignedTo}
+             </div>`
+          : `<div style="font-size:10px;color:var(--text3);font-family:var(--mono);opacity:0.6">sem responsável</div>`
+        }
+      </div>
     </div>
-    <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">
-      <button onclick="event.stopPropagation();quickMove('${t.id}','pendencia')" style="flex:1;font-size:10px;padding:3px 6px;border-radius:5px;border:1px solid #ff6b35;color:#ff6b35;background:rgba(255,107,53,0.08);cursor:pointer;font-family:var(--sans)">Pendência</button>
-      <button onclick="event.stopPropagation();quickMove('${t.id}','nao-atendido')" style="flex:1;font-size:10px;padding:3px 6px;border-radius:5px;border:1px solid var(--text3);color:var(--text3);background:rgba(138,144,160,0.08);cursor:pointer;font-family:var(--sans)">🚫 N. Atendido</button>
-      <button onclick="event.stopPropagation();quickDelete('${t.id}')" style="font-size:10px;padding:3px 6px;border-radius:5px;border:1px solid var(--danger);color:var(--danger);background:rgba(255,71,87,0.08);cursor:pointer;font-family:var(--sans)">🗑️</button>
+    <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:8px">
+      ${!t.assignedTo && !isLeitorRole
+        ? `<button onclick="event.stopPropagation();puxarChamado('${t.id}')"
+             style="flex:2;font-size:10px;padding:4px 6px;border-radius:4px;border:1px solid var(--accent);color:var(--accent);background:rgba(0,229,160,0.08);cursor:pointer;font-family:var(--mono);font-weight:600;letter-spacing:0.3px;transition:all 0.15s"
+             onmouseover="this.style.background='rgba(0,229,160,0.18)'" onmouseout="this.style.background='rgba(0,229,160,0.08)'">
+             ↙ Puxar para mim
+           </button>`
+        : `<button onclick="event.stopPropagation();quickMove('${t.id}','pendencia')"
+             style="flex:1;font-size:10px;padding:4px 6px;border-radius:4px;border:1px solid rgba(255,107,53,0.4);color:#ff6b35;background:transparent;cursor:pointer;font-family:var(--mono)">
+             Pend.
+           </button>`
+      }
+      <button onclick="event.stopPropagation();quickMove('${t.id}','nao-atendido')"
+        style="flex:1;font-size:10px;padding:4px 6px;border-radius:4px;border:1px solid rgba(138,144,160,0.3);color:var(--text3);background:transparent;cursor:pointer;font-family:var(--mono)">
+        N/A
+      </button>
+      <button onclick="event.stopPropagation();quickDelete('${t.id}')"
+        style="font-size:10px;padding:4px 6px;border-radius:4px;border:1px solid rgba(255,71,87,0.3);color:var(--danger);background:transparent;cursor:pointer;font-family:var(--mono)">
+        ✕
+      </button>
     </div>
   </div>`;
 }
@@ -4000,7 +4043,8 @@ function showTicketDetail(id) {
     { label:'PRIORIDADE', value: `<span class="tag ${t.prioridade}">${getPrioLabel(t.prioridade)}</span>` },
     { label:'NÍVEL', value: `<span class="tag ${t.nivel}">${t.nivel.toUpperCase()}</span>` },
     { label:'DESCRIÇÃO', value: t.desc || '—' },
-    { label:'ORIGEM', value: t.fromTrello ? `🟦 Trello · ${t.trelloList || ''}` : '📋 Painel' },
+    { label:'ORIGEM', value: t.fromTrello ? `Trello · ${t.trelloList || ''}` : 'Painel' },
+    { label:'RESPONSÁVEL', value: t.assignedTo || '—' },
   ].map(m => `
     <div class="ticket-meta-item" style="${m.label==='DESCRIÇÃO'?'grid-column:1/-1':''}">
       <div class="ticket-meta-label">${m.label}</div>
@@ -4036,11 +4080,96 @@ function showTicketDetail(id) {
   document.getElementById('ticket-modal').classList.remove('hidden');
   document.getElementById('ticket-modal')._currentId = id;
 
+  // Campo de atribuição
+  renderModalAtribuicao(t);
+
   // Mostra botão Reativar apenas para chamados resolvidos
   const btnReativar = document.getElementById('btn-reativar');
   if (btnReativar) {
     btnReativar.style.display = (t?.status === 'resolvido') ? 'inline-flex' : 'none';
   }
+}
+
+
+// ─── Atribuição de Chamados ───────────────────────────────────────────────────
+
+function renderModalAtribuicao(t) {
+  const select = document.getElementById('modal-atribuir-select');
+  const chips  = document.getElementById('modal-atribuido-chips');
+  if (!select || !chips) return;
+
+  const membros = getMembros();
+
+  // Popula o select com membros da equipe
+  select.innerHTML = '<option value="">— Atribuir para...</option>' +
+    membros.map(m => `<option value="${m}" ${t.assignedTo === m ? 'selected' : ''}>${m}</option>`).join('');
+
+  // Mostra chip do membro atual
+  if (t.assignedTo) {
+    const idx = membros.indexOf(t.assignedTo);
+    const color = MEMBER_COLORS[idx >= 0 ? idx % MEMBER_COLORS.length : 0];
+    chips.innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px;background:${color}18;border:1px solid ${color}44;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;color:${color}">
+        <div style="width:20px;height:20px;border-radius:50%;background:${color}22;border:1.5px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">${t.assignedTo.charAt(0).toUpperCase()}</div>
+        ${t.assignedTo}
+        <span onclick="removerAtribuicao()" style="cursor:pointer;opacity:0.6;font-size:13px;margin-left:2px">×</span>
+      </div>`;
+  } else {
+    chips.innerHTML = '<span style="font-size:11px;color:var(--text3)">Nenhum</span>';
+  }
+}
+
+
+async function puxarChamado(ticketId) {
+  if (bloquearLeitor('atribuir chamados')) return;
+  const t = tickets.find(x => x.id === ticketId);
+  if (!t) return;
+  if (t.assignedTo) {
+    if (!confirm(`Este chamado já está com ${t.assignedTo}. Quer puxar para você mesmo assim?`)) return;
+  }
+  // Usa o nome do membro que corresponde ao username logado, ou o username direto
+  const meuNome = currentUser?.username || '';
+  const meuMembro = getMembros().find(m => m.toLowerCase() === meuNome.toLowerCase()) || meuNome;
+
+  t.assignedTo = meuMembro;
+  // Se o chamado estava em "aberto", move para "em-andamento" automaticamente
+  if (t.status === 'aberto') {
+    t.status = 'em-andamento';
+    t.currentStatus = 'em-andamento';
+  }
+  await updateTicketInDB(t);
+  renderAll();
+  showNotif(`↙ Chamado ${t.id} puxado para ${meuMembro}!`);
+}
+
+async function atribuirChamado(membro) {
+  if (!membro) return;
+  if (bloquearLeitor('atribuir chamados')) return;
+  const modalId = document.getElementById('ticket-modal')._currentId;
+  const t = tickets.find(x => x.id === modalId);
+  if (!t) return;
+
+  t.assignedTo = membro;
+  await updateTicketInDB(t);
+  renderModalAtribuicao(t);
+  renderAll();
+  showNotif(`✅ Chamado ${t.id} atribuído para ${membro}`);
+
+  // Reseta o select
+  document.getElementById('modal-atribuir-select').value = '';
+}
+
+async function removerAtribuicao() {
+  if (bloquearLeitor('atribuir chamados')) return;
+  const modalId = document.getElementById('ticket-modal')._currentId;
+  const t = tickets.find(x => x.id === modalId);
+  if (!t) return;
+
+  t.assignedTo = null;
+  await updateTicketInDB(t);
+  renderModalAtribuicao(t);
+  renderAll();
+  showNotif(`Atribuição removida do chamado ${t.id}`);
 }
 
 function renderModalReplies(t) {
