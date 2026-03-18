@@ -201,7 +201,7 @@
   }
   .kanban-head .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .kanban-head .col-count { margin-left: auto; color: var(--text3); font-size: 11px; }
-  .kanban-cards { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 200px; }
+  .kanban-cards { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 80px; max-height: 520px; overflow-y: auto; }
   .ticket-card {
     background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
     padding: 12px; cursor: pointer; transition: all 0.15s; position: relative;
@@ -520,6 +520,15 @@
             </select>
           </div>
           <div class="form-group full">
+            <label class="form-label">Atendente <span style="font-size:10px;color:var(--text3);font-weight:400">— quem está realizando o desbloqueio</span></label>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px" id="desb-atendentes-chips"></div>
+            <div style="display:flex;gap:6px">
+              <input class="form-input" id="desb-atendente-input" placeholder="Nome do atendente..." style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarAtendenteDesb()}"/>
+              <button onclick="adicionarAtendenteDesb()" style="font-size:12px;padding:6px 12px;border-radius:7px;border:1px dashed var(--accent);color:var(--accent);background:rgba(0,229,160,0.06);cursor:pointer">＋</button>
+            </div>
+            <div id="desb-atendentes-sugestoes" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px"></div>
+          </div>
+          <div class="form-group full">
             <label class="form-label">Observação</label>
             <textarea class="form-textarea" id="desb-obs" placeholder="Ex: Serial do equipamento, número da nota, informações adicionais..." style="min-height:80px"></textarea>
           </div>
@@ -536,34 +545,53 @@
     <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
       <div class="page-header">
-        <div class="page-title">Dashboard</div>
-        <div class="page-sub">Visão geral dos atendimentos de hoje</div>
-      </div>
-      <div class="stats-row">
-        <div class="stat-card">
-          <div class="stat-num" id="stat-urgent" style="color:var(--accent)">0</div>
-          <div class="stat-label">🟢 Urgentes (com contrato)</div>
-        </div>
-        <div class="stat-card warn">
-          <div class="stat-num" id="stat-open" style="color:var(--warn)">0</div>
-          <div class="stat-label">⏳ Em aberto</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="stat-resolved" style="color:var(--accent)">0</div>
-          <div class="stat-label">✅ Finalizados hoje</div>
-        </div>
-        <div class="stat-card blue">
-          <div class="stat-num" id="stat-month" style="color:var(--accent2)">0</div>
-          <div class="stat-label" id="stat-month-label">📅 Atendidos este mês</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="stat-total" style="color:var(--text2)">0</div>
-          <div class="stat-label">📋 Total de chamados</div>
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-sub" id="dash-sub">Visão geral dos atendimentos</div>
         </div>
       </div>
 
-      <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;font-family:var(--mono)">Chamados recentes</div>
-      <div class="kanban" id="dashboard-kanban"></div>
+      <!-- Linha 1: Abertura do dia por tipo -->
+      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:2px;margin-bottom:10px">ABERTOS HOJE</div>
+      <div class="stats-row" style="margin-bottom:20px">
+        <div class="stat-card" style="--accent-line:var(--accent)">
+          <div class="stat-num" id="stat-contrato-dia" style="color:var(--accent)">0</div>
+          <div class="stat-label">🟢 Contrato</div>
+        </div>
+        <div class="stat-card" style="--accent-line:var(--accent2)">
+          <div class="stat-num" id="stat-garantia-dia" style="color:var(--accent2)">0</div>
+          <div class="stat-label">🔵 Garantia</div>
+        </div>
+        <div class="stat-card" style="--accent-line:var(--accent3)">
+          <div class="stat-num" id="stat-avulso-dia" style="color:var(--accent3)">0</div>
+          <div class="stat-label">🟠 Sem Garantia</div>
+        </div>
+        <div class="stat-card warn">
+          <div class="stat-num" id="stat-open" style="color:var(--warn)">0</div>
+          <div class="stat-label">⏳ Total abertos hoje</div>
+        </div>
+      </div>
+
+      <!-- Linha 2: Mês -->
+      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:2px;margin-bottom:10px" id="dash-mes-label">ESTE MÊS</div>
+      <div class="stats-row" style="margin-bottom:8px">
+        <div class="stat-card blue">
+          <div class="stat-num" id="stat-month" style="color:var(--accent2)">0</div>
+          <div class="stat-label" id="stat-month-label">📅 Abertos no mês</div>
+        </div>
+        <div class="stat-card" style="--accent-line:var(--accent)">
+          <div class="stat-num" id="stat-resolved" style="color:var(--accent)">0</div>
+          <div class="stat-label">✅ Concluídos no mês</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-urgent" style="color:var(--text2)">0</div>
+          <div class="stat-label">🟢 Contratos ativos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-total" style="color:var(--text3)">0</div>
+          <div class="stat-label">📋 Total geral</div>
+        </div>
+      </div>
     </div>
 
     <!-- CHAMADOS (KANBAN) -->
@@ -610,27 +638,17 @@
         <div class="page-sub">Registre um novo atendimento</div>
       </div>
 
-      <!-- BUSCA RÁPIDA DE CLIENTE -->
-      <div style="margin-bottom:16px">
-        <div style="position:relative">
-          <input class="form-input" id="f-busca-cliente" placeholder="🔍 Buscar cliente por razão social ou CNPJ..." oninput="onBuscaClienteInput(this.value)" autocomplete="off" style="padding-right:40px"/>
-          <div id="f-busca-spinner" style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:14px">⏳</div>
-        </div>
-        <!-- Dropdown de sugestões -->
-        <div id="client-suggestions" style="display:none;position:absolute;z-index:999;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-top:4px;width:calc(100% - 48px);max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4)"></div>
-      </div>
-
-      <!-- PAINEL DE HISTÓRICO DO CLIENTE -->
-      <div id="client-history-panel" style="display:none;background:rgba(0,229,160,0.04);border:1px solid rgba(0,229,160,0.2);border-radius:12px;padding:16px 20px;margin-bottom:20px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div style="font-size:13px;font-weight:700;color:var(--accent)">📋 Cliente Encontrado</div>
+      <!-- Painel histórico (ativado por Razão Social ou CNPJ) -->
+      <div id="client-history-panel" style="display:none;background:rgba(0,229,160,0.04);border:1px solid rgba(0,229,160,0.2);border-radius:12px;padding:14px 18px;margin-bottom:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:var(--accent)">📋 Cliente encontrado — dados preenchidos automaticamente</div>
           <div id="client-history-chamados-count" style="font-size:11px;color:var(--text3);font-family:var(--mono)"></div>
         </div>
-        <div id="client-history-info" style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.8"></div>
-        <div id="client-history-list" style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto"></div>
-        <div id="client-wa-history" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
-          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:6px">HISTÓRICO WHATSAPP</div>
-          <div id="client-wa-messages" style="font-size:12px;color:var(--text2);max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:4px"></div>
+        <div id="client-history-info" style="font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.8"></div>
+        <div id="client-history-list" style="display:flex;flex-direction:column;gap:5px;max-height:150px;overflow-y:auto"></div>
+        <div id="client-wa-history" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px">
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:5px">HISTÓRICO WHATSAPP</div>
+          <div id="client-wa-messages" style="font-size:12px;color:var(--text2);max-height:100px;overflow-y:auto;display:flex;flex-direction:column;gap:4px"></div>
         </div>
       </div>
 
@@ -640,11 +658,15 @@
           <input class="form-input" id="f-nome" placeholder="Ex: João Silva"/>
         </div>
         <div class="form-group">
-          <label class="form-label">Razão Social *</label>
+          <label class="form-label">Contato * <span style="font-size:10px;color:var(--text3);font-weight:400">telefone ou e-mail</span></label>
+          <input class="form-input" id="f-contato" placeholder="Ex: (31) 99999-0000"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Razão Social * <span style="font-size:10px;color:var(--accent);font-weight:400">— autopreenchimento</span></label>
           <input class="form-input" id="f-empresa" placeholder="Ex: Empresa Ltda." oninput="onEmpresaInput(this.value)"/>
         </div>
         <div class="form-group">
-          <label class="form-label">CNPJ * <span style="font-size:10px;color:var(--accent);font-weight:400">— digite para buscar cliente</span></label>
+          <label class="form-label">CNPJ * <span style="font-size:10px;color:var(--accent);font-weight:400">— autopreenchimento</span></label>
           <input class="form-input" id="f-cnpj" placeholder="00.000.000/0000-00" maxlength="18" oninput="onCnpjInput(this.value)"/>
         </div>
         <div class="form-group">
@@ -670,17 +692,22 @@
           </div>
         </div>
         <div class="form-group full">
-          <label class="form-label">Categoria do Problema *</label>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <label class="form-label" style="margin:0">Categoria do Problema <span style="font-size:10px;color:var(--text3);font-weight:400">— opcional</span></label>
+            <button onclick="abrirNovaCategoriaModal()" style="font-size:10px;padding:2px 8px;border-radius:5px;border:1px dashed var(--accent);color:var(--accent);background:rgba(0,229,160,0.06);cursor:pointer;font-family:var(--sans)">＋ Novo Problema</button>
+          </div>
           <select class="form-select" id="f-categoria">
-            <option value="">Selecione...</option>
-            <option value="relogio-offline">Relógio offline / fora da rede</option>
-            <option value="ponto-manual">Inserção de ponto manual</option>
-            <option value="feriado">Ponto em feriado / hora extra</option>
-            <option value="relatorio">Relatório com dados errados</option>
-            <option value="integracao">Integração com folha de pagamento</option>
-            <option value="login">Erro de login / acesso</option>
-            <option value="outro">Outro</option>
+            <option value="">— Não informado —</option>
           </select>
+          <!-- Modal inline de nova categoria -->
+          <div id="nova-cat-modal" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:8px">
+            <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px">＋ Cadastrar Nova Categoria</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input class="form-input" id="nova-cat-nome" placeholder="Ex: Erro de exportação de arquivo" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter') salvarNovaCategoria()"/>
+              <button class="btn-primary" onclick="salvarNovaCategoria()" style="font-size:12px;padding:6px 12px">Salvar</button>
+              <button onclick="document.getElementById('nova-cat-modal').style.display='none'" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px">✕</button>
+            </div>
+          </div>
         </div>
         <div class="form-group full">
           <label class="form-label">Nível do Chamado</label>
@@ -706,7 +733,15 @@
     <div class="view" id="view-chat">
       <div class="page-header">
         <div class="page-title">Simulador de Bot</div>
-        <div class="page-sub">Teste como o bot responderia os clientes via WhatsApp</div>
+        <div class="page-sub">Ambiente de testes para o agente WhatsApp</div>
+      </div>
+      <!-- Banner stand-by -->
+      <div style="background:rgba(255,204,0,0.08);border:1px solid rgba(255,204,0,0.3);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">🧪</span>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--warn)">MODO STAND-BY — Testes Operacionais</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">Este simulador está em fase de testes. Converse com o bot abaixo para validar as respostas antes de ativar o atendimento real.</div>
+        </div>
       </div>
       <div class="chat-layout">
         <div class="chat-list">
@@ -767,8 +802,14 @@
     <!-- KNOWLEDGE BASE -->
     <div class="view" id="view-kb">
       <div class="page-header">
-        <div class="page-title">Base de Conhecimento</div>
-        <div class="page-sub">Procedimentos N1 e N2 — gerados e salvos com IA</div>
+        <div>
+          <div class="page-title">Base de Conhecimento</div>
+          <div class="page-sub">Guias passo a passo para resolução de problemas — linguagem simples e direta</div>
+        </div>
+      </div>
+      <!-- Aviso de linguagem -->
+      <div style="background:rgba(0,144,255,0.07);border:1px solid rgba(0,144,255,0.2);border-radius:10px;padding:10px 14px;margin-bottom:18px;font-size:12px;color:var(--text2);line-height:1.6">
+        📌 <strong>Importante:</strong> todos os procedimentos devem ser escritos em linguagem simples e direta. Evite termos técnicos sem explicação. O objetivo é que qualquer pessoa consiga seguir os passos sem dificuldade.
       </div>
 
       <!-- AI Generator -->
@@ -836,38 +877,57 @@
         <button class="btn-primary" onclick="exportReport()">⬇ Exportar CSV</button>
       </div>
 
-      <!-- Filtro de período -->
-      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
-        <button class="btn-ghost rep-period active" onclick="setReportPeriod('mes')"  id="rp-mes">Este mês</button>
-        <button class="btn-ghost rep-period"         onclick="setReportPeriod('sem')"  id="rp-sem">Esta semana</button>
-        <button class="btn-ghost rep-period"         onclick="setReportPeriod('todos')" id="rp-todos">Todos</button>
+      <!-- Filtros -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">PERÍODO:</span>
+        <button class="btn-ghost rep-period active" onclick="setReportPeriod('mes')"   id="rp-mes">Este mês</button>
+        <button class="btn-ghost rep-period"        onclick="setReportPeriod('sem')"   id="rp-sem">Esta semana</button>
+        <button class="btn-ghost rep-period"        onclick="setReportPeriod('todos')" id="rp-todos">Todos</button>
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:12px">TIPO:</span>
+        <button class="btn-ghost rep-period active" onclick="setReportTipo('todos')"   id="rt-todos">Todos</button>
+        <button class="btn-ghost rep-period"        onclick="setReportTipo('contrato')" id="rt-contrato">Contrato</button>
+        <button class="btn-ghost rep-period"        onclick="setReportTipo('garantia')" id="rt-garantia">Garantia</button>
+        <button class="btn-ghost rep-period"        onclick="setReportTipo('avulso')"   id="rt-avulso">Sem Garantia</button>
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:12px">NÍVEL:</span>
+        <button class="btn-ghost rep-period active" onclick="setReportNivel('todos')" id="rn-todos">Todos</button>
+        <button class="btn-ghost rep-period"        onclick="setReportNivel('n1')"    id="rn-n1">N1</button>
+        <button class="btn-ghost rep-period"        onclick="setReportNivel('n2')"    id="rn-n2">N2</button>
+      </div>
+      <!-- Colunas visíveis -->
+      <div style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">MOSTRAR:</span>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="rc-equipe"    checked onchange="renderReports()"> Equipe</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="rc-problemas" checked onchange="renderReports()"> Problemas</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="rc-contrato"  checked onchange="renderReports()"> Contrato</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="rc-sistemas"  checked onchange="renderReports()"> Sistemas</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="rc-nivel"     checked onchange="renderReports()"> N1/N2</label>
       </div>
 
-      <!-- Relatório da equipe -->
-      <div class="report-card" style="margin-bottom:20px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <h3 style="margin:0">👥 Desempenho da Equipe</h3>
-          <span id="report-team-total" style="font-size:12px;color:var(--text3);font-family:var(--mono)"></span>
+      <div id="report-grid-wrap">
+        <div class="report-card" id="rc-equipe-card" style="margin-bottom:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <h3 style="margin:0">👥 Desempenho da Equipe</h3>
+            <span id="report-team-total" style="font-size:12px;color:var(--text3);font-family:var(--mono)"></span>
+          </div>
+          <div id="report-team"></div>
         </div>
-        <div id="report-team"></div>
-      </div>
-
-      <div class="report-grid">
-        <div class="report-card">
-          <h3>Problemas mais frequentes</h3>
-          <div id="report-issues"></div>
-        </div>
-        <div class="report-card">
-          <h3>Distribuição por contrato</h3>
-          <div id="report-contrato"></div>
-        </div>
-        <div class="report-card">
-          <h3>Chamados por sistema / equipamento</h3>
-          <div id="report-systems"></div>
-        </div>
-        <div class="report-card">
-          <h3>N1 vs N2</h3>
-          <div id="report-nivel"></div>
+        <div class="report-grid" id="report-cards-grid">
+          <div class="report-card" id="rc-problemas-card">
+            <h3>Problemas mais frequentes</h3>
+            <div id="report-issues"></div>
+          </div>
+          <div class="report-card" id="rc-contrato-card">
+            <h3>Distribuição por contrato</h3>
+            <div id="report-contrato"></div>
+          </div>
+          <div class="report-card" id="rc-sistemas-card">
+            <h3>Chamados por sistema / equipamento</h3>
+            <div id="report-systems"></div>
+          </div>
+          <div class="report-card" id="rc-nivel-card">
+            <h3>N1 vs N2</h3>
+            <div id="report-nivel"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1403,6 +1463,7 @@ async function loadTicketsFromDB() {
         status:       r.status,
         desc:         r.descricao,
         trelloCardId: r.trello_card_id,
+        contato:      r.contato       || null,
         trelloList:   r.trello_list,
         trelloListId: r.trello_list_id,
         assignedTo:   r.assigned_to   || null,
@@ -1428,6 +1489,7 @@ async function saveTicketToDB(t) {
     await sbFetch('chamados', 'POST', {
       id:             t.id,
       nome:           t.nome,
+      contato:        t.contato       || null,
       empresa:        t.empresa,
       cnpj:           t.cnpj,
       sistema:        t.sistema,
@@ -1935,11 +1997,12 @@ function showView(name) {
   renderAll();
   if (name === 'users') renderUsersTable();
   if (name === 'config') renderMembrosConfig();
+  if (name === 'novo') popularSelectCategorias('f-categoria');
 }
 
 function renderAll() {
   renderStats();
-  renderKanban('dashboard-kanban', tickets.filter(t => t.status !== 'resolvido').slice(0, 8));
+  // dashboard usa apenas totalizadores — sem kanban
   renderKanban('full-kanban', tickets);
   renderKB();
   renderReports();
@@ -1948,42 +2011,44 @@ function renderAll() {
 
 function renderStats() {
   const hoje     = new Date();
-  const diaStr   = hoje.toLocaleDateString('pt-BR');           // ex: "05/03/2026"
+  const diaStr   = hoje.toLocaleDateString('pt-BR');
   const mesAtual = hoje.getMonth();
   const anoAtual = hoje.getFullYear();
+  const mesLabel = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
-  const open     = tickets.filter(t => t.status !== 'resolvido').length;
-  const urgent   = tickets.filter(t => t.prioridade === 'contrato' && t.status !== 'resolvido').length;
+  // Abertos HOJE por tipo de prioridade
+  const abertosHoje = tickets.filter(t => {
+    const d = new Date(t.time || 0);
+    return d.toLocaleDateString('pt-BR') === diaStr && t.status !== 'resolvido';
+  });
+  const contratoDia  = abertosHoje.filter(t => t.prioridade === 'contrato').length;
+  const garantiaDia  = abertosHoje.filter(t => t.prioridade === 'garantia').length;
+  const avulsoDia    = abertosHoje.filter(t => t.prioridade === 'avulso').length;
+  const totalAbertosHoje = abertosHoje.length;
 
-  // Finalizados HOJE — só conta status resolvido com finalizadoEm de hoje
-  const resolvedHoje = tickets.filter(t => {
-    if (t.status !== 'resolvido') return false;
-    if (t.finalizadoEm) {
-      // finalizadoEm é string "dd/mm/yyyy, hh:mm:ss"
-      return t.finalizadoEm.startsWith(diaStr);
-    }
-    // Fallback pelo time do card (data de criação/atualização)
-    if (t.time) {
-      const d = new Date(t.time);
-      return d.toLocaleDateString('pt-BR') === diaStr;
-    }
-    return false;
-  }).length;
-
-  // Atendidos ESTE MÊS — todos os chamados cujo time está no mês atual
-  const atendidosMes = tickets.filter(t => {
+  // Mês atual
+  const doMes = tickets.filter(t => {
     const d = new Date(t.time || 0);
     return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
-  }).length;
+  });
+  const abertosNoMes = doMes.length;
+  const concluidosMes = doMes.filter(t => t.status === 'resolvido').length;
 
-  const mesLabel = hoje.toLocaleDateString('pt-BR', { month: 'long' });
+  // Contratos ativos (não resolvidos)
+  const contratosAtivos = tickets.filter(t => t.prioridade === 'contrato' && t.status !== 'resolvido').length;
 
-  document.getElementById('stat-urgent').textContent   = urgent;
-  document.getElementById('stat-open').textContent     = open;
-  document.getElementById('stat-resolved').textContent = resolvedHoje;
-  document.getElementById('stat-month').textContent    = atendidosMes;
-  document.getElementById('stat-month-label').textContent = `📅 Atendidos em ${mesLabel}`;
-  document.getElementById('stat-total').textContent    = tickets.length;
+  const el = id => document.getElementById(id);
+  if (el('stat-contrato-dia'))  el('stat-contrato-dia').textContent  = contratoDia;
+  if (el('stat-garantia-dia'))  el('stat-garantia-dia').textContent  = garantiaDia;
+  if (el('stat-avulso-dia'))    el('stat-avulso-dia').textContent    = avulsoDia;
+  if (el('stat-open'))          el('stat-open').textContent          = totalAbertosHoje;
+  if (el('stat-month'))         el('stat-month').textContent         = abertosNoMes;
+  if (el('stat-resolved'))      el('stat-resolved').textContent      = concluidosMes;
+  if (el('stat-urgent'))        el('stat-urgent').textContent        = contratosAtivos;
+  if (el('stat-total'))         el('stat-total').textContent         = tickets.length;
+  if (el('stat-month-label'))   el('stat-month-label').textContent   = `📅 Abertos em ${mesLabel}`;
+  if (el('dash-mes-label'))     el('dash-mes-label').textContent     = `${mesLabel.toUpperCase()}`;
+  if (el('dash-sub'))           el('dash-sub').textContent           = `Hoje é ${diaStr}`;
 }
 
 function updateNavCounts() {
@@ -2142,6 +2207,7 @@ async function saveGeneratedKB() {
   if (bloquearLeitor('salvar procedimentos')) return;
   if (!generatedKBItem) return;
   await saveCustomKBItems(generatedKBItem);
+  populateCategoriaSelect('f-categoria');
   window._customKB = await loadCustomKBItems();
   generatedKBItem = null;
   document.getElementById('kb-ai-preview').style.display = 'none';
@@ -2217,6 +2283,34 @@ function toggleKB(i) {
 
 let reportPeriod = 'mes';
 
+function toggleRepSection(sec) {
+  const btn = document.getElementById('rs-' + sec);
+  const card = document.getElementById('rep-sec-' + sec);
+  if (!card) return;
+  const hidden = card.style.display === 'none';
+  card.style.display = hidden ? '' : 'none';
+  if (btn) btn.classList.toggle('active', hidden);
+}
+
+let reportTipo  = 'todos';
+let reportNivel = 'todos';
+
+function setReportTipo(t) {
+  reportTipo = t;
+  document.querySelectorAll('[id^="rt-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('rt-' + t)?.classList.add('active');
+  renderReports();
+}
+
+function setReportNivel(n) {
+  reportNivel = n;
+  document.querySelectorAll('[id^="rn-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('rn-' + n)?.classList.add('active');
+  renderReports();
+}
+
+
+
 function setReportPeriod(p) {
   reportPeriod = p;
   document.querySelectorAll('.rep-period').forEach(b => b.classList.remove('active'));
@@ -2230,12 +2324,16 @@ function filtrarTicketsPeriodo() {
   const mesAtual = new Date().getMonth();
   const anoAtual = new Date().getFullYear();
   return tickets.filter(t => {
-    if (reportPeriod === 'todos') return true;
-    if (reportPeriod === 'sem') return (now - t.time) <= semana;
+    // Filtro período
+    if (reportPeriod === 'sem' && (now - t.time) > semana) return false;
     if (reportPeriod === 'mes') {
       const d = new Date(t.time);
-      return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+      if (d.getMonth() !== mesAtual || d.getFullYear() !== anoAtual) return false;
     }
+    // Filtro tipo
+    if (reportTipo !== 'todos' && t.prioridade !== reportTipo) return false;
+    // Filtro nível
+    if (reportNivel !== 'todos' && t.nivel !== reportNivel) return false;
     return true;
   });
 }
@@ -2417,6 +2515,18 @@ function getNomeMembro(nome) {
 function renderReports() {
   const data = filtrarTicketsPeriodo();
   const total = data.length;
+
+  // ── Visibilidade dos cards ────────────────────────────────────────
+  const isChecked = id => { const el = document.getElementById(id); return !el || el.checked; };
+  const showCard = (cardId, show) => {
+    const el = document.getElementById(cardId);
+    if (el) el.style.display = show ? '' : 'none';
+  };
+  showCard('rc-equipe-card',    isChecked('rc-equipe'));
+  showCard('rc-problemas-card', isChecked('rc-problemas'));
+  showCard('rc-contrato-card',  isChecked('rc-contrato'));
+  showCard('rc-sistemas-card',  isChecked('rc-sistemas'));
+  showCard('rc-nivel-card',     isChecked('rc-nivel'));
 
   // ── Equipe ────────────────────────────────────────────────────────
   const teamEl = document.getElementById('report-team');
@@ -2740,7 +2850,7 @@ function selecionarCliente(idx) {
   if (t.prioridade) selectPriority(t.prioridade);
 
   // Limpa o campo de busca e fecha sugestões
-  document.getElementById('f-busca-cliente').value = '';
+  // busca-cliente removida (migrada para Cadastro de Clientes)
   fecharSugestoes();
 
   // Mostra histórico completo
@@ -2760,6 +2870,227 @@ document.addEventListener('click', function(e) {
   }
 });
 
+
+
+// ─── Categorias dinâmicas ────────────────────────────────────────────────────
+
+const CATEGORIAS_BASE = [
+  { value:'relogio-offline', label:'Relógio offline / fora da rede' },
+  { value:'ponto-manual',    label:'Inserção de ponto manual' },
+  { value:'feriado',         label:'Ponto em feriado / hora extra' },
+  { value:'relatorio',       label:'Relatório com dados errados' },
+  { value:'integracao',      label:'Integração com folha de pagamento' },
+  { value:'login',           label:'Erro de login / acesso' },
+  { value:'desbloqueio',     label:'Desbloqueio de REP / contrasenha' },
+  { value:'outro',           label:'Outro' },
+];
+
+function getCategoriasCustom() {
+  const saved = localStorage.getItem('suporte_ti_categorias');
+  return saved ? JSON.parse(saved) : [];
+}
+
+function saveCategoriasCustom(lista) {
+  localStorage.setItem('suporte_ti_categorias', JSON.stringify(lista));
+}
+
+function getAllCategorias() {
+  return [...CATEGORIAS_BASE, ...getCategoriasCustom()];
+}
+
+function populateCategoriaSelect(selectId = 'f-categoria') {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— Não informado —</option>';
+  getAllCategorias().forEach(c => {
+    const o = document.createElement('option');
+    o.value = c.value; o.textContent = c.label;
+    sel.appendChild(o);
+  });
+  if (current) sel.value = current;
+}
+
+function abrirNovaCategoriaModal() {
+  const modal = document.getElementById('nova-cat-modal');
+  modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+  if (modal.style.display === 'block') {
+    document.getElementById('nova-cat-nome').focus();
+  }
+}
+
+function salvarNovaCategoria() {
+  const nome = document.getElementById('nova-cat-nome').value.trim();
+  if (!nome) { showNotif('⚠️ Digite o nome da categoria.', 'warn'); return; }
+  const key = nome.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const lista = getCategoriasCustom();
+  if (lista.find(c => c.value === key) || CATEGORIAS_BASE.find(c => c.value === key)) {
+    showNotif('⚠️ Categoria já existe.', 'warn'); return;
+  }
+  lista.push({ value: key, label: nome });
+  saveCategoriasCustom(lista);
+  populateCategoriaSelect('f-categoria');
+  document.getElementById('f-categoria').value = key;
+  document.getElementById('nova-cat-nome').value = '';
+  document.getElementById('nova-cat-modal').style.display = 'none';
+  showNotif(`✅ Categoria "${nome}" criada!`);
+}
+
+function getCategoryLabel(cat) {
+  const found = getAllCategorias().find(c => c.value === cat);
+  return found ? found.label : (cat || 'Outro');
+}
+
+// ─── Atendentes no Desbloqueio REP ──────────────────────────────────────────
+
+let deskAtendentes = [];
+
+function initDeskAtendentes() {
+  deskAtendentes = [];
+  const chipsEl = document.getElementById('desb-atendentes-chips');
+  if (chipsEl) chipsEl.innerHTML = '';
+  // Mostra sugestões dos membros cadastrados
+  const sugsEl = document.getElementById('desb-atendentes-sugestoes');
+  if (!sugsEl) return;
+  const membros = getMembros();
+  sugsEl.innerHTML = membros.map(m => `
+    <div onclick="adicionarAtendenteNome('${m}')"
+      style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border);color:var(--text2);cursor:pointer;background:var(--surface2)"
+      onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+      onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
+      ${m}
+    </div>
+  `).join('');
+}
+
+function adicionarAtendenteDesb() {
+  const input = document.getElementById('desb-atendente-input');
+  adicionarAtendenteNome(input.value.trim());
+  input.value = '';
+}
+
+function adicionarAtendenteNome(nome) {
+  if (!nome || deskAtendentes.includes(nome)) return;
+  deskAtendentes.push(nome);
+  renderDeskAtendentes();
+}
+
+function renderDeskAtendentes() {
+  const el = document.getElementById('desb-atendentes-chips');
+  if (!el) return;
+  el.innerHTML = deskAtendentes.map((a, i) => `
+    <div style="display:flex;align-items:center;gap:5px;background:rgba(0,229,160,0.12);border:1px solid rgba(0,229,160,0.3);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--accent)">
+      ${a}
+      <span onclick="removerAtendenteDesb(${i})" style="cursor:pointer;opacity:0.7;margin-left:2px">✕</span>
+    </div>
+  `).join('');
+}
+
+function removerAtendenteDesb(idx) {
+  deskAtendentes.splice(idx, 1);
+  renderDeskAtendentes();
+}
+
+
+// ─── Categorias Dinâmicas ─────────────────────────────────────────────────────
+const CATS_DEFAULT = [
+  { value:'relogio-offline', label:'Relógio offline / fora da rede' },
+  { value:'ponto-manual',    label:'Inserção de ponto manual' },
+  { value:'feriado',         label:'Ponto em feriado / hora extra' },
+  { value:'relatorio',       label:'Relatório com dados errados' },
+  { value:'integracao',      label:'Integração com folha de pagamento' },
+  { value:'login',           label:'Erro de login / acesso' },
+  { value:'desbloqueio-senha-sistema', label:'Contrasenha de sistema' },
+  { value:'desbloqueio-senha-relogio', label:'Contrasenha de relógio' },
+  { value:'desbloqueio-adm', label:'Desbloqueio ADM de relógio' },
+  { value:'outro',           label:'Outro' },
+];
+
+function getCategorias() {
+  const saved = localStorage.getItem('suporte_ti_categorias');
+  const extras = saved ? JSON.parse(saved) : [];
+  return [...CATS_DEFAULT, ...extras];
+}
+
+function salvarNovaCategoria() {
+  const nome = document.getElementById('nova-cat-nome').value.trim();
+  if (!nome) { showNotif('⚠️ Digite o nome da categoria.', 'warn'); return; }
+  const key = nome.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'') + '-' + Date.now();
+  const saved = localStorage.getItem('suporte_ti_categorias');
+  const extras = saved ? JSON.parse(saved) : [];
+  extras.push({ value: key, label: nome });
+  localStorage.setItem('suporte_ti_categorias', JSON.stringify(extras));
+  document.getElementById('nova-cat-nome').value = '';
+  document.getElementById('nova-cat-modal').style.display = 'none';
+  popularSelectCategorias('f-categoria');
+  document.getElementById('f-categoria').value = key;
+  showNotif(`✅ Categoria "${nome}" adicionada!`);
+}
+
+function abrirNovaCategoriaModal() {
+  const modal = document.getElementById('nova-cat-modal');
+  modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+  if (modal.style.display === 'block') document.getElementById('nova-cat-nome').focus();
+}
+
+function popularSelectCategorias(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const val = sel.value;
+  sel.innerHTML = '<option value="">— Não informado —</option>';
+  getCategorias().forEach(c => {
+    const o = document.createElement('option');
+    o.value = c.value; o.textContent = c.label;
+    sel.appendChild(o);
+  });
+  if (val) sel.value = val;
+}
+
+// ─── Atendentes no Desbloqueio REP ───────────────────────────────────────────
+let deskAtendentes = [];
+
+function renderDeskAtendentesChips() {
+  const chips = document.getElementById('desb-atendentes-chips');
+  if (!chips) return;
+  chips.innerHTML = deskAtendentes.map((n, i) => `
+    <span style="background:rgba(0,229,160,0.12);border:1px solid var(--accent);color:var(--accent);border-radius:5px;padding:3px 8px;font-size:11px;display:inline-flex;align-items:center;gap:5px">
+      👤 ${n}
+      <span onclick="removerAtendenteDesb(${i})" style="cursor:pointer;opacity:0.7;font-size:12px">✕</span>
+    </span>
+  `).join('');
+}
+
+function adicionarAtendenteDesb() {
+  const input = document.getElementById('desb-atendente-input');
+  const nome = input.value.trim();
+  if (!nome) return;
+  if (!deskAtendentes.includes(nome)) deskAtendentes.push(nome);
+  input.value = '';
+  renderDeskAtendentesChips();
+}
+
+function removerAtendenteDesb(idx) {
+  deskAtendentes.splice(idx, 1);
+  renderDeskAtendentesChips();
+}
+
+function renderSugestoesAtendentes() {
+  const el = document.getElementById('desb-atendentes-sugestoes');
+  if (!el) return;
+  const membros = getMembros();
+  el.innerHTML = membros.map(m => `
+    <span onclick="selecionarAtendenteDesb('${m}')" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:2px 8px;font-size:11px;cursor:pointer">
+      ${m}
+    </span>
+  `).join('');
+}
+
+function selecionarAtendenteDesb(nome) {
+  if (!deskAtendentes.includes(nome)) {
+    deskAtendentes.push(nome);
+    renderDeskAtendentesChips();
+  }
+}
 
 // ─── Desbloqueio REP ──────────────────────────────────────────────────────────
 
@@ -2810,11 +3141,15 @@ function abrirDesbloqueio(tipo) {
 
   document.getElementById('desbloqueio-form').style.display = 'block';
   document.getElementById('desbloqueio-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  initDeskAtendentes();
 }
 
 function fecharDesbloqueio() {
   document.getElementById('desbloqueio-form').style.display = 'none';
   ['desb-nome','desb-empresa','desb-cnpj','desb-obs'].forEach(id => document.getElementById(id).value = '');
+  deskAtendentes = [];
+  const chipsEl = document.getElementById('desb-atendentes-chips');
+  if (chipsEl) chipsEl.innerHTML = '';
   currentDesbloqueioTipo = null;
 }
 
@@ -2855,6 +3190,11 @@ async function criarChamadoDesbloqueio() {
   if (!nome || !empresa || !cnpj || !equip) {
     showNotif('⚠️ Preencha todos os campos obrigatórios.', 'warn'); return;
   }
+  // Monta etiquetas: tipo de desbloqueio + atendentes
+  const labelsDesb = [
+    { name: cfg.titulo, color: cfg.titulo.includes('Senha') ? 'yellow' : 'red', trelloId: null },
+    ...deskAtendentes.map(a => ({ name: a, color: 'green', trelloId: null }))
+  ];
   const newTicket = {
     id: '#' + String(tickets.length + 1).padStart(3, '0'),
     nome, empresa, cnpj,
@@ -2863,9 +3203,10 @@ async function criarChamadoDesbloqueio() {
     categoria: cfg.categoria,
     nivel: cfg.nivel,
     status: 'aberto',
-    desc: `${cfg.titulo}${obs ? ' — ' + obs : ''}`,
+    desc: `${cfg.titulo}${deskAtendentes.length ? ' — Atendente(s): ' + deskAtendentes.join(', ') : ''}${obs ? ' | ' + obs : ''}`,
     time: Date.now(),
-    labels: [{ name: cfg.titulo, color: cfg.titulo.includes('Senha') ? 'yellow' : 'red', trelloId: null }]
+    tipoChamado: 'desbloqueio',
+    labels: labelsDesb
   };
   tickets.unshift(newTicket);
   saveTicketToDB(newTicket);
@@ -3026,24 +3367,26 @@ async function saveWAConversation(phoneNumber, cnpj, empresa, messages) {
 
 function createTicket() {
   if (bloquearLeitor('criar chamados')) return;
-  const nome = document.getElementById('f-nome').value.trim();
-  const empresa = document.getElementById('f-empresa').value.trim();
-  const cnpj = document.getElementById('f-cnpj').value.trim();
-  const sistema = document.getElementById('f-sistema').value;
-  const categoria = document.getElementById('f-categoria').value;
-  const nivel = document.getElementById('f-nivel').value;
-  const desc = document.getElementById('f-descricao').value.trim();
+  const nome     = document.getElementById('f-nome').value.trim();
+  const contato  = document.getElementById('f-contato').value.trim();
+  const empresa  = document.getElementById('f-empresa').value.trim();
+  const cnpj     = document.getElementById('f-cnpj').value.trim();
+  const sistema  = document.getElementById('f-sistema').value;
+  const categoria= document.getElementById('f-categoria').value;
+  const nivel    = document.getElementById('f-nivel').value;
+  const desc     = document.getElementById('f-descricao').value.trim();
 
-  if (!nome || !empresa || !cnpj || !sistema || !selectedPriority || !categoria) {
-    showNotif('⚠️ Preencha todos os campos obrigatórios.', 'warn');
+  if (!nome || !contato || !empresa || !cnpj || !sistema || !selectedPriority) {
+    showNotif('⚠️ Preencha: Nome, Contato, Razão Social, CNPJ, Suporte e Prioridade.', 'warn');
     return;
   }
 
   const newTicket = {
     id: '#' + String(tickets.length + 1).padStart(3, '0'),
-    nome, empresa, cnpj, sistema,
+    nome, contato, empresa, cnpj, sistema,
     prioridade: selectedPriority,
-    categoria, nivel,
+    categoria: categoria || 'outro',
+    nivel,
     status: 'aberto',
     desc: desc || 'Sem descrição adicional.',
     time: Date.now()
@@ -3058,7 +3401,7 @@ function createTicket() {
 }
 
 function clearForm() {
-  ['f-nome','f-empresa','f-cnpj','f-descricao'].forEach(id => document.getElementById(id).value = '');
+  ['f-nome','f-contato','f-empresa','f-cnpj','f-descricao'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-sistema').value = '';
   document.getElementById('f-categoria').value = '';
   document.getElementById('f-nivel').value = 'n1';
@@ -3982,6 +4325,7 @@ async function initApp(user) {
   await loadTicketsFromDB();
   renderAll();
   selectChat(0);
+  popularSelectCategorias('f-categoria');
   initTrello();
   setTimeout(loadGlobalApiKey, 400);
   const waConf = loadWAConfig();
