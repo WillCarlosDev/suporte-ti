@@ -1040,27 +1040,45 @@
       </div>
 
       <!-- Status -->
-      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:8px">STATUS</div>
-      <div class="status-select-row" id="modal-status-row"></div>
+      <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:16px">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px;margin-bottom:10px">STATUS DO CHAMADO</div>
+        <div class="status-select-row" id="modal-status-row"></div>
+      </div>
 
       <!-- Histórico de respostas -->
-      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:8px;margin-top:14px">HISTÓRICO</div>
-      <div class="reply-history" id="modal-replies">
-        <div style="color:var(--text3);font-size:12px">Nenhuma resposta ainda.</div>
+      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px">HISTÓRICO DE ATENDIMENTO</div>
+          <div id="modal-replies-count" style="font-size:10px;color:var(--text3);font-family:var(--mono)"></div>
+        </div>
+        <div class="reply-history" id="modal-replies" style="padding:12px 14px;min-height:60px;max-height:200px">
+          <div style="color:var(--text3);font-size:12px">Nenhuma resposta ainda.</div>
+        </div>
       </div>
 
       <!-- Nova resposta -->
-      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:8px">NOVA RESPOSTA / OBSERVAÇÃO</div>
-      <textarea class="form-textarea" id="modal-reply-text" placeholder="Digite sua resposta ou observação interna..." style="margin-bottom:10px"></textarea>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn-primary" onclick="submitReply(false)">💬 Registrar Resposta</button>
-        <button class="btn-ghost" onclick="generateAIReply()" id="ai-reply-btn">✨ Sugerir com IA</button>
-        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn-ghost" onclick="moveTicketTo('pendencia')" style="border-color:#ff6b35;color:#ff6b35" title="Mover para Pendência">⏳ Pendência</button>
-          <button class="btn-ghost" onclick="moveTicketTo('nao-atendido')" style="border-color:var(--text3);color:var(--text3)" title="Mover para Não Atendido">🚫 Não Atendido</button>
-          <button class="btn-ghost" onclick="reativarTicket()" id="btn-reativar" style="display:none;border-color:var(--accent2);color:var(--accent2)">🔄 Reativar</button>
-          <button class="btn-ghost" onclick="deleteTicket()" style="border-color:var(--danger);color:var(--danger)">🗑️ Excluir</button>
-          <button class="btn-primary" onclick="finalizeTicket()" style="background:var(--accent)">✅ Finalizar</button>
+      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
+        <div style="padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px">NOVA RESPOSTA / OBSERVAÇÃO</div>
+        </div>
+        <div style="padding:12px 14px">
+          <textarea class="form-textarea" id="modal-reply-text" placeholder="Digite sua resposta ou observação interna..." style="margin-bottom:12px;border-radius:8px;min-height:80px"></textarea>
+
+          <!-- Linha 1: ações primárias -->
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <button class="btn-primary" onclick="submitReply(false)" style="flex:1">💬 Registrar Resposta</button>
+            <button class="btn-ghost" onclick="generateAIReply()" id="ai-reply-btn" style="flex:1">✨ Sugerir com IA</button>
+          </div>
+
+          <!-- Linha 2: ações de status -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border)">
+            <button onclick="moveTicketTo('pendencia')"   style="flex:1;min-width:100px;font-size:11px;padding:6px 8px;border-radius:7px;border:1px solid #ff6b35;color:#ff6b35;background:rgba(255,107,53,0.08);cursor:pointer;font-family:var(--sans);font-weight:600;transition:all 0.15s" onmouseover="this.style.background='rgba(255,107,53,0.18)'" onmouseout="this.style.background='rgba(255,107,53,0.08)'">⏳ Pendência</button>
+            <button onclick="moveTicketTo('nao-atendido')" style="flex:1;min-width:100px;font-size:11px;padding:6px 8px;border-radius:7px;border:1px solid var(--text3);color:var(--text2);background:rgba(138,144,160,0.08);cursor:pointer;font-family:var(--sans);font-weight:600;transition:all 0.15s" onmouseover="this.style.background='rgba(138,144,160,0.18)'" onmouseout="this.style.background='rgba(138,144,160,0.08)'">🚫 Não Atendido</button>
+            <button onclick="reativarTicket()" id="btn-reativar" style="display:none;flex:1;min-width:100px;font-size:11px;padding:6px 8px;border-radius:7px;border:1px solid var(--accent2);color:var(--accent2);background:rgba(0,144,255,0.08);cursor:pointer;font-family:var(--sans);font-weight:600">🔄 Reativar</button>
+            <div style="flex-grow:1"></div>
+            <button onclick="deleteTicket()" style="font-size:11px;padding:6px 12px;border-radius:7px;border:1px solid var(--danger);color:var(--danger);background:rgba(255,71,87,0.08);cursor:pointer;font-family:var(--sans);font-weight:600;transition:all 0.15s" onmouseover="this.style.background='rgba(255,71,87,0.18)'" onmouseout="this.style.background='rgba(255,71,87,0.08)'">🗑️ Excluir</button>
+            <button onclick="finalizeTicket()" style="font-size:11px;padding:6px 16px;border-radius:7px;border:none;background:var(--accent);color:#000;cursor:pointer;font-family:var(--sans);font-weight:700;transition:all 0.15s" onmouseover="this.style.background='#00ffb3'" onmouseout="this.style.background='var(--accent)'">✅ Finalizar</button>
+          </div>
         </div>
       </div>
     </div>
@@ -3310,16 +3328,21 @@ function showTicketDetail(id) {
 
 function renderModalReplies(t) {
   const container = document.getElementById('modal-replies');
+  const countEl   = document.getElementById('modal-replies-count');
   if (!t.replies || t.replies.length === 0) {
-    container.innerHTML = '<div style="color:var(--text3);font-size:12px">Nenhuma resposta ainda.</div>';
+    container.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:4px 0">Nenhuma resposta ainda.</div>';
+    if (countEl) countEl.textContent = '';
     return;
   }
+  if (countEl) countEl.textContent = `${t.replies.length} registro${t.replies.length > 1 ? 's' : ''}`;
   container.innerHTML = t.replies.map(r => `
-    <div class="reply-item">
-      <span class="reply-author">${r.author}</span>
-      <span class="reply-time">${r.time}</span>
-      ${r.isAI ? '<span style="font-size:10px;color:var(--accent);margin-left:4px">✨ IA</span>' : ''}
-      <div style="margin-top:4px;color:var(--text)">${r.text}</div>
+    <div class="reply-item" style="border-left:2px solid ${r.isAI ? 'var(--accent)' : 'var(--accent2)'}; padding-left:10px; margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span class="reply-author" style="font-size:11px;font-weight:700">${r.author}</span>
+        ${r.isAI ? '<span style="font-size:9px;color:var(--accent);background:rgba(0,229,160,0.12);padding:1px 6px;border-radius:4px;font-family:var(--mono)">✨ IA</span>' : ''}
+        <span class="reply-time" style="font-size:10px;color:var(--text3);margin-left:auto">${r.time}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6">${r.text}</div>
     </div>
   `).join('');
   container.scrollTop = container.scrollHeight;
