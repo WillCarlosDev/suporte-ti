@@ -879,6 +879,32 @@
         <div class="page-sub">Chave de IA, Trello e WhatsApp</div>
       </div>
 
+      <!-- Alterar Senha -->
+      <div class="config-box" style="border-color:rgba(255,204,0,0.2);background:rgba(255,204,0,0.03)">
+        <h3 style="color:var(--warn)">🔑 Alterar Senha</h3>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:16px">
+          Altere a senha da sua conta atual. ADM pode alterar a senha de qualquer usuário na aba Usuários.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:480px">
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label">Senha Atual *</label>
+            <input class="form-input" type="password" id="senha-atual" placeholder="••••••••"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nova Senha *</label>
+            <input class="form-input" type="password" id="senha-nova" placeholder="••••••••"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirmar Nova Senha *</label>
+            <input class="form-input" type="password" id="senha-confirma" placeholder="••••••••"/>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+          <button class="btn-primary" onclick="alterarSenha()" style="background:var(--warn);color:#000">🔑 Alterar Senha</button>
+          <span id="senha-status" style="font-size:12px;color:var(--text2)"></span>
+        </div>
+      </div>
+
       <!-- Membros da Equipe -->
       <div class="config-box" style="border-color:rgba(0,144,255,0.2);background:rgba(0,144,255,0.03)">
         <h3 style="color:var(--accent2)">👥 Membros da Equipe</h3>
@@ -977,6 +1003,25 @@
         <div class="config-box">
           <h3>👥 Usuários Cadastrados</h3>
           <table class="users-table" id="users-table"></table>
+
+          <!-- Reset de senha ADM -->
+          <div id="reset-senha-box" style="display:none;margin-top:16px;padding:14px;background:rgba(255,204,0,0.06);border:1px solid rgba(255,204,0,0.25);border-radius:10px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+              <span style="font-size:13px;font-weight:700;color:var(--warn)">🔑 Redefinir senha de: <span id="reset-senha-user" style="font-family:var(--mono)"></span></span>
+              <button onclick="fecharResetSenha()" style="margin-left:auto;background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px">✕</button>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+              <div class="form-group" style="flex:1;min-width:180px;margin:0">
+                <label class="form-label">Nova Senha *</label>
+                <input class="form-input" type="password" id="reset-nova-senha" placeholder="••••••••" onkeydown="if(event.key==='Enter') confirmarResetSenha()"/>
+              </div>
+              <div class="form-group" style="flex:1;min-width:180px;margin:0">
+                <label class="form-label">Confirmar *</label>
+                <input class="form-input" type="password" id="reset-confirma-senha" placeholder="••••••••" onkeydown="if(event.key==='Enter') confirmarResetSenha()"/>
+              </div>
+              <button class="btn-primary" onclick="confirmarResetSenha()" style="background:var(--warn);color:#000;margin-bottom:1px">Redefinir</button>
+            </div>
+          </div>
           <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn-ghost" style="font-size:12px" onclick="exportUsers()">📤 Exportar usuários</button>
             <label class="btn-ghost" style="font-size:12px;cursor:pointer">
@@ -1326,10 +1371,13 @@ async function renderUsersTable() {
           <td style="font-family:var(--mono);font-size:12px">${u.username}</td>
           <td><span class="tag ${u.role === 'adm' ? 'contrato' : u.role === 'leitor' ? 'n2' : 'n1'}">${u.role === 'leitor' ? '👁 LEITOR' : u.role.toUpperCase()}</span></td>
           <td style="color:var(--text2);font-size:12px">${new Date(u.created_at).toLocaleDateString('pt-BR')}</td>
-          <td>${u.username === 'adm'
-            ? '<span style="font-size:11px;color:var(--text3)">protegido</span>'
-            : `<button class="btn-danger" onclick="deleteUser('${u.username}')">Remover</button>`
-          }</td>
+          <td style="display:flex;gap:6px;align-items:center">
+            <button onclick="abrirResetSenha('${u.username}')" style="background:rgba(255,204,0,0.1);border:1px solid rgba(255,204,0,0.3);color:var(--warn);border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:var(--sans)">🔑 Senha</button>
+            ${u.username === currentUser?.username
+              ? '<span style="font-size:11px;color:var(--text3)">você</span>'
+              : `<button class="btn-danger" onclick="deleteUser('${u.username}')">Remover</button>`
+            }
+          </td>
         </tr>
       `).join('')}
     `;
@@ -2203,6 +2251,96 @@ function barHtml(label, val, total, color, extra) {
 }
 
 const MEMBER_COLORS = ['#00e5a0','#0090ff','#a855f7','#ff6b35','#f472b6','#ffcc00','#2dd4bf','#ff4757'];
+
+
+
+// ─── Reset de Senha (ADM) ─────────────────────────────────────────────────────
+function abrirResetSenha(username) {
+  document.getElementById('reset-senha-user').textContent = username;
+  document.getElementById('reset-nova-senha').value = '';
+  document.getElementById('reset-confirma-senha').value = '';
+  document.getElementById('reset-senha-box').style.display = 'block';
+  document.getElementById('reset-senha-box')._username = username;
+  document.getElementById('reset-nova-senha').focus();
+}
+
+function fecharResetSenha() {
+  document.getElementById('reset-senha-box').style.display = 'none';
+}
+
+async function confirmarResetSenha() {
+  const box      = document.getElementById('reset-senha-box');
+  const username = box._username;
+  const nova     = document.getElementById('reset-nova-senha').value;
+  const confirma = document.getElementById('reset-confirma-senha').value;
+
+  if (!nova) { showNotif('⚠️ Digite a nova senha.', 'warn'); return; }
+  if (nova.length < 4) { showNotif('⚠️ Senha deve ter ao menos 4 caracteres.', 'warn'); return; }
+  if (nova !== confirma) { showNotif('⚠️ As senhas não coincidem.', 'warn'); return; }
+
+  try {
+    await sbFetch('rpc/alterar_senha', 'POST', {
+      p_username: username,
+      p_nova_senha: nova
+    });
+    fecharResetSenha();
+    showNotif(`🔑 Senha de "${username}" redefinida com sucesso!`);
+  } catch(e) {
+    showNotif('❌ Erro ao redefinir: ' + e.message, 'warn');
+  }
+}
+
+// ─── Alterar Senha ────────────────────────────────────────────────────────────
+async function alterarSenha() {
+  const atual    = document.getElementById('senha-atual').value;
+  const nova     = document.getElementById('senha-nova').value;
+  const confirma = document.getElementById('senha-confirma').value;
+  const status   = document.getElementById('senha-status');
+
+  if (!atual || !nova || !confirma) {
+    status.textContent = '⚠️ Preencha todos os campos.';
+    status.style.color = 'var(--warn)'; return;
+  }
+  if (nova.length < 4) {
+    status.textContent = '⚠️ A nova senha deve ter ao menos 4 caracteres.';
+    status.style.color = 'var(--warn)'; return;
+  }
+  if (nova !== confirma) {
+    status.textContent = '⚠️ As senhas não coincidem.';
+    status.style.color = 'var(--danger)'; return;
+  }
+
+  status.textContent = 'Verificando...';
+  status.style.color = 'var(--text2)';
+
+  try {
+    // Verifica senha atual fazendo login
+    const check = await sbFetch('rpc/fazer_login', 'POST', {
+      p_username: currentUser.username,
+      p_password: atual
+    });
+    if (!check || check.length === 0) {
+      status.textContent = '❌ Senha atual incorreta.';
+      status.style.color = 'var(--danger)'; return;
+    }
+
+    // Altera a senha
+    await sbFetch('rpc/alterar_senha', 'POST', {
+      p_username: currentUser.username,
+      p_nova_senha: nova
+    });
+
+    // Limpa campos
+    ['senha-atual','senha-nova','senha-confirma'].forEach(id => document.getElementById(id).value = '');
+    status.textContent = '✅ Senha alterada com sucesso!';
+    status.style.color = 'var(--accent)';
+    showNotif('🔑 Senha alterada com sucesso!');
+    setTimeout(() => { status.textContent = ''; }, 4000);
+  } catch(e) {
+    status.textContent = '❌ Erro: ' + e.message;
+    status.style.color = 'var(--danger)';
+  }
+}
 
 // ─── Gerenciamento de Membros da Equipe ──────────────────────────────────────
 function getMembros() {
