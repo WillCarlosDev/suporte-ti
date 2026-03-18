@@ -2728,6 +2728,48 @@ async function alterarSenha() {
   }
 }
 
+// ─── Configurações via Supabase ──────────────────────────────────────────────
+async function getConfig(chave, fallback) {
+  try {
+    const rows = await sbFetch('configuracoes?chave=eq.' + encodeURIComponent(chave) + '&select=valor');
+    if (rows && rows.length > 0) return rows[0].valor;
+  } catch(e) { console.warn('getConfig:', e.message); }
+  return fallback !== undefined ? fallback : null;
+}
+
+async function setConfig(chave, valor) {
+  try {
+    await sbFetch('configuracoes', 'POST',
+      { chave, valor, updated_at: new Date().toISOString() },
+      { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
+  } catch(e) { console.warn('setConfig:', e.message); }
+}
+
+// ─── Colunas do Kanban ────────────────────────────────────────────────────────
+const DEFAULT_KANBAN_COLS = [
+  { key:'aberto',       label:'Aberto',       color:'#ff4757' },
+  { key:'em-andamento', label:'Em Andamento',  color:'#ffcc00' },
+  { key:'aguardando',   label:'Aguardando',    color:'#0090ff' },
+  { key:'pendencia',    label:'Pendência',     color:'#ff6b35' },
+  { key:'nao-atendido', label:'Não Atendido',  color:'#8a90a0' },
+  { key:'resolvido',    label:'Resolvido',     color:'#00e5a0' },
+];
+let _kanbanColsCache = null;
+
+function getKanbanCols() {
+  return _kanbanColsCache || DEFAULT_KANBAN_COLS;
+}
+
+async function loadKanbanCols() {
+  const saved = await getConfig('kanban_cols', DEFAULT_KANBAN_COLS);
+  _kanbanColsCache = Array.isArray(saved) && saved.length > 0 ? saved : DEFAULT_KANBAN_COLS;
+  return _kanbanColsCache;
+}
+
+async function saveKanbanCols() {
+  await setConfig('kanban_cols', _kanbanColsCache || DEFAULT_KANBAN_COLS);
+}
+
 // ─── Gerenciamento de Membros da Equipe ──────────────────────────────────────
 let _membrosCache = null;
 
