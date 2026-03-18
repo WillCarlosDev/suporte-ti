@@ -32,6 +32,22 @@
   .login-btn:hover { background: #00ffb3; }
   .login-footer { margin-top: 20px; font-size: 11px; color: var(--text3); text-align: center; font-family: var(--mono); }
 
+  /* ── Online status dot ── */
+  .user-online-dot { width:8px;height:8px;border-radius:50%;background:#00e5a0;display:inline-block;margin-right:4px;box-shadow:0 0 4px #00e5a0 }
+  .user-offline-dot { width:8px;height:8px;border-radius:50%;background:var(--text3);display:inline-block;margin-right:4px }
+  /* ── Notif panel ── */
+  .notif-item { padding:10px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start;font-size:12px;cursor:pointer;transition:background 0.1s }
+  .notif-item:hover { background:var(--surface2) }
+  .notif-item.unread { background:rgba(0,229,160,0.04) }
+  .notif-item .notif-icon { font-size:16px;flex-shrink:0;margin-top:1px }
+  .notif-item .notif-body { flex:1 }
+  .notif-item .notif-time { font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px }
+  /* ── Clientes tabela ── */
+  .clientes-table { width:100%;border-collapse:collapse;font-size:13px }
+  .clientes-table th { text-align:left;padding:10px 14px;font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;border-bottom:1px solid var(--border) }
+  .clientes-table td { padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle }
+  .clientes-table tr:hover td { background:var(--surface2) }
+
   /* ── User Management ── */
   .users-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .users-table th { text-align: left; padding: 10px 14px; font-size: 11px; color: var(--text3); font-family: var(--mono); letter-spacing: 1px; border-bottom: 1px solid var(--border); }
@@ -280,7 +296,7 @@
   .kb-badge { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 700; background: rgba(0,144,255,0.15); color: var(--accent2); margin-left: auto; }
 
   /* ── Chat Simulator ── */
-  .chat-layout { display: grid; grid-template-columns: 280px 1fr; gap: 0; height: calc(100vh - 160px); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .chat-layout { display: grid; grid-template-columns: 280px 1fr; gap: 0; height: calc(100vh - 230px); min-height: 400px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   .chat-list { border-right: 1px solid var(--border); overflow-y: auto; }
   .chat-list-head { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 700; }
   .chat-item { padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
@@ -414,6 +430,23 @@
       <span id="trello-sync-time" style="font-size:10px;color:var(--text3);font-family:var(--mono)"></span>
       <span class="badge-online">● ONLINE</span>
       <span class="time-display" id="clock">--:--:--</span>
+      <!-- Sino de notificações -->
+      <div style="position:relative">
+        <button onclick="toggleNotifPanel()" id="notif-btn" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;font-size:14px;cursor:pointer;position:relative" title="Notificações">
+          🔔
+          <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:9px;font-family:var(--mono);border-radius:10px;padding:1px 4px;min-width:14px;text-align:center"></span>
+        </button>
+        <!-- Painel de notificações -->
+        <div id="notif-panel" style="display:none;position:absolute;right:0;top:calc(100% + 8px);width:320px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5);z-index:9000;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;font-weight:700">🔔 Notificações</span>
+            <button onclick="limparNotificacoes()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer">Limpar tudo</button>
+          </div>
+          <div id="notif-list" style="max-height:320px;overflow-y:auto;padding:8px 0">
+            <div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">Nenhuma notificação</div>
+          </div>
+        </div>
+      </div>
       <span id="topbar-user" style="font-size:11px;color:var(--text2);font-family:var(--mono)"></span>
       <button onclick="doLogout()" style="background:rgba(255,71,87,0.1);border:1px solid rgba(255,71,87,0.2);color:var(--danger);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans)">Sair</button>
     </div>
@@ -442,6 +475,10 @@
     <div class="nav-item" onclick="showView('kb')">
       <span class="icon">◷</span> Base de Conhecimento
     </div>
+    <div class="nav-section">Ferramentas</div>
+    <div class="nav-item" onclick="showView('clientes')">
+      <span class="icon">🏢</span> Clientes
+    </div>
     <div class="nav-section">Relatórios</div>
     <div class="nav-item" onclick="showView('reports')">
       <span class="icon">◈</span> Relatórios
@@ -449,8 +486,15 @@
     <div class="nav-item" id="nav-config" onclick="showView('config')">
       <span class="icon">⚙</span> Configurações
     </div>
+    <div class="nav-item" id="nav-acl" onclick="showView('acl')">
+      <span class="icon">🔐</span> Permissões
+    </div>
     <div class="nav-item" id="nav-users" onclick="showView('users')">
       <span class="icon">👥</span> Usuários
+      <span class="nav-count" id="nav-online-count" style="background:var(--accent);color:#000;display:none">0</span>
+    </div>
+    <div class="nav-item" onclick="showView('onboarding')">
+      <span class="icon">📖</span> Manual
     </div>
     <div class="nav-item" onclick="showView('whatsapp')">
       <span class="icon">📲</span> Agente WhatsApp
@@ -460,6 +504,247 @@
   <!-- MAIN -->
   <main class="main">
 
+
+
+    <!-- CLIENTES -->
+    <div class="view" id="view-clientes">
+      <div class="page-header">
+        <div>
+          <div class="page-title">🏢 Cadastro de Clientes</div>
+          <div class="page-sub">Gerencie os clientes e contratos de suporte</div>
+        </div>
+        <button class="btn-primary" onclick="abrirFormCliente()" id="btn-novo-cliente">＋ Novo Cliente</button>
+      </div>
+
+      <!-- Formulário de cliente (colapsável) -->
+      <div id="form-cliente" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <span id="form-cliente-titulo" style="font-weight:700;font-size:14px">＋ Novo Cliente</span>
+          <button onclick="fecharFormCliente()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px">✕</button>
+        </div>
+        <div class="form-grid">
+          <input type="hidden" id="fc-id"/>
+          <div class="form-group">
+            <label class="form-label">Razão Social *</label>
+            <input class="form-input" id="fc-empresa" placeholder="Ex: Empresa Ltda."/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">CNPJ *</label>
+            <input class="form-input" id="fc-cnpj" placeholder="00.000.000/0000-00" maxlength="18" oninput="formatarCnpjCliente(this)"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contato Principal</label>
+            <input class="form-input" id="fc-contato" placeholder="Nome do responsável"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefone</label>
+            <input class="form-input" id="fc-telefone" placeholder="(31) 99999-0000"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">E-mail</label>
+            <input class="form-input" id="fc-email" placeholder="contato@empresa.com.br"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sistema</label>
+            <select class="form-select" id="fc-sistema">
+              <option value="">Selecione...</option>
+              <option value="rhid">RHID</option>
+              <option value="iponto">iPonto</option>
+              <option value="atecsoft">Atecsoft</option>
+              <option value="idsecure">IDSecure</option>
+              <option value="atec-web">Atec Web</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Tipo de Contrato</label>
+            <div class="priority-row">
+              <div class="priority-btn" id="fc-pb-contrato" onclick="selectClientePrio('contrato')">🟢 Contrato</div>
+              <div class="priority-btn" id="fc-pb-garantia" onclick="selectClientePrio('garantia')">🔵 Garantia</div>
+              <div class="priority-btn" id="fc-pb-avulso"   onclick="selectClientePrio('avulso')">🟠 Sem Garantia</div>
+            </div>
+            <input type="hidden" id="fc-prioridade"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Vencimento do Contrato</label>
+            <input class="form-input" type="date" id="fc-vencimento"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select class="form-select" id="fc-status">
+              <option value="ativo">✅ Ativo</option>
+              <option value="suspenso">⚠️ Suspenso</option>
+              <option value="cancelado">❌ Cancelado</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Observações</label>
+            <textarea class="form-textarea" id="fc-obs" placeholder="Informações adicionais sobre o cliente..." style="min-height:60px"></textarea>
+          </div>
+          <div class="form-group full">
+            <div class="btn-row">
+              <button class="btn-primary" onclick="salvarCliente()">💾 Salvar Cliente</button>
+              <button class="btn-ghost" onclick="fecharFormCliente()">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Busca -->
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <input class="form-input" id="clientes-busca" placeholder="🔍 Buscar por razão social ou CNPJ..." oninput="renderClientesTabela()" style="flex:1;max-width:380px"/>
+        <select class="form-select" id="clientes-filtro-status" onchange="renderClientesTabela()" style="width:160px">
+          <option value="">Todos os status</option>
+          <option value="ativo">✅ Ativos</option>
+          <option value="suspenso">⚠️ Suspensos</option>
+          <option value="cancelado">❌ Cancelados</option>
+        </select>
+        <select class="form-select" id="clientes-filtro-tipo" onchange="renderClientesTabela()" style="width:160px">
+          <option value="">Todos os contratos</option>
+          <option value="contrato">🟢 Contrato</option>
+          <option value="garantia">🔵 Garantia</option>
+          <option value="avulso">🟠 Sem Garantia</option>
+        </select>
+      </div>
+
+      <div id="clientes-tabela"></div>
+    </div>
+
+    <!-- ACL — PERMISSÕES -->
+    <div class="view" id="view-acl">
+      <div class="page-header">
+        <div class="page-title">🔐 Gestão de Permissões</div>
+        <div class="page-sub">Controle o que cada perfil pode acessar e executar</div>
+      </div>
+      <div style="background:rgba(255,204,0,0.07);border:1px solid rgba(255,204,0,0.25);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--text2)">
+        ⚠️ <strong>Atenção:</strong> alterações aqui afetam todos os usuários do perfil correspondente. O perfil <strong>ADM (Desenvolvedor)</strong> nunca pode ser restringido.
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;max-width:700px">
+        <!-- ADM -->
+        <div style="background:var(--surface);border:1px solid rgba(0,229,160,0.3);border-radius:12px;overflow:hidden">
+          <div style="background:rgba(0,229,160,0.08);padding:12px 16px;display:flex;align-items:center;gap:10px">
+            <span class="tag contrato">ADM</span>
+            <span style="font-size:13px;font-weight:700">Administrador</span>
+            <span style="font-size:11px;color:var(--text3);margin-left:auto">Acesso total — não pode ser alterado</span>
+          </div>
+          <div style="padding:12px 16px;font-size:12px;color:var(--text2)">
+            ✅ Todos os módulos · ✅ Configurações · ✅ Usuários · ✅ Permissões · ✅ Exportar dados
+          </div>
+        </div>
+
+        <!-- TÉCNICO -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+          <div style="background:var(--surface2);padding:12px 16px;display:flex;align-items:center;gap:10px">
+            <span class="tag n1">TÉCNICO</span>
+            <span style="font-size:13px;font-weight:700">Técnico de Suporte</span>
+          </div>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px" id="acl-tecnico">
+          </div>
+        </div>
+
+        <!-- LEITOR -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+          <div style="background:var(--surface2);padding:12px 16px;display:flex;align-items:center;gap:10px">
+            <span class="tag n2">LEITOR</span>
+            <span style="font-size:13px;font-weight:700">Leitor (Somente Visualização)</span>
+          </div>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px" id="acl-leitor">
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="salvarACL()" style="max-width:200px">💾 Salvar Permissões</button>
+      </div>
+    </div>
+
+    <!-- ONBOARDING / MANUAL -->
+    <div class="view" id="view-onboarding">
+      <div class="page-header">
+        <div class="page-title">📖 Manual da Plataforma</div>
+        <div class="page-sub">Guia passo a passo para novos usuários</div>
+      </div>
+      <div style="max-width:720px;display:flex;flex-direction:column;gap:16px">
+
+        <div style="background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.2);border-radius:12px;padding:20px">
+          <div style="font-size:16px;font-weight:700;margin-bottom:6px">👋 Bem-vindo ao painel de Suporte TI</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.8">Este é o sistema central de gestão de chamados do time de suporte. Aqui você registra, acompanha e resolve os atendimentos dos clientes de ponto eletrônico.</div>
+        </div>
+
+        <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden" open>
+          <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
+            <span>📋</span> Como abrir um novo chamado
+          </summary>
+          <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
+            <br>
+            <strong>1.</strong> Clique em <strong>"Novo Chamado"</strong> no menu lateral.<br>
+            <strong>2.</strong> Preencha o nome e o contato do cliente (telefone ou e-mail).<br>
+            <strong>3.</strong> Digite a Razão Social ou o CNPJ — o sistema vai tentar preencher automaticamente os dados de clientes anteriores.<br>
+            <strong>4.</strong> Selecione o tipo de suporte: <strong>Equipamentos</strong> (relógios, catracas) ou <strong>Sistemas</strong> (software).<br>
+            <strong>5.</strong> Escolha o tipo de contrato: Contrato, Garantia ou Sem Garantia.<br>
+            <strong>6.</strong> A categoria do problema é opcional — preencha se souber, caso contrário deixe em branco.<br>
+            <strong>7.</strong> Clique em <strong>"Abrir Chamado"</strong>.
+          </div>
+        </details>
+
+        <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
+            <span>🔓</span> Como usar o Desbloqueio de REP
+          </summary>
+          <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
+            <br>
+            <strong>1.</strong> Clique em <strong>"Desbloqueio REP"</strong> no menu lateral.<br>
+            <strong>2.</strong> Escolha o tipo: <strong>Contrasenha de Sistema</strong>, <strong>Contrasenha de Relógio</strong> ou <strong>Desbloqueio ADM</strong>.<br>
+            <strong>3.</strong> Preencha os dados do cliente e selecione o equipamento.<br>
+            <strong>4.</strong> Adicione o seu nome como atendente clicando nas sugestões ou digitando no campo.<br>
+            <strong>5.</strong> Clique em <strong>"Abrir Chamado"</strong> — ele será criado automaticamente no kanban.
+          </div>
+        </details>
+
+        <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
+            <span>📊</span> Como usar o Kanban de Chamados
+          </summary>
+          <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
+            <br>
+            O kanban mostra todos os chamados organizados por coluna (status).<br><br>
+            <strong>Mover um chamado:</strong> Clique no card e use os botões de status dentro do chamado, ou use os botões rápidos <strong>⏳ Pendência</strong> e <strong>🚫 Não Atendido</strong> diretamente no card.<br><br>
+            <strong>Finalizar um chamado:</strong> Abra o chamado e clique em <strong>"✅ Finalizar"</strong>. Você pode registrar uma resposta antes de finalizar.<br><br>
+            <strong>Gerenciar colunas:</strong> Clique no botão <strong>"⚙ Gerenciar Colunas"</strong> no topo da tela de Chamados para adicionar, renomear ou reordenar colunas.
+          </div>
+        </details>
+
+        <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
+            <span>🤖</span> Como usar a Base de Conhecimento com IA
+          </summary>
+          <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
+            <br>
+            A Base de Conhecimento guarda os procedimentos de suporte para consulta rápida.<br><br>
+            <strong>Criar um procedimento com IA:</strong><br>
+            <strong>1.</strong> Vá em <strong>"Base de Conhecimento"</strong>.<br>
+            <strong>2.</strong> Preencha o título do problema e descreva o que o cliente relatou.<br>
+            <strong>3.</strong> Clique em <strong>"✨ Gerar com IA"</strong> — a IA vai criar um passo a passo completo.<br>
+            <strong>4.</strong> Revise o procedimento e clique em <strong>"💾 Salvar na Base"</strong>.<br><br>
+            <strong>Dica:</strong> Quanto mais detalhada for a sua descrição, melhor será o procedimento gerado.
+          </div>
+        </details>
+
+        <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
+            <span>🔑</span> Alterar sua senha
+          </summary>
+          <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
+            <br>
+            <strong>1.</strong> Vá em <strong>"Configurações"</strong> no menu lateral (apenas ADM e Técnico).<br>
+            <strong>2.</strong> Localize a seção <strong>"🔑 Alterar Senha"</strong>.<br>
+            <strong>3.</strong> Digite sua senha atual, a nova senha e confirme.<br>
+            <strong>4.</strong> Clique em <strong>"Alterar Senha"</strong>.<br><br>
+            Se você esqueceu sua senha, peça ao Administrador para redefini-la na tela de <strong>Usuários</strong>.
+          </div>
+        </details>
+
+      </div>
+    </div>
 
     <!-- DESBLOQUEIO REP -->
     <div class="view" id="view-desbloqueio">
@@ -1428,7 +1713,10 @@ async function renderUsersTable() {
       <tr><th>Usuário</th><th>Perfil</th><th>Criado em</th><th></th></tr>
       ${users.map(u => `
         <tr>
-          <td style="font-family:var(--mono);font-size:12px">${u.username}</td>
+          <td style="font-family:var(--mono);font-size:12px">
+              ${currentUser?.role === 'adm' ? `<span class="${getUsuariosOnline().find(o=>o.username===u.username) ? 'user-online-dot' : 'user-offline-dot'}"></span>` : ''}
+              ${u.username}
+            </td>
           <td><span class="tag ${u.role === 'adm' ? 'contrato' : u.role === 'leitor' ? 'n2' : 'n1'}">${u.role === 'leitor' ? '👁 LEITOR' : u.role.toUpperCase()}</span></td>
           <td style="color:var(--text2);font-size:12px">${new Date(u.created_at).toLocaleDateString('pt-BR')}</td>
           <td style="display:flex;gap:6px;align-items:center">
@@ -2441,15 +2729,21 @@ async function alterarSenha() {
 }
 
 // ─── Gerenciamento de Membros da Equipe ──────────────────────────────────────
-function getMembros() {
-  const saved = localStorage.getItem('suporte_ti_membros');
-  if (saved) return JSON.parse(saved);
-  // Membros padrão iniciais
-  return ['Willian', 'Lucas', 'Alex', 'Julio'];
+let _membrosCache = null;
+
+async function getMembrosAsync() {
+  const data = await getConfig('membros_equipe', ['Willian', 'Lucas', 'Alex', 'Julio']);
+  _membrosCache = Array.isArray(data) ? data : ['Willian', 'Lucas', 'Alex', 'Julio'];
+  return _membrosCache;
 }
 
-function saveMembros(lista) {
-  localStorage.setItem('suporte_ti_membros', JSON.stringify(lista));
+function getMembros() {
+  return _membrosCache || ['Willian', 'Lucas', 'Alex', 'Julio'];
+}
+
+async function saveMembros(lista) {
+  _membrosCache = lista;
+  await setConfig('membros_equipe', lista);
 }
 
 function renderMembrosConfig() {
@@ -2471,7 +2765,7 @@ function renderMembrosConfig() {
   `).join('');
 }
 
-function adicionarMembro() {
+async function adicionarMembro() {
   const input = document.getElementById('novo-membro-nome');
   const nome = input.value.trim();
   if (!nome) { showNotif('⚠️ Digite o nome do membro.', 'warn'); return; }
@@ -2480,18 +2774,18 @@ function adicionarMembro() {
     showNotif('⚠️ Membro já cadastrado.', 'warn'); return;
   }
   lista.push(nome);
-  saveMembros(lista);
+  await saveMembros(lista);
   input.value = '';
   renderMembrosConfig();
   showNotif(`✅ ${nome} adicionado à equipe!`);
 }
 
-function removerMembro(idx) {
+async function removerMembro(idx) {
   const lista = getMembros();
   const nome = lista[idx];
   if (!confirm(`Remover ${nome} da equipe?`)) return;
   lista.splice(idx, 1);
-  saveMembros(lista);
+  await saveMembros(lista);
   renderMembrosConfig();
   showNotif(`🗑️ ${nome} removido.`);
 }
@@ -2632,28 +2926,8 @@ function renderReports() {
 }
 
 // ─── Gerenciar Colunas do Kanban ─────────────────────────────────────────────
-
-let customCols = null; // null = usa padrão
 let selectedColColor = '#0090ff';
-
-function getKanbanCols() {
-  if (customCols) return customCols;
-  const saved = localStorage.getItem('suporte_ti_cols');
-  if (saved) { customCols = JSON.parse(saved); return customCols; }
-  customCols = [
-    { key:'aberto',       label:'Aberto',       color:'#ff4757' },
-    { key:'em-andamento', label:'Em Andamento',  color:'#ffcc00' },
-    { key:'aguardando',   label:'Aguardando',    color:'#0090ff' },
-    { key:'pendencia',    label:'Pendência',     color:'#ff6b35' },
-    { key:'nao-atendido', label:'Não Atendido',  color:'#8a90a0' },
-    { key:'resolvido',    label:'Resolvido',     color:'#00e5a0' },
-  ];
-  return customCols;
-}
-
-function saveKanbanCols() {
-  localStorage.setItem('suporte_ti_cols', JSON.stringify(customCols));
-}
+// getKanbanCols, loadKanbanCols e saveKanbanCols definidos acima (Supabase)
 
 function toggleGerenciarColunas() {
   const p = document.getElementById('painel-colunas');
@@ -2885,13 +3159,21 @@ const CATEGORIAS_BASE = [
   { value:'outro',           label:'Outro' },
 ];
 
-function getCategoriasCustom() {
-  const saved = localStorage.getItem('suporte_ti_categorias');
-  return saved ? JSON.parse(saved) : [];
+let _categoriasCache = null;
+
+async function loadCategoriasCustom() {
+  const saved = await getConfig('categorias_custom', []);
+  _categoriasCache = Array.isArray(saved) ? saved : [];
+  return _categoriasCache;
 }
 
-function saveCategoriasCustom(lista) {
-  localStorage.setItem('suporte_ti_categorias', JSON.stringify(lista));
+function getCategoriasCustom() {
+  return _categoriasCache || [];
+}
+
+async function saveCategoriasCustom(lista) {
+  _categoriasCache = lista;
+  await setConfig('categorias_custom', lista);
 }
 
 function getAllCategorias() {
@@ -2910,6 +3192,23 @@ function populateCategoriaSelect(selectId = 'f-categoria') {
   });
   if (current) sel.value = current;
 }
+
+function salvarNovaCategoria() {
+  const nome = document.getElementById('nova-cat-nome').value.trim();
+  if (!nome) { showNotif('⚠️ Digite o nome da categoria.', 'warn'); return; }
+  const key = nome.toLowerCase().replace(/[^a-z0-9]/gi,'-').replace(/-+/g,'-') + '-' + Date.now();
+  const lista = getCategoriasCustom();
+  lista.push({ value: key, label: nome });
+  saveCategoriasCustom(lista);
+  document.getElementById('nova-cat-nome').value = '';
+  document.getElementById('nova-cat-modal').style.display = 'none';
+  populateCategoriaSelect('f-categoria');
+  document.getElementById('f-categoria').value = key;
+  showNotif('✅ Categoria "' + nome + '" adicionada!');
+}
+
+// Alias para compatibilidade
+function popularSelectCategorias(selectId) { populateCategoriaSelect(selectId); }
 
 function abrirNovaCategoriaModal() {
   const modal = document.getElementById('nova-cat-modal');
@@ -2933,45 +3232,7 @@ const CATS_DEFAULT = [
   { value:'outro',           label:'Outro' },
 ];
 
-function getCategorias() {
-  const saved = localStorage.getItem('suporte_ti_categorias');
-  const extras = saved ? JSON.parse(saved) : [];
-  return [...CATS_DEFAULT, ...extras];
-}
-
-function salvarNovaCategoria() {
-  const nome = document.getElementById('nova-cat-nome').value.trim();
-  if (!nome) { showNotif('⚠️ Digite o nome da categoria.', 'warn'); return; }
-  const key = nome.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'') + '-' + Date.now();
-  const saved = localStorage.getItem('suporte_ti_categorias');
-  const extras = saved ? JSON.parse(saved) : [];
-  extras.push({ value: key, label: nome });
-  localStorage.setItem('suporte_ti_categorias', JSON.stringify(extras));
-  document.getElementById('nova-cat-nome').value = '';
-  document.getElementById('nova-cat-modal').style.display = 'none';
-  popularSelectCategorias('f-categoria');
-  document.getElementById('f-categoria').value = key;
-  showNotif(`✅ Categoria "${nome}" adicionada!`);
-}
-
-function abrirNovaCategoriaModal() {
-  const modal = document.getElementById('nova-cat-modal');
-  modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
-  if (modal.style.display === 'block') document.getElementById('nova-cat-nome').focus();
-}
-
-function popularSelectCategorias(selectId) {
-  const sel = document.getElementById(selectId);
-  if (!sel) return;
-  const val = sel.value;
-  sel.innerHTML = '<option value="">— Não informado —</option>';
-  getCategorias().forEach(c => {
-    const o = document.createElement('option');
-    o.value = c.value; o.textContent = c.label;
-    sel.appendChild(o);
-  });
-  if (val) sel.value = val;
-}
+// categorias gerenciadas pelo bloco CATEGORIAS_BASE acima
 
 // ─── Atendentes no Desbloqueio REP ───────────────────────────────────────────
 let deskAtendentes = [];
@@ -3320,6 +3581,7 @@ function createTicket() {
   };
 
   tickets.unshift(newTicket);
+  notificarNovoChamado(newTicket);
   showNotif(`✅ Chamado ${newTicket.id} aberto para ${empresa}`);
   clearForm();
   renderAll();
@@ -4035,6 +4297,8 @@ function saveWAConfig() {
   };
   if (!config.apiKey) { showNotif('⚠️ Insira a chave API da Anthropic.', 'warn'); return; }
   localStorage.setItem(WA_CONFIG_KEY, JSON.stringify(config));
+  window._waConfigCache = config;
+  await setConfig('wa_config', config);
   document.getElementById('wa-status-dot').classList.add('on');
   document.getElementById('wa-status-text').textContent = `✅ Agente "${config.agentName}" configurado e pronto`;
   showNotif('✅ Configurações do agente salvas!');
@@ -4043,7 +4307,7 @@ function saveWAConfig() {
 
 function loadWAConfig() {
   try {
-    const saved = localStorage.getItem(WA_CONFIG_KEY);
+    const saved = window._waConfigCache ? JSON.stringify(window._waConfigCache) : localStorage.getItem(WA_CONFIG_KEY);
     if (!saved) return null;
     return JSON.parse(saved);
   } catch { return null; }
@@ -4241,11 +4505,24 @@ async function initApp(user) {
   if (user.role !== 'adm') {
     document.getElementById('nav-users').style.display  = 'none';
     document.getElementById('nav-config').style.display = 'none';
+    const navAcl = document.getElementById('nav-acl');
+    if (navAcl) navAcl.style.display = 'none';
   }
   if (user.role === 'leitor') {
     // Leitor vê todos os menus exceto Configurações e Usuários (já ocultos acima)
     // Ações são bloqueadas via bloquearLeitor() em cada função
   }
+  marcarOnline();
+  setInterval(marcarOnline, 60000);
+  // Carrega todas as configurações do Supabase em paralelo
+  await Promise.all([
+    loadKanbanCols(),
+    getMembrosAsync(),
+    loadCategoriasCustom(),
+    loadACL(),
+    loadClientes(),
+    getConfig('wa_config').then(v => { if (v) { window._waConfigCache = v; localStorage.setItem(WA_CONFIG_KEY, JSON.stringify(v)); } }),
+  ]);
   // Carrega KB customizada do Supabase
   window._customKB = await loadCustomKBItems();
   // Carrega chamados do Supabase
@@ -4269,6 +4546,366 @@ async function initApp(user) {
       if (txt) txt.textContent = `✅ Agente "${waConf.agentName}" configurado`;
     }, 600);
   }
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// NOTIFICAÇÕES INTERNAS
+// ═══════════════════════════════════════════════════════════════════════
+let notificacoes = [];
+
+function addNotif(icon, titulo, corpo, link) {
+  const n = { id: Date.now(), icon, titulo, corpo, link, lida: false, time: new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) };
+  notificacoes.unshift(n);
+  if (notificacoes.length > 50) notificacoes.pop();
+  renderNotifBadge();
+  renderNotifList();
+}
+
+function renderNotifBadge() {
+  const unread = notificacoes.filter(n => !n.lida).length;
+  const badge = document.getElementById('notif-badge');
+  if (!badge) return;
+  badge.textContent = unread > 9 ? '9+' : unread;
+  badge.style.display = unread > 0 ? 'block' : 'none';
+}
+
+function renderNotifList() {
+  const el = document.getElementById('notif-list');
+  if (!el) return;
+  if (notificacoes.length === 0) {
+    el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:12px">Nenhuma notificação</div>';
+    return;
+  }
+  el.innerHTML = notificacoes.slice(0,20).map(n => `
+    <div class="notif-item ${n.lida?'':'unread'}" onclick="marcarNotifLida(${n.id})">
+      <div class="notif-icon">${n.icon}</div>
+      <div class="notif-body">
+        <div style="font-weight:${n.lida?'400':'700'};color:var(--text1)">${n.titulo}</div>
+        <div style="color:var(--text2);margin-top:2px">${n.corpo}</div>
+        <div class="notif-time">${n.time}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function marcarNotifLida(id) {
+  const n = notificacoes.find(x => x.id === id);
+  if (n) { n.lida = true; renderNotifBadge(); renderNotifList(); }
+}
+
+function limparNotificacoes() {
+  notificacoes = [];
+  renderNotifBadge();
+  renderNotifList();
+}
+
+function toggleNotifPanel() {
+  const p = document.getElementById('notif-panel');
+  const open = p.style.display !== 'none';
+  p.style.display = open ? 'none' : 'block';
+  if (!open) {
+    notificacoes.forEach(n => n.lida = true);
+    renderNotifBadge();
+    renderNotifList();
+  }
+}
+
+// Fecha notif ao clicar fora
+document.addEventListener('click', e => {
+  if (!e.target.closest('#notif-btn') && !e.target.closest('#notif-panel')) {
+    const p = document.getElementById('notif-panel');
+    if (p) p.style.display = 'none';
+  }
+});
+
+// Hook: notificar quando chamado novo é criado
+function notificarNovoChamado(t) {
+  addNotif('📋', `Novo chamado ${t.id}`, `${t.empresa} — ${t.categoria || 'sem categoria'}`, 'chamados');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// STATUS ONLINE/OFFLINE (visível só para ADM)
+// ═══════════════════════════════════════════════════════════════════════
+const ONLINE_KEY = 'suporte_ti_online_' + (currentUser?.username || 'anon');
+
+function marcarOnline() {
+  if (!currentUser) return;
+  try {
+    localStorage.setItem('suporte_ti_online_' + currentUser.username, JSON.stringify({
+      username: currentUser.username, role: currentUser.role, ts: Date.now()
+    }));
+  } catch(e) {}
+}
+
+function getUsuariosOnline() {
+  const online = [];
+  const agora = Date.now();
+  const limite = 5 * 60 * 1000; // 5 minutos
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('suporte_ti_online_')) {
+      try {
+        const d = JSON.parse(localStorage.getItem(k));
+        if (d && (agora - d.ts) < limite) online.push(d);
+      } catch(e) {}
+    }
+  }
+  return online;
+}
+
+function renderOnlineStatus() {
+  if (currentUser?.role !== 'adm') return;
+  const online = getUsuariosOnline();
+  const countEl = document.getElementById('nav-online-count');
+  if (countEl) { countEl.textContent = online.length; countEl.style.display = online.length > 0 ? 'inline' : 'none'; }
+  // Atualiza tabela de usuários se estiver aberta
+  const tabela = document.getElementById('users-table');
+  if (tabela && tabela.innerHTML.includes('online-dot')) renderUsersTable();
+}
+
+// Ping a cada 2 minutos
+setInterval(() => { marcarOnline(); renderOnlineStatus(); }, 2 * 60 * 1000);
+
+// ═══════════════════════════════════════════════════════════════════════
+// CADASTRO DE CLIENTES
+// ═══════════════════════════════════════════════════════════════════════
+let clientesList = [];
+let clienteEditId = null;
+let clientePrioSelecionada = '';
+
+let _clientesCache = null;
+
+async function loadClientes() {
+  try {
+    const rows = await sbFetch('clientes?order=empresa.asc');
+    _clientesCache = rows || [];
+    return _clientesCache;
+  } catch(e) {
+    console.warn('loadClientes:', e.message);
+    _clientesCache = [];
+    return [];
+  }
+}
+
+function getClientes() {
+  return _clientesCache || [];
+}
+
+async function saveClientes(lista) {
+  _clientesCache = lista;
+  // Não usada diretamente — salvarCliente e excluirCliente fazem upsert/delete individual
+}
+
+function abrirFormCliente(id) {
+  clienteEditId = id || null;
+  const form = document.getElementById('form-cliente');
+  form.style.display = 'block';
+  if (id) {
+    const c = getClientes().find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('form-cliente-titulo').textContent = '✏️ Editar Cliente';
+    document.getElementById('fc-empresa').value   = c.empresa   || '';
+    document.getElementById('fc-cnpj').value      = c.cnpj      || '';
+    document.getElementById('fc-contato').value   = c.contato   || '';
+    document.getElementById('fc-telefone').value  = c.telefone  || '';
+    document.getElementById('fc-email').value     = c.email     || '';
+    document.getElementById('fc-sistema').value   = c.sistema   || '';
+    document.getElementById('fc-vencimento').value = c.vencimento || '';
+    document.getElementById('fc-status').value    = c.status    || 'ativo';
+    document.getElementById('fc-obs').value       = c.obs       || '';
+    selectClientePrio(c.prioridade || '');
+  } else {
+    document.getElementById('form-cliente-titulo').textContent = '＋ Novo Cliente';
+    ['fc-empresa','fc-cnpj','fc-contato','fc-telefone','fc-email','fc-obs'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fc-sistema').value = '';
+    document.getElementById('fc-vencimento').value = '';
+    document.getElementById('fc-status').value = 'ativo';
+    selectClientePrio('');
+  }
+  form.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function fecharFormCliente() {
+  document.getElementById('form-cliente').style.display = 'none';
+  clienteEditId = null;
+}
+
+function selectClientePrio(p) {
+  clientePrioSelecionada = p;
+  document.getElementById('fc-prioridade').value = p;
+  ['contrato','garantia','avulso'].forEach(x => {
+    const el = document.getElementById('fc-pb-' + x);
+    if (el) el.className = 'priority-btn' + (x === p ? ' selected-' + x : '');
+  });
+}
+
+function formatarCnpjCliente(input) {
+  let v = input.value.replace(/\D/g,'').slice(0,14);
+  if (v.length > 12) v = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12);
+  else if (v.length > 8) v = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8);
+  else if (v.length > 5) v = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5);
+  else if (v.length > 2) v = v.slice(0,2)+'.'+v.slice(2);
+  input.value = v;
+}
+
+function salvarCliente() {
+  const empresa = document.getElementById('fc-empresa').value.trim();
+  const cnpj    = document.getElementById('fc-cnpj').value.trim();
+  if (!empresa || !cnpj) { showNotif('⚠️ Razão Social e CNPJ são obrigatórios.','warn'); return; }
+  const lista = getClientes();
+  const cliente = {
+    id:         clienteEditId || 'cli-' + Date.now(),
+    empresa, cnpj,
+    contato:    document.getElementById('fc-contato').value.trim(),
+    telefone:   document.getElementById('fc-telefone').value.trim(),
+    email:      document.getElementById('fc-email').value.trim(),
+    sistema:    document.getElementById('fc-sistema').value,
+    prioridade: clientePrioSelecionada,
+    vencimento: document.getElementById('fc-vencimento').value,
+    status:     document.getElementById('fc-status').value,
+    obs:        document.getElementById('fc-obs').value.trim(),
+    updatedAt:  new Date().toISOString(),
+  };
+  if (clienteEditId) {
+    const idx = lista.findIndex(c => c.id === clienteEditId);
+    if (idx >= 0) lista[idx] = cliente;
+  } else {
+    lista.unshift(cliente);
+  }
+  try {
+    if (clienteEditId) {
+      await sbFetch(`clientes?id=eq.${clienteEditId}`, 'PATCH', cliente);
+      const idx = _clientesCache.findIndex(c => c.id === clienteEditId);
+      if (idx >= 0) _clientesCache[idx] = cliente;
+    } else {
+      await sbFetch('clientes', 'POST', cliente, {'Prefer':'resolution=merge-duplicates,return=minimal'});
+      _clientesCache.unshift(cliente);
+    }
+  } catch(e) { showNotif('❌ Erro ao salvar: ' + e.message, 'warn'); return; }
+  fecharFormCliente();
+  renderClientesTabela();
+  showNotif('✅ Cliente "' + empresa + '" salvo!');
+}
+
+function excluirCliente(id) {
+  const c = getClientes().find(x => x.id === id);
+  if (!c || !confirm(`Excluir o cliente "${c.empresa}"?`)) return;
+  try {
+    await sbFetch(`clientes?id=eq.${id}`, 'DELETE');
+    _clientesCache = _clientesCache.filter(x => x.id !== id);
+  } catch(e) { showNotif('❌ Erro ao excluir: ' + e.message, 'warn'); return; }
+  renderClientesTabela();
+  showNotif('🗑️ Cliente removido.');
+}
+
+function renderClientesTabela() {
+  const el = document.getElementById('clientes-tabela');
+  if (!el) return;
+  const busca    = (document.getElementById('clientes-busca')?.value || '').toLowerCase();
+  const filtroSt = document.getElementById('clientes-filtro-status')?.value || '';
+  const filtroTp = document.getElementById('clientes-filtro-tipo')?.value || '';
+  let lista = getClientes();
+  if (busca)    lista = lista.filter(c => c.empresa.toLowerCase().includes(busca) || c.cnpj.includes(busca));
+  if (filtroSt) lista = lista.filter(c => c.status === filtroSt);
+  if (filtroTp) lista = lista.filter(c => c.prioridade === filtroTp);
+  if (lista.length === 0) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:20px;text-align:center">Nenhum cliente encontrado.</div>';
+    return;
+  }
+  const statusLabel = { ativo:'✅ Ativo', suspenso:'⚠️ Suspenso', cancelado:'❌ Cancelado' };
+  const prioColor   = { contrato:'var(--accent)', garantia:'var(--accent2)', avulso:'var(--accent3)' };
+  el.innerHTML = `<table class="clientes-table">
+    <tr><th>Cliente</th><th>CNPJ</th><th>Sistema</th><th>Contrato</th><th>Status</th><th>Vencimento</th><th></th></tr>
+    ${lista.map(c => `
+    <tr>
+      <td><div style="font-weight:600">${c.empresa}</div><div style="font-size:11px;color:var(--text3)">${c.contato||''} ${c.telefone ? '· '+c.telefone : ''}</div></td>
+      <td style="font-family:var(--mono);font-size:11px">${c.cnpj}</td>
+      <td><span class="tag ${c.sistema||'outro'}" style="font-size:10px">${(c.sistema||'—').toUpperCase()}</span></td>
+      <td><span style="font-size:11px;color:${prioColor[c.prioridade]||'var(--text3)'}">${c.prioridade ? '● ' + c.prioridade : '—'}</span></td>
+      <td style="font-size:12px">${statusLabel[c.status]||c.status}</td>
+      <td style="font-size:12px;color:var(--text2)">${c.vencimento ? new Date(c.vencimento+'T00:00').toLocaleDateString('pt-BR') : '—'}</td>
+      <td style="display:flex;gap:6px">
+        <button onclick="abrirFormCliente('${c.id}')" style="font-size:11px;padding:3px 8px;border-radius:5px;border:1px solid var(--border);color:var(--text2);background:none;cursor:pointer">✏️</button>
+        <button onclick="excluirCliente('${c.id}')" style="font-size:11px;padding:3px 8px;border-radius:5px;border:1px solid rgba(255,71,87,0.3);color:var(--danger);background:rgba(255,71,87,0.05);cursor:pointer">🗑️</button>
+      </td>
+    </tr>`).join('')}
+  </table>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ACL — GESTÃO DE PERMISSÕES
+// ═══════════════════════════════════════════════════════════════════════
+const ACL_KEY = 'suporte_ti_acl';
+const ACL_MODULOS = [
+  { key:'criar_chamado',   label:'Abrir novo chamado' },
+  { key:'editar_chamado',  label:'Editar e mover chamados' },
+  { key:'excluir_chamado', label:'Excluir chamados' },
+  { key:'finalizar_chamado', label:'Finalizar chamados' },
+  { key:'responder',       label:'Registrar respostas' },
+  { key:'sugerir_ia',      label:'Sugerir resposta com IA' },
+  { key:'criar_kb',        label:'Criar procedimentos (KB)' },
+  { key:'excluir_kb',      label:'Excluir procedimentos (KB)' },
+  { key:'desbloqueio',     label:'Desbloqueio REP' },
+  { key:'clientes',        label:'Cadastro de clientes' },
+  { key:'whatsapp',        label:'Agente WhatsApp' },
+  { key:'exportar',        label:'Exportar relatórios' },
+];
+
+const ACL_DEFAULT = {
+  tecnico: ['criar_chamado','editar_chamado','finalizar_chamado','responder','sugerir_ia','criar_kb','desbloqueio','clientes','whatsapp','exportar'],
+  leitor:  []
+};
+let _aclCache = null;
+
+async function loadACL() {
+  const saved = await getConfig('acl_permissoes', ACL_DEFAULT);
+  _aclCache = saved || ACL_DEFAULT;
+  return _aclCache;
+}
+
+function getACL() {
+  return _aclCache || ACL_DEFAULT;
+}
+
+async function saveACL(acl) {
+  _aclCache = acl;
+  await setConfig('acl_permissoes', acl);
+}
+
+function temPermissao(modulo) {
+  if (!currentUser) return false;
+  if (currentUser.role === 'adm') return true;
+  const acl = getACL();
+  const perms = acl[currentUser.role] || [];
+  return perms.includes(modulo);
+}
+
+function renderACL() {
+  const acl = getACL();
+  ['tecnico','leitor'].forEach(role => {
+    const el = document.getElementById('acl-' + role);
+    if (!el) return;
+    el.innerHTML = ACL_MODULOS.map(m => `
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="acl-${role}-${m.key}" ${acl[role]?.includes(m.key) ? 'checked' : ''}
+          style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent)"/>
+        ${m.label}
+      </label>
+    `).join('');
+  });
+}
+
+async function salvarACL() {
+  const acl = { tecnico: [], leitor: [] };
+  ['tecnico','leitor'].forEach(role => {
+    ACL_MODULOS.forEach(m => {
+      const cb = document.getElementById('acl-' + role + '-' + m.key);
+      if (cb?.checked) acl[role].push(m.key);
+    });
+  });
+  await saveACL(acl);
+  showNotif('✅ Permissões salvas com sucesso!');
 }
 
 // Verifica sessão ativa
