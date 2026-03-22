@@ -2021,6 +2021,25 @@ async function syncFromTrello(silent = false) {
     TRELLO.lists = {}; TRELLO.listOrder = [];
     lists.forEach(l => { TRELLO.lists[l.id] = l.name; TRELLO.listOrder.push({ id: l.id, name: l.name }); });
 
+
+function detectarStatusPorLista(listName) {
+  const n = (listName || '').toLowerCase();
+  if (n.includes('finaliz') || n.includes('resolv') || n.includes('conclu') || n.includes('done') || n.includes('fechado')) return 'resolvido';
+  if (n.includes('pendên') || n.includes('pendenc') || n.includes('pend'))                   return 'pendencia';
+  if (n.includes('não atend') || n.includes('nao atend') || n.includes('n/a'))                return 'nao-atendido';
+  if (n.includes('andament') || n.includes('progress') || n.includes('em atend'))             return 'em-andamento';
+  if (n.includes('aguard') || n.includes('espera') || n.includes('hold'))                     return 'aguardando';
+  // Colunas de pessoas = em-andamento
+  const membros = getMembros();
+  if (membros.some(m => n.includes(m.toLowerCase()))) return 'em-andamento';
+  return 'aberto';
+}
+
+function trelloCardCreatedAt(cardId) {
+  // O ID do Trello é um ObjectId — os 4 primeiros bytes são o timestamp Unix
+  try { return parseInt(cardId.substring(0, 8), 16) * 1000; } catch { return Date.now(); }
+}
+
     const cards = await trelloGET(`/boards/${TRELLO.board}/cards?fields=id,name,desc,idList,labels,dateLastActivity`);
     const cardIds = cards.map(c => c.id);
     let novos = 0, atualizados = 0;
@@ -2038,21 +2057,32 @@ async function syncFromTrello(silent = false) {
 
       const existing = tickets.find(t => t.trelloCardId === card.id);
       if (existing) {
+        const novoStatus = detectarStatusPorLista(listName);
+        const novoAssigned = getMembros().find(m => listName.toLowerCase().includes(m.toLowerCase())) || existing.assignedTo;
         const mudou = existing.trelloListId !== card.idList || existing.sistema !== sistema || existing.prioridade !== prioridade;
-        existing.trelloList = listName; existing.trelloListId = card.idList;
-        existing.sistema = sistema; existing.prioridade = prioridade; existing.nivel = nivel;
+        existing.trelloList   = listName;
+        existing.trelloListId = card.idList;
+        existing.sistema      = sistema;
+        existing.prioridade   = prioridade;
+        existing.nivel        = nivel;
+        existing.status       = novoStatus;
+        existing.currentStatus = novoStatus;
+        if (novoAssigned) existing.assignedTo = novoAssigned;
         if (empresa !== '—') existing.empresa = empresa;
-        // Atualiza labels do Trello
         existing.labels = card.labels.map(l => ({ id:l.id, name:l.name||l.color, color:l.color, trelloId:l.id }));
-        if (mudou) atualizados++;
+        if (mudou) { atualizados++; updateTicketInDB(existing); }
       } else {
+        const statusTrello = detectarStatusPorLista(listName);
+        const assignedTrello = getMembros().find(m => listName.toLowerCase().includes(m.toLowerCase())) || null;
         const newT = {
           id: `#T${String(tickets.length + 1).padStart(3,'0')}`,
           nome, empresa, cnpj, sistema, prioridade, categoria, nivel,
-          status: 'trello', desc: card.desc || card.name,
-          time: new Date(card.dateLastActivity).getTime() || Date.now(),
+          status: statusTrello,
+          desc: card.desc || card.name,
+          time: trelloCardCreatedAt(card.id),
           trelloCardId: card.id, trelloList: listName, trelloListId: card.idList,
           fromTrello: true, replies: [],
+          assignedTo: assignedTrello,
           labels: card.labels.map(l => ({ id:l.id, name:l.name||l.color, color:l.color, trelloId:l.id })),
         };
         tickets.push(newT);
@@ -2316,14 +2346,16 @@ function renderStats() {
   const anoAtual = hoje.getFullYear();
   const mesLabel = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
-  // Abertos HOJE por tipo de prioridade
+  const naoResolvido = s => s !== 'resolvido';
+
+  // Abertos HOJE — criados hoje com status em aberto
   const abertosHoje = tickets.filter(t => {
     const d = new Date(t.time || 0);
-    return d.toLocaleDateString('pt-BR') === diaStr && t.status !== 'resolvido';
+    return d.toLocaleDateString('pt-BR') === diaStr && naoResolvido(t.status);
   });
-  const contratoDia  = abertosHoje.filter(t => t.prioridade === 'contrato').length;
-  const garantiaDia  = abertosHoje.filter(t => t.prioridade === 'garantia').length;
-  const avulsoDia    = abertosHoje.filter(t => t.prioridade === 'avulso').length;
+  const contratoDia      = abertosHoje.filter(t => t.prioridade === 'contrato').length;
+  const garantiaDia      = abertosHoje.filter(t => t.prioridade === 'garantia').length;
+  const avulsoDia        = abertosHoje.filter(t => t.prioridade === 'avulso').length;
   const totalAbertosHoje = abertosHoje.length;
 
   // Mês atual
@@ -2331,11 +2363,26 @@ function renderStats() {
     const d = new Date(t.time || 0);
     return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
   });
-  const abertosNoMes = doMes.length;
-  const concluidosMes = doMes.filter(t => t.status === 'resolvido').length;
+  // Abertos no mês = criados este mês e ainda não resolvidos
+  const abertosNoMes  = doMes.filter(t => naoResolvido(t.status)).length;
+  // Concluídos no mês = resolvidos independente de quando foram criados
+  const concluidosMes = tickets.filter(t => {
+    if (t.status !== 'resolvido') return false;
+    // Usa finalizadoEm se disponível, senão usa time
+    if (t.finalizadoEm) {
+      const parts = t.finalizadoEm.split('/');
+      if (parts.length >= 3) {
+        const mes = parseInt(parts[1]) - 1;
+        const ano = parseInt(parts[2]);
+        return mes === mesAtual && ano === anoAtual;
+      }
+    }
+    const d = new Date(t.time || 0);
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+  }).length;
 
-  // Contratos ativos (não resolvidos)
-  const contratosAtivos = tickets.filter(t => t.prioridade === 'contrato' && t.status !== 'resolvido').length;
+  // Contratos ativos (em aberto agora)
+  const contratosAtivos = tickets.filter(t => t.prioridade === 'contrato' && naoResolvido(t.status)).length;
 
   const el = id => document.getElementById(id);
   if (el('stat-contrato-dia'))  el('stat-contrato-dia').textContent  = contratoDia;
@@ -2346,7 +2393,7 @@ function renderStats() {
   if (el('stat-resolved'))      el('stat-resolved').textContent      = concluidosMes;
   if (el('stat-urgent'))        el('stat-urgent').textContent        = contratosAtivos;
   if (el('stat-total'))         el('stat-total').textContent         = tickets.length;
-  if (el('stat-month-label'))   el('stat-month-label').textContent   = `📅 Abertos em ${mesLabel}`;
+  if (el('stat-month-label'))   el('stat-month-label').textContent   = `Em aberto — ${mesLabel}`;
   if (el('dash-mes-label'))     el('dash-mes-label').textContent     = `${mesLabel.toUpperCase()}`;
   if (el('dash-sub'))           el('dash-sub').textContent           = `Hoje é ${diaStr}`;
 }
