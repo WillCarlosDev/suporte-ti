@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   const SUPA_KEY   = process.env.SUPABASE_ANON_KEY;
   const AGENT_NAME = process.env.WA_AGENT_NAME  || 'Suporte TI';
   const WELCOME    = process.env.WA_WELCOME_MSG  ||
-    'Olá! Sou o assistente de suporte de Ponto Eletrônico.\n\nPara iniciar, informe:\n• Seu nome\n• Razão social da empresa\n• CNPJ\n• Sistema utilizado (RHID, iPonto ou Atecsoft)';
+    'Olá! Sou o assistente de suporte da Acesso e Ponto.\n\nPara iniciar, informe:\n• Seu nome\n• Razão social da empresa\n• CNPJ\n• Sistema utilizado (RHID, iPonto ou Atecsoft)';
 
   // ── Helpers Supabase ─────────────────────────────────────────────────────────
   async function sbGet(path) {
@@ -93,7 +93,7 @@ export default async function handler(req, res) {
           messages: [
             {
               role: 'system',
-              content: `Você é ${AGENT_NAME}, assistente de suporte técnico de ponto eletrônico (RHID, iPonto, Atecsoft) via WhatsApp.
+              content: `Você é ${AGENT_NAME}, assistente de suporte técnico da Acesso e Ponto (RHID, iPonto, Atecsoft) via WhatsApp.
 Sempre colete: nome, razão social, CNPJ e sistema ao iniciar.
 ${clienteCNPJ ? `CNPJ identificado: ${clienteCNPJ}` : ''}
 ${clienteEmpresa ? `Empresa identificada: ${clienteEmpresa}` : ''}
