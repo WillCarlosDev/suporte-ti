@@ -2028,6 +2028,7 @@ function detectarStatusPorLista(listName) {
   if (n.includes('pendên') || n.includes('pendenc') || n.includes('pend'))                   return 'pendencia';
   if (n.includes('não atend') || n.includes('nao atend') || n.includes('n/a'))                return 'nao-atendido';
   if (n.includes('andament') || n.includes('progress') || n.includes('em atend'))             return 'em-andamento';
+  if (n.includes('agend'))                                                                      return 'agendado';
   if (n.includes('aguard') || n.includes('espera') || n.includes('hold'))                     return 'aguardando';
   // Colunas de pessoas = em-andamento
   const membros = getMembros();
@@ -2040,7 +2041,7 @@ function trelloCardCreatedAt(cardId) {
   try { return parseInt(cardId.substring(0, 8), 16) * 1000; } catch { return Date.now(); }
 }
 
-    const cards = await trelloGET(`/boards/${TRELLO.board}/cards?fields=id,name,desc,idList,labels,dateLastActivity`);
+    const cards = await trelloGET(`/boards/${TRELLO.board}/cards?fields=id,name,desc,idList,labels,dateLastActivity,due`);
     const cardIds = cards.map(c => c.id);
     let novos = 0, atualizados = 0;
 
@@ -2067,6 +2068,9 @@ function trelloCardCreatedAt(cardId) {
         existing.nivel        = nivel;
         existing.status       = novoStatus;
         existing.currentStatus = novoStatus;
+        existing.dueDate      = card.due || existing.dueDate || null;
+        const horaM = (card.name + ' ' + (card.desc||'')).match(/\b([0-1]?\d|2[0-3]):[0-5]\d\b/);
+        if (horaM) existing.horaAgendada = horaM[0];
         if (novoAssigned) existing.assignedTo = novoAssigned;
         if (empresa !== '—') existing.empresa = empresa;
         existing.labels = card.labels.map(l => ({ id:l.id, name:l.name||l.color, color:l.color, trelloId:l.id }));
@@ -2074,12 +2078,17 @@ function trelloCardCreatedAt(cardId) {
       } else {
         const statusTrello = detectarStatusPorLista(listName);
         const assignedTrello = getMembros().find(m => listName.toLowerCase().includes(m.toLowerCase())) || null;
+        // Extrai hora da descrição/nome (ex: 09:00 ou 14:00)
+        const horaMatch = (card.name + ' ' + (card.desc||'')).match(/\b([0-1]?\d|2[0-3]):[0-5]\d\b/);
+        const horaAgendada = horaMatch ? horaMatch[0] : null;
         const newT = {
           id: `#T${String(tickets.length + 1).padStart(3,'0')}`,
           nome, empresa, cnpj, sistema, prioridade, categoria, nivel,
           status: statusTrello,
           desc: card.desc || card.name,
           time: trelloCardCreatedAt(card.id),
+          dueDate: card.due || null,
+          horaAgendada: horaAgendada,
           trelloCardId: card.id, trelloList: listName, trelloListId: card.idList,
           fromTrello: true, replies: [],
           assignedTo: assignedTrello,
@@ -2435,9 +2444,12 @@ function renderKanban(containerId, data) {
   const membros = getMembros();
 
   // Chamados SEM responsável e em aberto → coluna "Fila"
-  const fila = sortByPriority(data.filter(t =>
-    !t.assignedTo && t.status !== 'resolvido' && t.status !== 'pendencia' && t.status !== 'nao-atendido' && t.status !== 'aguardando' && t.status !== 'agendado'
-  ));
+  const fila = sortByPriority(data.filter(t => {
+    if (t.status === 'resolvido' || t.status === 'pendencia' || t.status === 'nao-atendido' || t.status === 'aguardando' || t.status === 'agendado') return false;
+    if (t.trelloList && t.trelloList.toLowerCase().includes('agend')) return false;
+    if (t.assignedTo) return false;
+    return true;
+  }));
 
   // Colunas por técnico → tickets atribuídos a eles que não estão resolvidos/pendência/etc
   const colsMembros = membros.map((m, idx) => ({
@@ -2448,7 +2460,10 @@ function renderKanban(containerId, data) {
   }));
 
   // Colunas de status especiais
-  const agendado    = sortByPriority(data.filter(t => t.status === 'agendado'));
+  const agendado    = sortByPriority(data.filter(t =>
+    t.status === 'agendado' ||
+    (t.trelloList && t.trelloList.toLowerCase().includes('agend') && t.status !== 'resolvido')
+  ));
   const aguardando  = sortByPriority(data.filter(t => t.status === 'aguardando'));
   const pendencia   = sortByPriority(data.filter(t => t.status === 'pendencia'));
   const naoAtendido = sortByPriority(data.filter(t => t.status === 'nao-atendido'));
@@ -2506,6 +2521,13 @@ function renderTicketCard(t) {
           : `<div style="font-size:10px;color:var(--text3);font-family:var(--mono);opacity:0.6">sem responsável</div>`
         }
       </div>
+      ${(t.status === 'agendado' || (t.trelloList && t.trelloList.toLowerCase().includes('agend'))) && (t.dueDate || t.horaAgendada) ? `
+      <div style="display:flex;align-items:center;gap:6px;margin-top:6px;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.25);border-radius:5px;padding:4px 8px">
+        <span style="font-size:12px">📅</span>
+        <span style="font-size:11px;font-family:var(--mono);color:#c084fc;font-weight:600">
+          ${t.dueDate ? new Date(t.dueDate).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'}) : ''}${t.dueDate && t.horaAgendada ? ' · ' : ''}${t.horaAgendada || ''}
+        </span>
+      </div>` : ''}
     </div>
     <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:8px">
       ${!t.assignedTo && !isLeitorRole
