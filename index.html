@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Central de Suporte TI — Ponto Eletrônico</title>
+<title>Central de Suporte — Acesso e Ponto</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
   /* ── Login ── */
@@ -406,7 +406,7 @@
   <div class="login-box">
     <div class="login-logo">SUPORTE/TI</div>
     <div class="login-title">Bem-vindo 👋</div>
-    <div class="login-sub">Central de Suporte — Ponto Eletrônico</div>
+    <div class="login-sub">Central de Suporte — Acesso e Ponto</div>
     <div class="login-error" id="login-error">Usuário ou senha incorretos.</div>
     <div class="form-group" style="margin-bottom:14px">
       <label class="form-label">Usuário</label>
@@ -417,7 +417,7 @@
       <input class="form-input" type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
     </div>
     <button class="login-btn" onclick="doLogin()">Entrar</button>
-    <div class="login-footer">Ponto Eletrônico · Suporte N1/N2</div>
+    <div class="login-footer">Acesso e Ponto · Suporte N1/N2</div>
   </div>
 </div>
 
@@ -427,7 +427,7 @@
   <header class="topbar">
     <div class="topbar-logo">SPT<span>.</span>TI</div>
     <div style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
-    <span style="font-size:12px;color:var(--text2)">Ponto Eletrônico — N1 / N2</span>
+    <span style="font-size:12px;color:var(--text2)">Acesso e Ponto — N1 / N2</span>
     <div class="topbar-right">
       <button onclick="syncFromTrello(false)" style="background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:var(--mono);letter-spacing:0.5px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--accent2)';this.style.color='var(--accent2)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">SYNC TRELLO</button>
       <span id="trello-sync-time" style="font-size:10px;color:var(--text3);font-family:var(--mono)"></span>
@@ -670,7 +670,7 @@
 
         <div style="background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.2);border-radius:12px;padding:20px">
           <div style="font-size:16px;font-weight:700;margin-bottom:6px">👋 Bem-vindo ao painel de Suporte TI</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.8">Este é o sistema central de gestão de chamados do time de suporte. Aqui você registra, acompanha e resolve os atendimentos dos clientes de ponto eletrônico.</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.8">Este é o sistema central de gestão de chamados do time de suporte da Acesso e Ponto. Aqui você registra, acompanha e resolve os atendimentos dos clientes.</div>
         </div>
 
         <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden" open>
@@ -1510,7 +1510,7 @@ document.querySelector('.main').insertAdjacentHTML('beforeend', `
         </div>
         <div class="form-group">
           <label class="form-label">Mensagem de Boas-vindas</label>
-          <textarea class="form-textarea" id="wa-welcome" style="min-height:70px">👋 Olá! Sou o assistente de suporte de Ponto Eletrônico.
+          <textarea class="form-textarea" id="wa-welcome" style="min-height:70px">👋 Olá! Sou o assistente de suporte da Acesso e Ponto.
 Para iniciar, informe:
 • Seu nome
 • Razão social da empresa
@@ -2299,7 +2299,7 @@ async function getBotResponse(userMessage) {
     const data = await anthropicFetch({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 512,
-      system: `Você é um assistente de suporte técnico de sistemas de ponto eletrônico (RHID, iPonto, Atecsoft).
+      system: `Você é um assistente de suporte técnico de ponto eletrônico da Acesso e Ponto (RHID, iPonto, Atecsoft).
 Use linguagem simples e do dia a dia — sem termos técnicos complicados.
 Quando precisar usar um termo técnico, explique o que significa.
 Seja direto, amigável e objetivo. Fale como se estivesse ajudando um colega de trabalho.
@@ -2539,7 +2539,7 @@ async function generateKBItem() {
     const data = await anthropicFetch({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1024,
-      system: `Você é um especialista em suporte técnico de sistemas de ponto eletrônico (RHID, iPonto, Atecsoft).
+      system: `Você é um especialista em suporte técnico de ponto eletrônico da Acesso e Ponto (RHID, iPonto, Atecsoft).
 Crie procedimentos de atendimento usando linguagem simples e do dia a dia.
 Evite jargões técnicos — se precisar usar um termo técnico, explique entre parênteses.
 Escreva como se estivesse explicando para alguém que não é da área de TI.
@@ -3420,7 +3420,7 @@ function selecionarAtendenteDesb(nome) {
 const DESB_CONFIGS = {
   'senha-sistema': {
     icon: '🔑', titulo: 'Contrasenha de Sistema',
-    sub: 'Recuperação de acesso a sistemas de ponto eletrônico',
+    sub: 'Recuperação de acesso a sistemas — Acesso e Ponto',
     tipo: 'sistema', equipLabel: 'Sistema',
     categoria: 'login', nivel: 'n1'
   },
@@ -4326,7 +4326,7 @@ async function generateAIReply() {
     const data = await anthropicFetch({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 512,
-      system: `Você é um técnico de suporte de sistemas de ponto eletrônico (RHID, iPonto, Atecsoft).
+      system: `Você é um técnico de suporte da Acesso e Ponto (RHID, iPonto, Atecsoft).
 Use linguagem simples e cotidiana — escreva como se estivesse conversando com um colega.
 Evite termos técnicos difíceis. Se precisar usá-los, explique o significado.
 Escreva uma resposta profissional e objetiva para enviar ao cliente.
@@ -4597,7 +4597,7 @@ async function processWAMessage(fromNumber, messageText) {
   try {
     const data = await anthropicFetch({
       max_tokens: 600,
-      system: `Você é ${config.agentName}, assistente de suporte técnico de ponto eletrônico (RHID, iPonto, Atecsoft) via WhatsApp.
+      system: `Você é ${config.agentName}, assistente de suporte técnico da Acesso e Ponto (RHID, iPonto, Atecsoft) via WhatsApp.
 ${modeInstructions}
 Sempre colete: nome, razão social, CNPJ e sistema ao iniciar.
 ${clienteCNPJ ? `CNPJ já identificado: ${clienteCNPJ}` : ''}
