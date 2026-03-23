@@ -2436,7 +2436,7 @@ function renderKanban(containerId, data) {
 
   // Chamados SEM responsável e em aberto → coluna "Fila"
   const fila = sortByPriority(data.filter(t =>
-    !t.assignedTo && t.status !== 'resolvido' && t.status !== 'pendencia' && t.status !== 'nao-atendido' && t.status !== 'aguardando'
+    !t.assignedTo && t.status !== 'resolvido' && t.status !== 'pendencia' && t.status !== 'nao-atendido' && t.status !== 'aguardando' && t.status !== 'agendado'
   ));
 
   // Colunas por técnico → tickets atribuídos a eles que não estão resolvidos/pendência/etc
@@ -2448,6 +2448,7 @@ function renderKanban(containerId, data) {
   }));
 
   // Colunas de status especiais
+  const agendado    = sortByPriority(data.filter(t => t.status === 'agendado'));
   const aguardando  = sortByPriority(data.filter(t => t.status === 'aguardando'));
   const pendencia   = sortByPriority(data.filter(t => t.status === 'pendencia'));
   const naoAtendido = sortByPriority(data.filter(t => t.status === 'nao-atendido'));
@@ -2460,6 +2461,7 @@ function renderKanban(containerId, data) {
   container.innerHTML =
     makeCol('Fila', '#ff4757', fila) +
     colsMembros.map(c => makeCol(c.label, null, c.tickets, true, c.idx)).join('') +
+    makeCol('Agendado', '#a855f7', agendado) +
     makeCol('Aguardando', '#0090ff', aguardando) +
     makeCol('Pendência', '#ff6b35', pendencia) +
     makeCol('Não Atendido', '#8a90a0', naoAtendido) +
@@ -4123,6 +4125,7 @@ function showTicketDetail(id) {
     { key:'nao-atendido', label:'Não Atendido',  dot:'#8a90a0' },
     { key:'em-andamento', label:'Em Andamento',  dot:'#ffcc00' },
     { key:'aguardando',   label:'Aguardando',    dot:'#0090ff' },
+    { key:'agendado',     label:'Agendado',      dot:'#a855f7' },
     { key:'resolvido',    label:'Resolvido',     dot:'#00e5a0' },
   ];
   document.getElementById('modal-status-row').innerHTML = statuses.map(s => `
@@ -4440,7 +4443,7 @@ async function quickMove(ticketId, status) {
   if (bloquearLeitor('mover chamados')) return;
   const t = tickets.find(x => x.id === ticketId);
   if (!t) return;
-  const labels = { 'pendencia': 'Pendência', 'nao-atendido': 'Não Atendido', 'aguardando': 'Aguardando', 'aberto': 'Aberto' };
+  const labels = { 'pendencia': 'Pendência', 'nao-atendido': 'Não Atendido', 'aguardando': 'Aguardando', 'agendado': 'Agendado', 'aberto': 'Aberto' };
   t.status = status;
   t.currentStatus = status;
   await updateTicketInDB(t);
