@@ -210,7 +210,7 @@
   .stat-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; font-family: var(--mono); }
 
   /* ── Kanban ── */
-  .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .kanban { display: grid; gap: 14px; overflow-x: auto; }
   .kanban-col { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   .kanban-head {
     padding: 12px 16px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
@@ -2408,50 +2408,67 @@ function renderKanban(containerId, data) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  // Prioridade de ordenação: contrato > garantia > avulso
   const prioOrder = { contrato: 0, garantia: 1, avulso: 2 };
   const sortByPriority = arr => [...arr].sort((a,b) => (prioOrder[a.prioridade]??2) - (prioOrder[b.prioridade]??2));
 
-  // Se tem listas do Trello carregadas, usa elas — senão usa colunas padrão
-  const trelloLoaded = TRELLO.listOrder && TRELLO.listOrder.length > 0;
-
-  if (trelloLoaded) {
-    // Colunas = listas reais do Trello na ordem original
-    const cols = TRELLO.listOrder;
-    container.style.gridTemplateColumns = `repeat(${Math.min(cols.length, 5)}, 1fr)`;
-    container.innerHTML = cols.map(col => {
-      const colTickets = sortByPriority(data.filter(t => t.trelloListId === col.id || t.trelloList === col.name));
-      return `
-      <div class="kanban-col">
-        <div class="kanban-head">
-          <div class="dot" style="background:var(--accent2)"></div>
-          ${col.name}
-          <span class="col-count">${colTickets.length}</span>
-        </div>
-        <div class="kanban-cards">
-          ${colTickets.map(t => renderTicketCard(t)).join('') || '<div style="color:var(--text3);font-size:11px;padding:8px;text-align:center">Nenhum card</div>'}
-        </div>
-      </div>`;
-    }).join('');
-  } else {
-    // Colunas customizáveis (padrão ou salvas pelo usuário)
-    const cols = getKanbanCols();
-    container.style.gridTemplateColumns = `repeat(${Math.min(cols.length, 7)}, 1fr)`;
-    container.innerHTML = cols.map(col => {
-      const colTickets = sortByPriority(data.filter(t => t.status === col.key));
-      return `
-      <div class="kanban-col">
-        <div class="kanban-head">
-          <div class="dot" style="background:${col.color}"></div>
-          ${col.label}
-          <span class="col-count">${colTickets.length}</span>
-        </div>
-        <div class="kanban-cards">
-          ${colTickets.map(t => renderTicketCard(t)).join('') || '<div style="color:var(--text3);font-size:11px;padding:8px;text-align:center">Nenhum card</div>'}
-        </div>
-      </div>`;
-    }).join('');
+  function makeCol(label, color, tickets, isчлен = false, memberIdx = -1) {
+    const memberColor = memberIdx >= 0 ? MEMBER_COLORS[memberIdx % MEMBER_COLORS.length] : color;
+    const headBg = isчлен ? `rgba(${hexToRgb(memberColor)},0.06)` : '';
+    const dotStyle = isчлен
+      ? `width:22px;height:22px;border-radius:50%;background:${memberColor}22;border:1.5px solid ${memberColor};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${memberColor}`
+      : `background:${color}`;
+    const dotContent = isчлен ? label.charAt(0).toUpperCase() : '';
+    return `
+    <div class="kanban-col">
+      <div class="kanban-head" style="${headBg ? 'background:'+headBg : ''}">
+        <div class="dot" style="${dotStyle}">${dotContent}</div>
+        ${label}
+        <span class="col-count">${tickets.length}</span>
+      </div>
+      <div class="kanban-cards">
+        ${tickets.map(t => renderTicketCard(t)).join('') || '<div style="color:var(--text3);font-size:11px;padding:8px;text-align:center">Nenhum card</div>'}
+      </div>
+    </div>`;
   }
+
+  // Modo painel próprio (sem Trello ou com Trello)
+  const membros = getMembros();
+
+  // Chamados SEM responsável e em aberto → coluna "Fila"
+  const fila = sortByPriority(data.filter(t =>
+    !t.assignedTo && t.status !== 'resolvido' && t.status !== 'pendencia' && t.status !== 'nao-atendido' && t.status !== 'aguardando'
+  ));
+
+  // Colunas por técnico → tickets atribuídos a eles que não estão resolvidos/pendência/etc
+  const colsMembros = membros.map((m, idx) => ({
+    label: m, idx,
+    tickets: sortByPriority(data.filter(t =>
+      t.assignedTo === m && t.status !== 'resolvido' && t.status !== 'pendencia' && t.status !== 'nao-atendido'
+    ))
+  }));
+
+  // Colunas de status especiais
+  const aguardando  = sortByPriority(data.filter(t => t.status === 'aguardando'));
+  const pendencia   = sortByPriority(data.filter(t => t.status === 'pendencia'));
+  const naoAtendido = sortByPriority(data.filter(t => t.status === 'nao-atendido'));
+  const resolvido   = sortByPriority(data.filter(t => t.status === 'resolvido'));
+
+  const totalCols = 1 + membros.length + 3 + (resolvido.length > 0 ? 1 : 0);
+  container.style.gridTemplateColumns = `repeat(${Math.min(totalCols, 8)}, minmax(180px, 1fr))`;
+  container.style.overflowX = 'auto';
+
+  container.innerHTML =
+    makeCol('Fila', '#ff4757', fila) +
+    colsMembros.map(c => makeCol(c.label, null, c.tickets, true, c.idx)).join('') +
+    makeCol('Aguardando', '#0090ff', aguardando) +
+    makeCol('Pendência', '#ff6b35', pendencia) +
+    makeCol('Não Atendido', '#8a90a0', naoAtendido) +
+    (resolvido.length > 0 ? makeCol('Resolvido', '#00e5a0', resolvido) : '');
+}
+
+function hexToRgb(hex) {
+  const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return r ? `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}` : '0,229,160';
 }
 
 function renderTicketCard(t) {
@@ -4423,7 +4440,7 @@ async function quickMove(ticketId, status) {
   if (bloquearLeitor('mover chamados')) return;
   const t = tickets.find(x => x.id === ticketId);
   if (!t) return;
-  const labels = { 'pendencia': '⏳ Pendência', 'nao-atendido': '🚫 Não Atendido' };
+  const labels = { 'pendencia': 'Pendência', 'nao-atendido': 'Não Atendido', 'aguardando': 'Aguardando', 'aberto': 'Aberto' };
   t.status = status;
   t.currentStatus = status;
   await updateTicketInDB(t);
