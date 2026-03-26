@@ -1781,7 +1781,7 @@ async function salvarCliente() {
     vencimento: document.getElementById('fc-vencimento').value,
     status:     document.getElementById('fc-status').value,
     obs:        document.getElementById('fc-obs').value.trim(),
-    updatedAt:  new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
   try {
     if (clienteEditId) {
@@ -2623,7 +2623,7 @@ async function salvarClienteInline() {
     vencimento: '',
     status: 'ativo',
     obs: '',
-    updatedAt: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
   try {
     await sbFetch('clientes', 'POST', cliente, {'Prefer':'resolution=merge-duplicates,return=minimal'});
