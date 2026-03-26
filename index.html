@@ -676,41 +676,84 @@
     <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
       <div class="page-header">
-        <div class="page-title">Dashboard</div>
-        <div class="page-sub">Visão geral dos atendimentos de hoje</div>
-      </div>
-      <div class="stats-row">
-        <div class="stat-card">
-          <div class="stat-num" id="stat-urgent" style="color:var(--accent)">0</div>
-          <div class="stat-label">🟢 Urgentes (com contrato)</div>
-        </div>
-        <div class="stat-card warn">
-          <div class="stat-num" id="stat-open" style="color:var(--warn)">0</div>
-          <div class="stat-label">⏳ Em aberto</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="stat-resolved" style="color:var(--accent)">0</div>
-          <div class="stat-label">✅ Finalizados hoje</div>
-        </div>
-        <div class="stat-card blue">
-          <div class="stat-num" id="stat-month" style="color:var(--accent2)">0</div>
-          <div class="stat-label" id="stat-month-label">📅 Atendidos este mês</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="stat-total" style="color:var(--text2)">0</div>
-          <div class="stat-label">📋 Total de chamados</div>
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-sub" id="dash-sub">Visão geral dos atendimentos</div>
         </div>
       </div>
 
-      <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;font-family:var(--mono)">Chamados recentes</div>
-      <div class="kanban" id="dashboard-kanban"></div>
+      <!-- Abertos hoje -->
+      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:2px;margin-bottom:10px">ABERTOS HOJE</div>
+      <div class="stats-row" style="margin-bottom:20px">
+        <div class="stat-card" style="--accent-line:var(--accent)">
+          <div class="stat-num" id="stat-contrato-dia" style="color:var(--accent)">0</div>
+          <div class="stat-label">Contrato</div>
+        </div>
+        <div class="stat-card" style="--accent-line:var(--accent2)">
+          <div class="stat-num" id="stat-garantia-dia" style="color:var(--accent2)">0</div>
+          <div class="stat-label">Garantia</div>
+        </div>
+        <div class="stat-card" style="--accent-line:var(--accent3)">
+          <div class="stat-num" id="stat-avulso-dia" style="color:var(--accent3)">0</div>
+          <div class="stat-label">Sem Garantia</div>
+        </div>
+        <div class="stat-card warn">
+          <div class="stat-num" id="stat-open" style="color:var(--warn)">0</div>
+          <div class="stat-label">⏳ Total abertos hoje</div>
+        </div>
+      </div>
+
+      <!-- Mês -->
+      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:2px;margin-bottom:10px" id="dash-mes-label">ESTE MÊS</div>
+      <div class="stats-row">
+        <div class="stat-card blue">
+          <div class="stat-num" id="stat-month" style="color:var(--accent2)">0</div>
+          <div class="stat-label" id="stat-month-label">📅 Em aberto no mês</div>
+        </div>
+        <div class="stat-card" style="--accent-line:var(--accent)">
+          <div class="stat-num" id="stat-resolved" style="color:var(--accent)">0</div>
+          <div class="stat-label">✅ Concluídos no mês</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-urgent" style="color:var(--text2)">0</div>
+          <div class="stat-label">Contratos ativos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-total" style="color:var(--text3)">0</div>
+          <div class="stat-label">📋 Total geral</div>
+        </div>
+      </div>
     </div>
 
     <!-- CHAMADOS (KANBAN) -->
     <div class="view" id="view-chamados">
       <div class="page-header">
-        <div class="page-title">Chamados</div>
-        <div class="page-sub">Gerencie e acompanhe todos os atendimentos</div>
+        <div>
+          <div class="page-title">Chamados</div>
+          <div class="page-sub">Gerencie e acompanhe todos os atendimentos</div>
+        </div>
+        <button class="btn-ghost" onclick="toggleGerenciarColunas()" style="font-size:12px">⚙ Gerenciar Colunas</button>
+      </div>
+      <!-- Painel de gerenciar colunas -->
+      <div id="painel-colunas" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:700">⚙ Gerenciar Colunas do Kanban</div>
+          <button onclick="toggleGerenciarColunas()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px">✕</button>
+        </div>
+        <div id="colunas-lista" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--border);padding-top:14px">
+          <input class="form-input" id="nova-col-nome" placeholder="Nome da nova coluna" style="flex:1;min-width:160px;font-size:13px"/>
+          <div id="nova-col-swatches" style="display:flex;gap:4px">
+            <div onclick="selectColColor('#ff4757')" style="width:20px;height:20px;border-radius:4px;background:#ff4757;cursor:pointer;border:2px solid transparent" title="Vermelho"></div>
+            <div onclick="selectColColor('#ffcc00')" style="width:20px;height:20px;border-radius:4px;background:#ffcc00;cursor:pointer;border:2px solid transparent" title="Amarelo"></div>
+            <div onclick="selectColColor('#0090ff')" style="width:20px;height:20px;border-radius:4px;background:#0090ff;cursor:pointer;border:2px solid transparent" title="Azul"></div>
+            <div onclick="selectColColor('#ff6b35')" style="width:20px;height:20px;border-radius:4px;background:#ff6b35;cursor:pointer;border:2px solid transparent" title="Laranja"></div>
+            <div onclick="selectColColor('#00e5a0')" style="width:20px;height:20px;border-radius:4px;background:#00e5a0;cursor:pointer;border:2px solid transparent" title="Verde"></div>
+            <div onclick="selectColColor('#a855f7')" style="width:20px;height:20px;border-radius:4px;background:#a855f7;cursor:pointer;border:2px solid transparent" title="Roxo"></div>
+          </div>
+          <input type="hidden" id="nova-col-cor" value="#0090ff"/>
+          <button class="btn-primary" onclick="adicionarColuna()" style="font-size:12px">＋ Adicionar Coluna</button>
+        </div>
       </div>
       <div class="kanban" id="full-kanban"></div>
     </div>
@@ -728,11 +771,11 @@
         </div>
         <div class="form-group">
           <label class="form-label">Razão Social *</label>
-          <input class="form-input" id="f-empresa" placeholder="Ex: Empresa Ltda."/>
+          <input class="form-input" id="f-empresa" placeholder="Ex: Empresa Ltda." oninput="onEmpresaInput(this.value)"/>
         </div>
         <div class="form-group">
           <label class="form-label">CNPJ *</label>
-          <input class="form-input" id="f-cnpj" placeholder="00.000.000/0000-00" maxlength="18"/>
+          <input class="form-input" id="f-cnpj" placeholder="00.000.000/0000-00" maxlength="18" oninput="onCnpjInput(this.value)"/>
         </div>
         <div class="form-group">
           <label class="form-label">Sistema *</label>
@@ -779,6 +822,63 @@
           <div class="btn-row">
             <button class="btn-primary" onclick="createTicket()">Abrir Chamado</button>
             <button class="btn-ghost" onclick="clearForm()">Limpar</button>
+            <button class="btn-ghost" onclick="toggleCadastrarClienteInline()" id="btn-cadastrar-cliente-inline" style="border-color:rgba(0,144,255,0.4);color:var(--accent2)">🏢 Salvar Cliente</button>
+          </div>
+        </div>
+
+        <!-- Modal inline: cadastrar cliente com os dados do chamado -->
+        <div id="form-cliente-inline" style="display:none;margin-top:16px;background:rgba(0,144,255,0.04);border:1px solid rgba(0,144,255,0.2);border-radius:12px;padding:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <span style="font-size:13px;font-weight:700;color:var(--accent2)">🏢 Cadastrar este cliente na base</span>
+            <button onclick="toggleCadastrarClienteInline()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px">✕</button>
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Os dados abaixo foram preenchidos automaticamente com o que você digitou no chamado. Complete e salve.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label class="form-label">Razão Social *</label>
+              <input class="form-input" id="fi-empresa" placeholder="Empresa Ltda."/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">CNPJ *</label>
+              <input class="form-input" id="fi-cnpj" placeholder="00.000.000/0000-00" maxlength="18" oninput="formatarCnpjInline(this)"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contato Principal</label>
+              <input class="form-input" id="fi-contato" placeholder="Nome do responsável"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Telefone</label>
+              <input class="form-input" id="fi-telefone" placeholder="(31) 99999-0000"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">E-mail</label>
+              <input class="form-input" id="fi-email" placeholder="contato@empresa.com.br"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sistema</label>
+              <select class="form-select" id="fi-sistema">
+                <option value="">Selecione...</option>
+                <option value="rhid">RHID</option>
+                <option value="iponto">iPonto</option>
+                <option value="atecsoft">Atecsoft</option>
+                <option value="idsecure">IDSecure</option>
+                <option value="atec-web">Atec Web</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Tipo de Contrato</label>
+              <div class="priority-row">
+                <div class="priority-btn" id="fi-pb-contrato" onclick="selectClientePrioInline('contrato')">Contrato</div>
+                <div class="priority-btn" id="fi-pb-garantia" onclick="selectClientePrioInline('garantia')">Garantia</div>
+                <div class="priority-btn" id="fi-pb-avulso"   onclick="selectClientePrioInline('avulso')">Sem Garantia</div>
+              </div>
+              <input type="hidden" id="fi-prioridade"/>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn-primary" onclick="salvarClienteInline()" style="background:var(--accent2)">💾 Salvar na base de clientes</button>
+            <button class="btn-ghost" onclick="toggleCadastrarClienteInline()">Cancelar</button>
           </div>
         </div>
       </div>
@@ -1071,41 +1171,54 @@
         <button onclick="toggleLabelPicker()" style="background:rgba(255,255,255,0.06);border:1px dashed var(--border);color:var(--text2);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">＋ Etiqueta</button>
       </div>
       <!-- Label Picker -->
-      <div id="label-picker" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;max-width:360px">
-        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px">Selecionar etiquetas</div>
-        <div id="label-picker-list" style="display:flex;flex-direction:column;gap:6px"></div>
+      <div id="label-picker" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;max-width:400px;box-shadow:0 8px 24px rgba(0,0,0,0.3)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-size:11px;font-weight:700;color:var(--text2)">ETIQUETAS</span>
+          <input id="label-search" class="form-input" placeholder="🔍 Buscar..." oninput="filtrarEtiquetas(this.value)" style="flex:1;font-size:12px;padding:4px 8px;height:28px"/>
+        </div>
+        <div id="label-picker-list" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto"></div>
         <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Nova etiqueta personalizada:</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono);letter-spacing:1px">CRIAR NOVA ETIQUETA</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
             <input id="new-label-name" class="form-input" placeholder="Nome da etiqueta" style="flex:1;min-width:120px;font-size:12px;padding:5px 8px"/>
-            <select id="new-label-color" class="form-select" style="font-size:12px;padding:5px 8px">
-              <option value="green">🟢 Verde (Contrato)</option>
-              <option value="blue">🔵 Azul (Garantia)</option>
-              <option value="orange">🟠 Laranja (Sem garantia)</option>
-              <option value="red">🔴 Vermelho</option>
-              <option value="yellow">🟡 Amarelo</option>
-              <option value="purple">🟣 Roxo</option>
-            </select>
-            <button onclick="createAndAddLabel()" class="btn-primary" style="font-size:12px;padding:5px 12px">Criar</button>
+            <div style="display:flex;gap:4px;flex-wrap:wrap" id="color-swatches">
+              <div onclick="selectLabelColor('green')"  id="swatch-green"  title="Verde"    style="width:20px;height:20px;border-radius:4px;background:#00e5a0;cursor:pointer;border:2px solid transparent"></div>
+              <div onclick="selectLabelColor('blue')"   id="swatch-blue"   title="Azul"     style="width:20px;height:20px;border-radius:4px;background:#0090ff;cursor:pointer;border:2px solid transparent"></div>
+              <div onclick="selectLabelColor('purple')" id="swatch-purple" title="Roxo"     style="width:20px;height:20px;border-radius:4px;background:#a855f7;cursor:pointer;border:2px solid transparent"></div>
+              <div onclick="selectLabelColor('red')"    id="swatch-red"    title="Vermelho"  style="width:20px;height:20px;border-radius:4px;background:#ff4757;cursor:pointer;border:2px solid transparent"></div>
+              <div onclick="selectLabelColor('yellow')" id="swatch-yellow" title="Amarelo"   style="width:20px;height:20px;border-radius:4px;background:#ffcc00;cursor:pointer;border:2px solid transparent"></div>
+              <div onclick="selectLabelColor('orange')" id="swatch-orange" title="Laranja"   style="width:20px;height:20px;border-radius:4px;background:#ff6b35;cursor:pointer;border:2px solid transparent"></div>
+            </div>
+            <button onclick="createAndAddLabel()" class="btn-primary" style="font-size:12px;padding:5px 12px">＋ Criar</button>
           </div>
+          <input type="hidden" id="new-label-color" value="blue"/>
         </div>
       </div>
 
-      <!-- Status -->
-      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:8px">STATUS</div>
-      <div class="status-select-row" id="modal-status-row"></div>
+      <!-- Status + Atribuição lado a lado -->
+      <div style="display:grid;grid-template-columns:1fr auto;gap:12px;margin-bottom:14px;align-items:start">
+        <div style="background:var(--surface2);border-radius:10px;padding:12px 14px">
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px;margin-bottom:10px">STATUS DO CHAMADO</div>
+          <div class="status-select-row" id="modal-status-row"></div>
+        </div>
+        <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;min-width:190px">
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px;margin-bottom:10px">ATRIBUÍDO A</div>
+          <div id="modal-atribuido-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px"></div>
+          <select id="modal-atribuir-select" onchange="atribuirChamado(this.value)" class="form-select" style="font-size:12px;padding:5px 8px">
+            <option value="">— Atribuir para...</option>
+          </select>
+        </div>
+      </div>
 
       <!-- Agendamento — linha discreta colapsável -->
-      <div id="modal-agendamento-box" style="display:none;margin-top:10px">
-        <!-- Linha resumo (sempre visível quando tem data) -->
+      <div id="modal-agendamento-box" style="display:none;margin-top:2px;margin-bottom:12px">
         <div onclick="toggleAgendaExpand()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 10px;border-radius:7px;border:1px solid rgba(168,85,247,0.2);background:rgba(168,85,247,0.04);transition:background 0.15s" onmouseover="this.style.background='rgba(168,85,247,0.09)'" onmouseout="this.style.background='rgba(168,85,247,0.04)'">
           <span style="font-size:12px">📅</span>
-          <span id="modal-agenda-preview" style="font-size:12px;color:#c084fc;font-family:var(--mono);flex:1">Agendar para...</span>
+          <span id="modal-agenda-preview" style="font-size:12px;color:var(--text3);font-family:var(--mono);flex:1">Agendar para...</span>
           <span id="agenda-expand-icon" style="font-size:10px;color:var(--text3)">▼</span>
-          <button onclick="event.stopPropagation();limparAgendamento()" id="btn-limpar-agenda" style="display:none;background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px" title="Remover agendamento">✕</button>
+          <button onclick="event.stopPropagation();limparAgendamento()" id="btn-limpar-agenda" style="display:none;background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0 2px" title="Remover">✕</button>
         </div>
-        <!-- Painel expandido -->
-        <div id="agenda-expanded" style="display:none;padding:10px 10px 4px;border:1px solid rgba(168,85,247,0.15);border-top:none;border-radius:0 0 7px 7px;background:rgba(168,85,247,0.03)">
+        <div id="agenda-expanded" style="display:none;padding:10px 10px 6px;border:1px solid rgba(168,85,247,0.15);border-top:none;border-radius:0 0 7px 7px;background:rgba(168,85,247,0.03)">
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <input type="date" class="form-input" id="modal-data-agenda" onchange="salvarAgendamento()" style="flex:1;min-width:140px;padding:6px 10px;font-size:12px"/>
             <input type="time" class="form-input" id="modal-hora-agenda" onchange="salvarAgendamento()" style="width:110px;padding:6px 10px;font-size:12px"/>
@@ -1120,18 +1233,38 @@
       </div>
 
       <!-- Histórico de respostas -->
-      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:8px;margin-top:14px">HISTÓRICO</div>
-      <div class="reply-history" id="modal-replies">
-        <div style="color:var(--text3);font-size:12px">Nenhuma resposta ainda.</div>
+      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px">HISTÓRICO DE ATENDIMENTO</div>
+          <div id="modal-replies-count" style="font-size:10px;color:var(--text3);font-family:var(--mono)"></div>
+        </div>
+        <div class="reply-history" id="modal-replies" style="padding:12px 14px;min-height:60px;max-height:200px">
+          <div style="color:var(--text3);font-size:12px">Nenhuma resposta ainda.</div>
+        </div>
       </div>
 
       <!-- Nova resposta -->
-      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:8px">NOVA RESPOSTA / OBSERVAÇÃO</div>
-      <textarea class="form-textarea" id="modal-reply-text" placeholder="Digite sua resposta ou observação interna..." style="margin-bottom:10px"></textarea>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn-primary" onclick="submitReply(false)">💬 Registrar Resposta</button>
-        <button class="btn-ghost" onclick="generateAIReply()" id="ai-reply-btn">✨ Sugerir com IA</button>
-        <button class="btn-primary" onclick="finalizeTicket()" style="background:var(--accent);margin-left:auto">✅ Finalizar Chamado</button>
+      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
+        <div style="padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px">NOVA RESPOSTA / OBSERVAÇÃO</div>
+        </div>
+        <div style="padding:12px 14px">
+          <textarea class="form-textarea" id="modal-reply-text" placeholder="Digite sua resposta ou observação interna..." style="margin-bottom:12px;border-radius:8px;min-height:80px"></textarea>
+          <!-- Linha 1: ações primárias -->
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <button class="btn-primary" onclick="submitReply(false)" style="flex:1">Registrar</button>
+            <button class="btn-ghost" onclick="generateAIReply()" id="ai-reply-btn" style="flex:1">✨ Sugerir IA</button>
+          </div>
+          <!-- Linha 2: ações de status -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border)">
+            <button onclick="moveTicketTo('pendencia')" style="flex:1;min-width:100px;font-size:11px;padding:6px 8px;border-radius:7px;border:1px solid #ff6b35;color:#ff6b35;background:rgba(255,107,53,0.08);cursor:pointer;font-weight:600" onmouseover="this.style.background='rgba(255,107,53,0.18)'" onmouseout="this.style.background='rgba(255,107,53,0.08)'">⏳ Pendência</button>
+            <button onclick="moveTicketTo('nao-atendido')" style="flex:1;min-width:100px;font-size:11px;padding:6px 8px;border-radius:7px;border:1px solid var(--text3);color:var(--text2);background:rgba(138,144,160,0.08);cursor:pointer;font-weight:600" onmouseover="this.style.background='rgba(138,144,160,0.18)'" onmouseout="this.style.background='rgba(138,144,160,0.08)'">🚫 Não Atendido</button>
+            <button onclick="reativarTicket()" id="btn-reativar" style="display:none;flex:1;min-width:100px;font-size:11px;padding:6px 8px;border-radius:7px;border:1px solid var(--accent2);color:var(--accent2);background:rgba(0,144,255,0.08);cursor:pointer;font-weight:600">🔄 Reativar</button>
+            <div style="flex-grow:1"></div>
+            <button onclick="deleteTicket()" style="font-size:11px;padding:6px 12px;border-radius:7px;border:1px solid var(--danger);color:var(--danger);background:rgba(255,71,87,0.08);cursor:pointer;font-weight:600" onmouseover="this.style.background='rgba(255,71,87,0.18)'" onmouseout="this.style.background='rgba(255,71,87,0.08)'">Excluir</button>
+            <button onclick="finalizeTicket()" style="font-size:11px;padding:6px 16px;border-radius:7px;border:none;background:var(--accent);color:#000;cursor:pointer;font-weight:700" onmouseover="this.style.background='#00ffb3'" onmouseout="this.style.background='var(--accent)'">✅ Finalizar</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -2044,7 +2177,6 @@ function showView(name) {
 
 function renderAll() {
   renderStats();
-  renderKanban('dashboard-kanban', tickets.slice(0,4));
   renderKanban('full-kanban', tickets);
   renderKB();
   renderReports();
@@ -2053,42 +2185,53 @@ function renderAll() {
 
 function renderStats() {
   const hoje     = new Date();
-  const diaStr   = hoje.toLocaleDateString('pt-BR');           // ex: "05/03/2026"
+  const diaStr   = hoje.toLocaleDateString('pt-BR');
   const mesAtual = hoje.getMonth();
   const anoAtual = hoje.getFullYear();
+  const mesLabel = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
-  const open     = tickets.filter(t => t.status !== 'resolvido').length;
-  const urgent   = tickets.filter(t => t.prioridade === 'contrato' && t.status !== 'resolvido').length;
+  const naoResolvido = s => s !== 'resolvido';
 
-  // Finalizados HOJE — só conta status resolvido com finalizadoEm de hoje
-  const resolvedHoje = tickets.filter(t => {
+  // ── Abertos HOJE por tipo ──────────────────────────────────────────
+  const abertosHoje = tickets.filter(t => {
+    const d = new Date(t.time || 0);
+    return d.toLocaleDateString('pt-BR') === diaStr && naoResolvido(t.status);
+  });
+  const contratoDia = abertosHoje.filter(t => t.prioridade === 'contrato').length;
+  const garantiaDia = abertosHoje.filter(t => t.prioridade === 'garantia').length;
+  const avulsoDia   = abertosHoje.filter(t => t.prioridade === 'avulso').length;
+
+  // ── Mês atual ─────────────────────────────────────────────────────
+  const doMes = tickets.filter(t => {
+    const d = new Date(t.time || 0);
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+  });
+  const abertosNoMes  = doMes.filter(t => naoResolvido(t.status)).length;
+  const concluidosMes = tickets.filter(t => {
     if (t.status !== 'resolvido') return false;
     if (t.finalizadoEm) {
-      // finalizadoEm é string "dd/mm/yyyy, hh:mm:ss"
-      return t.finalizadoEm.startsWith(diaStr);
+      const parts = t.finalizadoEm.split('/');
+      if (parts.length >= 3) {
+        return parseInt(parts[1])-1 === mesAtual && parseInt(parts[2]) === anoAtual;
+      }
     }
-    // Fallback pelo time do card (data de criação/atualização)
-    if (t.time) {
-      const d = new Date(t.time);
-      return d.toLocaleDateString('pt-BR') === diaStr;
-    }
-    return false;
-  }).length;
-
-  // Atendidos ESTE MÊS — todos os chamados cujo time está no mês atual
-  const atendidosMes = tickets.filter(t => {
     const d = new Date(t.time || 0);
     return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
   }).length;
+  const contratosAtivos = tickets.filter(t => t.prioridade === 'contrato' && naoResolvido(t.status)).length;
 
-  const mesLabel = hoje.toLocaleDateString('pt-BR', { month: 'long' });
-
-  document.getElementById('stat-urgent').textContent   = urgent;
-  document.getElementById('stat-open').textContent     = open;
-  document.getElementById('stat-resolved').textContent = resolvedHoje;
-  document.getElementById('stat-month').textContent    = atendidosMes;
-  document.getElementById('stat-month-label').textContent = `📅 Atendidos em ${mesLabel}`;
-  document.getElementById('stat-total').textContent    = tickets.length;
+  const el = id => document.getElementById(id);
+  if (el('stat-contrato-dia'))  el('stat-contrato-dia').textContent  = contratoDia;
+  if (el('stat-garantia-dia'))  el('stat-garantia-dia').textContent  = garantiaDia;
+  if (el('stat-avulso-dia'))    el('stat-avulso-dia').textContent    = avulsoDia;
+  if (el('stat-open'))          el('stat-open').textContent          = abertosHoje.length;
+  if (el('stat-month'))         el('stat-month').textContent         = abertosNoMes;
+  if (el('stat-resolved'))      el('stat-resolved').textContent      = concluidosMes;
+  if (el('stat-urgent'))        el('stat-urgent').textContent        = contratosAtivos;
+  if (el('stat-total'))         el('stat-total').textContent         = tickets.length;
+  if (el('stat-month-label'))   el('stat-month-label').textContent   = `Em aberto — ${mesLabel}`;
+  if (el('dash-mes-label'))     el('dash-mes-label').textContent     = mesLabel.toUpperCase();
+  if (el('dash-sub'))           el('dash-sub').textContent           = `Hoje é ${diaStr}`;
 }
 
 function updateNavCounts() {
@@ -2411,7 +2554,88 @@ function clearForm() {
   document.getElementById('f-nivel').value = 'n1';
   selectedPriority = '';
   ['contrato','garantia','avulso'].forEach(x => document.getElementById('pb-'+x).className = 'priority-btn');
+  // Esconder form inline se aberto
+  const inlineForm = document.getElementById('form-cliente-inline');
+  if (inlineForm) inlineForm.style.display = 'none';
 }
+
+// ─── Cadastro inline de cliente na abertura de chamado ────────────────────────
+let clientePrioInline = '';
+
+function toggleCadastrarClienteInline() {
+  const form = document.getElementById('form-cliente-inline');
+  if (!form) return;
+  const open = form.style.display !== 'none';
+  if (!open) {
+    // Preencher com dados do chamado atual
+    const emp = document.getElementById('f-empresa')?.value || '';
+    const cnpj = document.getElementById('f-cnpj')?.value || '';
+    const nome = document.getElementById('f-nome')?.value || '';
+    const sis = document.getElementById('f-sistema')?.value || '';
+    if (document.getElementById('fi-empresa')) document.getElementById('fi-empresa').value = emp;
+    if (document.getElementById('fi-cnpj')) document.getElementById('fi-cnpj').value = cnpj;
+    if (document.getElementById('fi-contato')) document.getElementById('fi-contato').value = nome;
+    if (document.getElementById('fi-sistema')) document.getElementById('fi-sistema').value = sis;
+    // Sincronizar prioridade
+    if (selectedPriority) selectClientePrioInline(selectedPriority);
+    form.style.display = 'block';
+    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } else {
+    form.style.display = 'none';
+  }
+}
+
+function selectClientePrioInline(p) {
+  clientePrioInline = p;
+  document.getElementById('fi-prioridade').value = p;
+  ['contrato','garantia','avulso'].forEach(x => {
+    const el = document.getElementById('fi-pb-' + x);
+    if (el) el.className = 'priority-btn' + (x === p ? ' selected-' + x : '');
+  });
+}
+
+function formatarCnpjInline(input) {
+  let v = input.value.replace(/\D/g,'').slice(0,14);
+  if (v.length > 12) v = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12);
+  else if (v.length > 8) v = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8);
+  else if (v.length > 5) v = v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5);
+  else if (v.length > 2) v = v.slice(0,2)+'.'+v.slice(2);
+  input.value = v;
+}
+
+async function salvarClienteInline() {
+  const empresa = document.getElementById('fi-empresa')?.value.trim();
+  const cnpj    = document.getElementById('fi-cnpj')?.value.trim();
+  if (!empresa || !cnpj) { showNotif('⚠️ Razão Social e CNPJ são obrigatórios.', 'warn'); return; }
+
+  // Verificar se já existe
+  const existente = getClientes().find(c => c.cnpj.replace(/\D/g,'') === cnpj.replace(/\D/g,''));
+  if (existente) { showNotif('⚠️ Cliente já cadastrado: ' + existente.empresa, 'warn'); return; }
+
+  const cliente = {
+    id: 'cli-' + Date.now(),
+    empresa, cnpj,
+    contato:   document.getElementById('fi-contato')?.value.trim() || '',
+    telefone:  document.getElementById('fi-telefone')?.value.trim() || '',
+    email:     document.getElementById('fi-email')?.value.trim() || '',
+    sistema:   document.getElementById('fi-sistema')?.value || '',
+    prioridade: clientePrioInline || selectedPriority || '',
+    vencimento: '',
+    status: 'ativo',
+    obs: '',
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    await sbFetch('clientes', 'POST', cliente, {'Prefer':'resolution=merge-duplicates,return=minimal'});
+    if (_clientesCache) _clientesCache.unshift(cliente);
+    document.getElementById('form-cliente-inline').style.display = 'none';
+    showNotif('✅ Cliente "' + empresa + '" cadastrado na base!');
+  } catch(e) {
+    showNotif('❌ Erro ao salvar cliente: ' + e.message, 'warn');
+  }
+}
+
+
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────
 function selectChat(idx) {
@@ -3623,6 +3847,16 @@ function atalhoAgenda(dias) {
   salvarAgendamento();
 }
 
+
+function closeModal() {
+  document.getElementById('ticket-modal').classList.add('hidden');
+  renderAll();
+}
+
+// Fecha modal clicando fora
+document.getElementById('ticket-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
 
 function updateClock() {
   document.getElementById('clock').textContent = new Date().toLocaleTimeString('pt-BR');
