@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Central de Suporte TI — Ponto Eletrônico</title>
+<title>Central de Suporte — Acesso e Ponto</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
   /* ── Login ── */
@@ -210,7 +210,7 @@
   .stat-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; font-family: var(--mono); }
 
   /* ── Kanban ── */
-  .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .kanban { display: grid; gap: 14px; overflow-x: auto; }
   .kanban-col { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   .kanban-head {
     padding: 12px 16px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
@@ -309,11 +309,11 @@
   .chat-item-preview { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .chat-item-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
   .chat-item-time { font-size: 10px; color: var(--text3); margin-left: auto; font-family: var(--mono); }
-  .chat-main { display: flex; flex-direction: column; }
+  .chat-main { display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
   .chat-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
   .chat-header-info .name { font-weight: 700; font-size: 14px; }
   .chat-header-info .sub { font-size: 11px; color: var(--text2); }
-  .chat-msgs { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .chat-msgs { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
   .msg { max-width: 72%; }
   .msg.bot { align-self: flex-start; }
   .msg.user { align-self: flex-end; }
@@ -406,7 +406,7 @@
   <div class="login-box">
     <div class="login-logo">SUPORTE/TI</div>
     <div class="login-title">Bem-vindo 👋</div>
-    <div class="login-sub">Central de Suporte — Ponto Eletrônico</div>
+    <div class="login-sub">Central de Suporte — Acesso e Ponto</div>
     <div class="login-error" id="login-error">Usuário ou senha incorretos.</div>
     <div class="form-group" style="margin-bottom:14px">
       <label class="form-label">Usuário</label>
@@ -417,7 +417,7 @@
       <input class="form-input" type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
     </div>
     <button class="login-btn" onclick="doLogin()">Entrar</button>
-    <div class="login-footer">Ponto Eletrônico · Suporte N1/N2</div>
+    <div class="login-footer">Acesso e Ponto · Suporte N1/N2</div>
   </div>
 </div>
 
@@ -427,7 +427,7 @@
   <header class="topbar">
     <div class="topbar-logo">SPT<span>.</span>TI</div>
     <div style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
-    <span style="font-size:12px;color:var(--text2)">Ponto Eletrônico — N1 / N2</span>
+    <span style="font-size:12px;color:var(--text2)">Acesso e Ponto — N1 / N2</span>
     <div class="topbar-right">
       <button onclick="syncFromTrello(false)" style="background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:var(--mono);letter-spacing:0.5px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--accent2)';this.style.color='var(--accent2)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">SYNC TRELLO</button>
       <span id="trello-sync-time" style="font-size:10px;color:var(--text3);font-family:var(--mono)"></span>
@@ -670,7 +670,7 @@
 
         <div style="background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.2);border-radius:12px;padding:20px">
           <div style="font-size:16px;font-weight:700;margin-bottom:6px">👋 Bem-vindo ao painel de Suporte TI</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.8">Este é o sistema central de gestão de chamados do time de suporte. Aqui você registra, acompanha e resolve os atendimentos dos clientes de ponto eletrônico.</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.8">Este é o sistema central de gestão de chamados do time de suporte da Acesso e Ponto. Aqui você registra, acompanha e resolve os atendimentos dos clientes.</div>
         </div>
 
         <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden" open>
@@ -1510,7 +1510,7 @@ document.querySelector('.main').insertAdjacentHTML('beforeend', `
         </div>
         <div class="form-group">
           <label class="form-label">Mensagem de Boas-vindas</label>
-          <textarea class="form-textarea" id="wa-welcome" style="min-height:70px">👋 Olá! Sou o assistente de suporte de Ponto Eletrônico.
+          <textarea class="form-textarea" id="wa-welcome" style="min-height:70px">👋 Olá! Sou o assistente de suporte da Acesso e Ponto.
 Para iniciar, informe:
 • Seu nome
 • Razão social da empresa
@@ -2021,7 +2021,27 @@ async function syncFromTrello(silent = false) {
     TRELLO.lists = {}; TRELLO.listOrder = [];
     lists.forEach(l => { TRELLO.lists[l.id] = l.name; TRELLO.listOrder.push({ id: l.id, name: l.name }); });
 
-    const cards = await trelloGET(`/boards/${TRELLO.board}/cards?fields=id,name,desc,idList,labels,dateLastActivity`);
+
+function detectarStatusPorLista(listName) {
+  const n = (listName || '').toLowerCase();
+  if (n.includes('finaliz') || n.includes('resolv') || n.includes('conclu') || n.includes('done') || n.includes('fechado')) return 'resolvido';
+  if (n.includes('pendên') || n.includes('pendenc') || n.includes('pend'))                   return 'pendencia';
+  if (n.includes('não atend') || n.includes('nao atend') || n.includes('n/a'))                return 'nao-atendido';
+  if (n.includes('andament') || n.includes('progress') || n.includes('em atend'))             return 'em-andamento';
+  if (n.includes('agend'))                                                                      return 'agendado';
+  if (n.includes('aguard') || n.includes('espera') || n.includes('hold'))                     return 'aguardando';
+  // Colunas de pessoas = em-andamento
+  const membros = getMembros();
+  if (membros.some(m => n.includes(m.toLowerCase()))) return 'em-andamento';
+  return 'aberto';
+}
+
+function trelloCardCreatedAt(cardId) {
+  // O ID do Trello é um ObjectId — os 4 primeiros bytes são o timestamp Unix
+  try { return parseInt(cardId.substring(0, 8), 16) * 1000; } catch { return Date.now(); }
+}
+
+    const cards = await trelloGET(`/boards/${TRELLO.board}/cards?fields=id,name,desc,idList,labels,dateLastActivity,due`);
     const cardIds = cards.map(c => c.id);
     let novos = 0, atualizados = 0;
 
@@ -2038,21 +2058,40 @@ async function syncFromTrello(silent = false) {
 
       const existing = tickets.find(t => t.trelloCardId === card.id);
       if (existing) {
+        const novoStatus = detectarStatusPorLista(listName);
+        const novoAssigned = getMembros().find(m => listName.toLowerCase().includes(m.toLowerCase())) || existing.assignedTo;
         const mudou = existing.trelloListId !== card.idList || existing.sistema !== sistema || existing.prioridade !== prioridade;
-        existing.trelloList = listName; existing.trelloListId = card.idList;
-        existing.sistema = sistema; existing.prioridade = prioridade; existing.nivel = nivel;
+        existing.trelloList   = listName;
+        existing.trelloListId = card.idList;
+        existing.sistema      = sistema;
+        existing.prioridade   = prioridade;
+        existing.nivel        = nivel;
+        existing.status       = novoStatus;
+        existing.currentStatus = novoStatus;
+        existing.dueDate      = card.due || existing.dueDate || null;
+        const horaM = (card.name + ' ' + (card.desc||'')).match(/\b([0-1]?\d|2[0-3]):[0-5]\d\b/);
+        if (horaM) existing.horaAgendada = horaM[0];
+        if (novoAssigned) existing.assignedTo = novoAssigned;
         if (empresa !== '—') existing.empresa = empresa;
-        // Atualiza labels do Trello
         existing.labels = card.labels.map(l => ({ id:l.id, name:l.name||l.color, color:l.color, trelloId:l.id }));
-        if (mudou) atualizados++;
+        if (mudou) { atualizados++; updateTicketInDB(existing); }
       } else {
+        const statusTrello = detectarStatusPorLista(listName);
+        const assignedTrello = getMembros().find(m => listName.toLowerCase().includes(m.toLowerCase())) || null;
+        // Extrai hora da descrição/nome (ex: 09:00 ou 14:00)
+        const horaMatch = (card.name + ' ' + (card.desc||'')).match(/\b([0-1]?\d|2[0-3]):[0-5]\d\b/);
+        const horaAgendada = horaMatch ? horaMatch[0] : null;
         const newT = {
           id: `#T${String(tickets.length + 1).padStart(3,'0')}`,
           nome, empresa, cnpj, sistema, prioridade, categoria, nivel,
-          status: 'trello', desc: card.desc || card.name,
-          time: new Date(card.dateLastActivity).getTime() || Date.now(),
+          status: statusTrello,
+          desc: card.desc || card.name,
+          time: trelloCardCreatedAt(card.id),
+          dueDate: card.due || null,
+          horaAgendada: horaAgendada,
           trelloCardId: card.id, trelloList: listName, trelloListId: card.idList,
           fromTrello: true, replies: [],
+          assignedTo: assignedTrello,
           labels: card.labels.map(l => ({ id:l.id, name:l.name||l.color, color:l.color, trelloId:l.id })),
         };
         tickets.push(newT);
@@ -2269,13 +2308,13 @@ async function getBotResponse(userMessage) {
     const data = await anthropicFetch({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 512,
-      system: `Você é um assistente de suporte técnico de sistemas de ponto eletrônico (RHID, iPonto, Atecsoft).
-Use linguagem simples e do dia a dia — sem termos técnicos complicados.
-Quando precisar usar um termo técnico, explique o que significa.
-Seja direto, amigável e objetivo. Fale como se estivesse ajudando um colega de trabalho.
+      system: `Você é um assistente de atendimento da Acesso e Ponto — revendedora autorizada de sistemas de ponto eletrônico (RHID, iPonto, Atecsoft).
+Use linguagem simples e do dia a dia — sem termos técnicos desnecessários.
+Seja direto, amigável e objetivo.
 Categorize problemas como N1 (básico) ou N2 (avançado).
 Prioridades: Contrato > Garantia > Avulso.
-Use negrito para destacar os passos importantes.`,
+Use negrito para destacar os passos importantes.
+IMPORTANTE: Responda SOMENTE com informações que você tem certeza. Não invente canais, sites, telefones ou serviços. Se não souber algo, diga que a equipe vai verificar.`,
       messages: [{ role: 'user', content: userMessage }]
     });
     return data.content?.[0]?.text || getGenericResponse();
@@ -2316,14 +2355,16 @@ function renderStats() {
   const anoAtual = hoje.getFullYear();
   const mesLabel = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
-  // Abertos HOJE por tipo de prioridade
+  const naoResolvido = s => s !== 'resolvido';
+
+  // Abertos HOJE — criados hoje com status em aberto
   const abertosHoje = tickets.filter(t => {
     const d = new Date(t.time || 0);
-    return d.toLocaleDateString('pt-BR') === diaStr && t.status !== 'resolvido';
+    return d.toLocaleDateString('pt-BR') === diaStr && naoResolvido(t.status);
   });
-  const contratoDia  = abertosHoje.filter(t => t.prioridade === 'contrato').length;
-  const garantiaDia  = abertosHoje.filter(t => t.prioridade === 'garantia').length;
-  const avulsoDia    = abertosHoje.filter(t => t.prioridade === 'avulso').length;
+  const contratoDia      = abertosHoje.filter(t => t.prioridade === 'contrato').length;
+  const garantiaDia      = abertosHoje.filter(t => t.prioridade === 'garantia').length;
+  const avulsoDia        = abertosHoje.filter(t => t.prioridade === 'avulso').length;
   const totalAbertosHoje = abertosHoje.length;
 
   // Mês atual
@@ -2331,11 +2372,26 @@ function renderStats() {
     const d = new Date(t.time || 0);
     return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
   });
-  const abertosNoMes = doMes.length;
-  const concluidosMes = doMes.filter(t => t.status === 'resolvido').length;
+  // Abertos no mês = criados este mês e ainda não resolvidos
+  const abertosNoMes  = doMes.filter(t => naoResolvido(t.status)).length;
+  // Concluídos no mês = resolvidos independente de quando foram criados
+  const concluidosMes = tickets.filter(t => {
+    if (t.status !== 'resolvido') return false;
+    // Usa finalizadoEm se disponível, senão usa time
+    if (t.finalizadoEm) {
+      const parts = t.finalizadoEm.split('/');
+      if (parts.length >= 3) {
+        const mes = parseInt(parts[1]) - 1;
+        const ano = parseInt(parts[2]);
+        return mes === mesAtual && ano === anoAtual;
+      }
+    }
+    const d = new Date(t.time || 0);
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+  }).length;
 
-  // Contratos ativos (não resolvidos)
-  const contratosAtivos = tickets.filter(t => t.prioridade === 'contrato' && t.status !== 'resolvido').length;
+  // Contratos ativos (em aberto agora)
+  const contratosAtivos = tickets.filter(t => t.prioridade === 'contrato' && naoResolvido(t.status)).length;
 
   const el = id => document.getElementById(id);
   if (el('stat-contrato-dia'))  el('stat-contrato-dia').textContent  = contratoDia;
@@ -2346,7 +2402,7 @@ function renderStats() {
   if (el('stat-resolved'))      el('stat-resolved').textContent      = concluidosMes;
   if (el('stat-urgent'))        el('stat-urgent').textContent        = contratosAtivos;
   if (el('stat-total'))         el('stat-total').textContent         = tickets.length;
-  if (el('stat-month-label'))   el('stat-month-label').textContent   = `📅 Abertos em ${mesLabel}`;
+  if (el('stat-month-label'))   el('stat-month-label').textContent   = `Em aberto — ${mesLabel}`;
   if (el('dash-mes-label'))     el('dash-mes-label').textContent     = `${mesLabel.toUpperCase()}`;
   if (el('dash-sub'))           el('dash-sub').textContent           = `Hoje é ${diaStr}`;
 }
@@ -2361,50 +2417,75 @@ function renderKanban(containerId, data) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  // Prioridade de ordenação: contrato > garantia > avulso
   const prioOrder = { contrato: 0, garantia: 1, avulso: 2 };
   const sortByPriority = arr => [...arr].sort((a,b) => (prioOrder[a.prioridade]??2) - (prioOrder[b.prioridade]??2));
 
-  // Se tem listas do Trello carregadas, usa elas — senão usa colunas padrão
-  const trelloLoaded = TRELLO.listOrder && TRELLO.listOrder.length > 0;
-
-  if (trelloLoaded) {
-    // Colunas = listas reais do Trello na ordem original
-    const cols = TRELLO.listOrder;
-    container.style.gridTemplateColumns = `repeat(${Math.min(cols.length, 5)}, 1fr)`;
-    container.innerHTML = cols.map(col => {
-      const colTickets = sortByPriority(data.filter(t => t.trelloListId === col.id || t.trelloList === col.name));
-      return `
-      <div class="kanban-col">
-        <div class="kanban-head">
-          <div class="dot" style="background:var(--accent2)"></div>
-          ${col.name}
-          <span class="col-count">${colTickets.length}</span>
-        </div>
-        <div class="kanban-cards">
-          ${colTickets.map(t => renderTicketCard(t)).join('') || '<div style="color:var(--text3);font-size:11px;padding:8px;text-align:center">Nenhum card</div>'}
-        </div>
-      </div>`;
-    }).join('');
-  } else {
-    // Colunas customizáveis (padrão ou salvas pelo usuário)
-    const cols = getKanbanCols();
-    container.style.gridTemplateColumns = `repeat(${Math.min(cols.length, 7)}, 1fr)`;
-    container.innerHTML = cols.map(col => {
-      const colTickets = sortByPriority(data.filter(t => t.status === col.key));
-      return `
-      <div class="kanban-col">
-        <div class="kanban-head">
-          <div class="dot" style="background:${col.color}"></div>
-          ${col.label}
-          <span class="col-count">${colTickets.length}</span>
-        </div>
-        <div class="kanban-cards">
-          ${colTickets.map(t => renderTicketCard(t)).join('') || '<div style="color:var(--text3);font-size:11px;padding:8px;text-align:center">Nenhum card</div>'}
-        </div>
-      </div>`;
-    }).join('');
+  function makeCol(label, color, tickets, isчлен = false, memberIdx = -1) {
+    const memberColor = memberIdx >= 0 ? MEMBER_COLORS[memberIdx % MEMBER_COLORS.length] : color;
+    const headBg = isчлен ? `rgba(${hexToRgb(memberColor)},0.06)` : '';
+    const dotStyle = isчлен
+      ? `width:22px;height:22px;border-radius:50%;background:${memberColor}22;border:1.5px solid ${memberColor};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${memberColor}`
+      : `background:${color}`;
+    const dotContent = isчлен ? label.charAt(0).toUpperCase() : '';
+    return `
+    <div class="kanban-col">
+      <div class="kanban-head" style="${headBg ? 'background:'+headBg : ''}">
+        <div class="dot" style="${dotStyle}">${dotContent}</div>
+        ${label}
+        <span class="col-count">${tickets.length}</span>
+      </div>
+      <div class="kanban-cards">
+        ${tickets.map(t => renderTicketCard(t)).join('') || '<div style="color:var(--text3);font-size:11px;padding:8px;text-align:center">Nenhum card</div>'}
+      </div>
+    </div>`;
   }
+
+  // Modo painel próprio (sem Trello ou com Trello)
+  const membros = getMembros();
+
+  // Chamados SEM responsável e em aberto → coluna "Fila"
+  const fila = sortByPriority(data.filter(t => {
+    if (t.status === 'resolvido' || t.status === 'pendencia' || t.status === 'nao-atendido' || t.status === 'aguardando' || t.status === 'agendado') return false;
+    if (t.trelloList && t.trelloList.toLowerCase().includes('agend')) return false;
+    if (t.assignedTo) return false;
+    return true;
+  }));
+
+  // Colunas por técnico → tickets atribuídos a eles que não estão resolvidos/pendência/etc
+  const colsMembros = membros.map((m, idx) => ({
+    label: m, idx,
+    tickets: sortByPriority(data.filter(t =>
+      t.assignedTo === m && t.status !== 'resolvido' && t.status !== 'pendencia' && t.status !== 'nao-atendido'
+    ))
+  }));
+
+  // Colunas de status especiais
+  const agendado    = sortByPriority(data.filter(t =>
+    t.status === 'agendado' ||
+    (t.trelloList && t.trelloList.toLowerCase().includes('agend') && t.status !== 'resolvido')
+  ));
+  const aguardando  = sortByPriority(data.filter(t => t.status === 'aguardando'));
+  const pendencia   = sortByPriority(data.filter(t => t.status === 'pendencia'));
+  const naoAtendido = sortByPriority(data.filter(t => t.status === 'nao-atendido'));
+  const resolvido   = sortByPriority(data.filter(t => t.status === 'resolvido'));
+
+  const totalCols = 1 + membros.length + 3 + (resolvido.length > 0 ? 1 : 0);
+  container.style.gridTemplateColumns = `repeat(${Math.min(totalCols, 8)}, minmax(180px, 1fr))`;
+  container.style.overflowX = 'auto';
+
+  container.innerHTML =
+    makeCol('Fila', '#ff4757', fila) +
+    colsMembros.map(c => makeCol(c.label, null, c.tickets, true, c.idx)).join('') +
+    makeCol('Agendado', '#a855f7', agendado) +
+    makeCol('Aguardando', '#0090ff', aguardando) +
+    makeCol('Pendência', '#ff6b35', pendencia) +
+    makeCol('Não Atendido', '#8a90a0', naoAtendido) +
+    (resolvido.length > 0 ? makeCol('Resolvido', '#00e5a0', resolvido) : '');
+}
+
+function hexToRgb(hex) {
+  const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return r ? `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}` : '0,229,160';
 }
 
 function renderTicketCard(t) {
@@ -2440,6 +2521,13 @@ function renderTicketCard(t) {
           : `<div style="font-size:10px;color:var(--text3);font-family:var(--mono);opacity:0.6">sem responsável</div>`
         }
       </div>
+      ${(t.status === 'agendado' || (t.trelloList && t.trelloList.toLowerCase().includes('agend'))) && (t.dueDate || t.horaAgendada) ? `
+      <div style="display:flex;align-items:center;gap:6px;margin-top:6px;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.25);border-radius:5px;padding:4px 8px">
+        <span style="font-size:12px">📅</span>
+        <span style="font-size:11px;font-family:var(--mono);color:#c084fc;font-weight:600">
+          ${t.dueDate ? new Date(t.dueDate).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'}) : ''}${t.dueDate && t.horaAgendada ? ' · ' : ''}${t.horaAgendada || ''}
+        </span>
+      </div>` : ''}
     </div>
     <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:8px">
       ${!t.assignedTo && !isLeitorRole
@@ -2492,7 +2580,7 @@ async function generateKBItem() {
     const data = await anthropicFetch({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1024,
-      system: `Você é um especialista em suporte técnico de sistemas de ponto eletrônico (RHID, iPonto, Atecsoft).
+      system: `Você é um especialista em suporte técnico de ponto eletrônico da Acesso e Ponto (RHID, iPonto, Atecsoft).
 Crie procedimentos de atendimento usando linguagem simples e do dia a dia.
 Evite jargões técnicos — se precisar usar um termo técnico, explique entre parênteses.
 Escreva como se estivesse explicando para alguém que não é da área de TI.
@@ -3373,7 +3461,7 @@ function selecionarAtendenteDesb(nome) {
 const DESB_CONFIGS = {
   'senha-sistema': {
     icon: '🔑', titulo: 'Contrasenha de Sistema',
-    sub: 'Recuperação de acesso a sistemas de ponto eletrônico',
+    sub: 'Recuperação de acesso a sistemas — Acesso e Ponto',
     tipo: 'sistema', equipLabel: 'Sistema',
     categoria: 'login', nivel: 'n1'
   },
@@ -4059,6 +4147,7 @@ function showTicketDetail(id) {
     { key:'nao-atendido', label:'Não Atendido',  dot:'#8a90a0' },
     { key:'em-andamento', label:'Em Andamento',  dot:'#ffcc00' },
     { key:'aguardando',   label:'Aguardando',    dot:'#0090ff' },
+    { key:'agendado',     label:'Agendado',      dot:'#a855f7' },
     { key:'resolvido',    label:'Resolvido',     dot:'#00e5a0' },
   ];
   document.getElementById('modal-status-row').innerHTML = statuses.map(s => `
@@ -4279,7 +4368,7 @@ async function generateAIReply() {
     const data = await anthropicFetch({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 512,
-      system: `Você é um técnico de suporte de sistemas de ponto eletrônico (RHID, iPonto, Atecsoft).
+      system: `Você é um técnico de suporte da Acesso e Ponto (RHID, iPonto, Atecsoft).
 Use linguagem simples e cotidiana — escreva como se estivesse conversando com um colega.
 Evite termos técnicos difíceis. Se precisar usá-los, explique o significado.
 Escreva uma resposta profissional e objetiva para enviar ao cliente.
@@ -4376,7 +4465,7 @@ async function quickMove(ticketId, status) {
   if (bloquearLeitor('mover chamados')) return;
   const t = tickets.find(x => x.id === ticketId);
   if (!t) return;
-  const labels = { 'pendencia': '⏳ Pendência', 'nao-atendido': '🚫 Não Atendido' };
+  const labels = { 'pendencia': 'Pendência', 'nao-atendido': 'Não Atendido', 'aguardando': 'Aguardando', 'agendado': 'Agendado', 'aberto': 'Aberto' };
   t.status = status;
   t.currentStatus = status;
   await updateTicketInDB(t);
@@ -4550,16 +4639,25 @@ async function processWAMessage(fromNumber, messageText) {
   try {
     const data = await anthropicFetch({
       max_tokens: 600,
-      system: `Você é ${config.agentName}, assistente de suporte técnico de ponto eletrônico (RHID, iPonto, Atecsoft) via WhatsApp.
+      system: `Você é ${config.agentName}, assistente de atendimento via WhatsApp da Acesso e Ponto — revendedora autorizada de sistemas de ponto eletrônico (RHID, iPonto, Atecsoft).
 ${modeInstructions}
 Sempre colete: nome, razão social, CNPJ e sistema ao iniciar.
 ${clienteCNPJ ? `CNPJ já identificado: ${clienteCNPJ}` : ''}
 ${clienteEmpresa ? `Empresa já identificada: ${clienteEmpresa}` : ''}
-Prioridades: Contrato > Garantia > Avulso.
-Responda em português, de forma concisa e amigável para WhatsApp.
-Base de conhecimento:\n${kbContext}
 
-Ao final da resposta, se identificar um novo chamado, adicione uma linha:
+REGRAS OBRIGATÓRIAS — siga sempre:
+- Responda SOMENTE com informações que você tem certeza. Se não souber, diga: "Vou verificar com nossa equipe e retornaremos em breve."
+- NÃO invente canais de atendimento (site, chat online, e-mail, telefone) que não foram informados.
+- NÃO prometa prazos ou serviços sem confirmação da equipe.
+- NÃO mencione outros sistemas além de RHID, iPonto e Atecsoft.
+- Se o cliente perguntar algo fora do escopo de suporte técnico de ponto eletrônico, diga que vai encaminhar para a equipe.
+- Canais reais de atendimento: somente este WhatsApp. Não cite outros.
+- Prioridades: Contrato > Garantia > Avulso.
+- Use linguagem simples, direta e amigável. Mensagens curtas.
+
+Base de conhecimento dos procedimentos:\n${kbContext}
+
+Ao final da resposta, se identificar um novo chamado técnico, adicione:
 CHAMADO: <categoria>|<sistema>|<n1 ou n2>|<empresa>|<cnpj>|<nome do cliente>`,
       messages
     });
