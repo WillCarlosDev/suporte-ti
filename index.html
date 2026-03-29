@@ -835,50 +835,81 @@
       <div class="page-header">
         <div>
           <div class="page-title">Dashboard</div>
-          <div class="page-sub" id="dash-sub">Visão geral dos atendimentos</div>
+          <div class="page-sub" id="dash-sub">Hoje</div>
         </div>
+        <div id="dash-online-bar" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"></div>
       </div>
 
-      <!-- Linha 1: Abertura do dia por tipo -->
-      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:2px;margin-bottom:10px">ABERTOS HOJE</div>
+      <!-- Linha de stats rápidos -->
       <div class="stats-row" style="margin-bottom:20px">
-        <div class="stat-card" style="--accent-line:var(--accent)">
-          <div class="stat-num" id="stat-contrato-dia" style="color:var(--accent)">0</div>
-          <div class="stat-label">Contrato</div>
-        </div>
-        <div class="stat-card" style="--accent-line:var(--accent2)">
-          <div class="stat-num" id="stat-garantia-dia" style="color:var(--accent2)">0</div>
-          <div class="stat-label">Garantia</div>
-        </div>
-        <div class="stat-card" style="--accent-line:var(--accent3)">
-          <div class="stat-num" id="stat-avulso-dia" style="color:var(--accent3)">0</div>
-          <div class="stat-label">Sem Garantia</div>
-        </div>
-        <div class="stat-card warn">
+        <div class="stat-card warn" style="cursor:pointer" onclick="showView('chamados')" title="Ver chamados">
           <div class="stat-num" id="stat-open" style="color:var(--warn)">0</div>
-          <div class="stat-label">⏳ Total abertos hoje</div>
+          <div class="stat-label">⏳ Em aberto</div>
         </div>
-      </div>
-
-      <!-- Linha 2: Mês -->
-      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:2px;margin-bottom:10px" id="dash-mes-label">ESTE MÊS</div>
-      <div class="stats-row" style="margin-bottom:8px">
-        <div class="stat-card blue">
-          <div class="stat-num" id="stat-month" style="color:var(--accent2)">0</div>
-          <div class="stat-label" id="stat-month-label">📅 Abertos no mês</div>
+        <div class="stat-card" style="cursor:pointer;--accent-line:#ff4757" onclick="showView('chamados')" title="Contratos sem técnico">
+          <div class="stat-num" id="stat-sem-tecnico" style="color:#ff4757">0</div>
+          <div class="stat-label">🚨 Sem técnico</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer;--accent-line:#a855f7" onclick="showView('chamados')" title="Agendados para hoje">
+          <div class="stat-num" id="stat-agendados-hoje" style="color:#a855f7">0</div>
+          <div class="stat-label">📅 Hoje agendados</div>
         </div>
         <div class="stat-card" style="--accent-line:var(--accent)">
           <div class="stat-num" id="stat-resolved" style="color:var(--accent)">0</div>
-          <div class="stat-label">✅ Concluídos no mês</div>
+          <div class="stat-label">✅ Concluídos hoje</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-num" id="stat-urgent" style="color:var(--text2)">0</div>
-          <div class="stat-label">Contratos ativos</div>
+        <div class="stat-card blue">
+          <div class="stat-num" id="stat-month" style="color:var(--accent2)">0</div>
+          <div class="stat-label" id="stat-month-label">📆 No mês</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-num" id="stat-total" style="color:var(--text3)">0</div>
-          <div class="stat-label">📋 Total geral</div>
+      </div>
+
+      <!-- Grid principal -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+        <!-- Coluna 1: Chamados urgentes sem técnico -->
+        <div class="report-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <h3 style="margin:0;font-size:13px">🚨 Contratos sem técnico</h3>
+            <button onclick="showView('chamados')" style="font-size:11px;padding:3px 10px;border-radius:5px;border:1px solid var(--border);color:var(--text2);background:none;cursor:pointer">Ver kanban →</button>
+          </div>
+          <div id="dash-urgentes" style="display:flex;flex-direction:column;gap:8px">
+            <div style="color:var(--text3);font-size:12px;padding:8px 0">Carregando...</div>
+          </div>
         </div>
+
+        <!-- Coluna 2: Agendados para hoje -->
+        <div class="report-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <h3 style="margin:0;font-size:13px">📅 Agendados para hoje</h3>
+            <span id="dash-agendados-count" style="font-size:11px;color:var(--text3);font-family:var(--mono)"></span>
+          </div>
+          <div id="dash-agendados" style="display:flex;flex-direction:column;gap:8px">
+            <div style="color:var(--text3);font-size:12px;padding:8px 0">Nenhum agendamento para hoje.</div>
+          </div>
+        </div>
+
+        <!-- Coluna 3: Chamados por técnico (snapshot) -->
+        <div class="report-card">
+          <div style="margin-bottom:14px">
+            <h3 style="margin:0;font-size:13px">👥 Equipe agora</h3>
+          </div>
+          <div id="dash-equipe" style="display:flex;flex-direction:column;gap:10px">
+            <div style="color:var(--text3);font-size:12px;padding:8px 0">Carregando...</div>
+          </div>
+        </div>
+
+        <!-- Coluna 4: Últimos chamados abertos -->
+        <div class="report-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <h3 style="margin:0;font-size:13px">🕐 Recém abertos</h3>
+            <button onclick="showView('novo')" style="font-size:11px;padding:3px 10px;border-radius:5px;border:1px solid var(--accent);color:var(--accent);background:rgba(0,229,160,0.06);cursor:pointer">+ Novo</button>
+          </div>
+          <div id="dash-recentes" style="display:flex;flex-direction:column;gap:8px">
+            <div style="color:var(--text3);font-size:12px;padding:8px 0">Carregando...</div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -2390,57 +2421,167 @@ function renderStats() {
   const mesAtual = hoje.getMonth();
   const anoAtual = hoje.getFullYear();
   const mesLabel = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const el       = id => document.getElementById(id);
 
-  const naoResolvido = s => s !== 'resolvido';
+  // Chamados em aberto (qualquer status != resolvido)
+  const emAberto = tickets.filter(t => t.status !== 'resolvido');
 
-  // Abertos HOJE — criados hoje com status em aberto
-  const abertosHoje = tickets.filter(t => {
-    const d = new Date(t.time || 0);
-    return d.toLocaleDateString('pt-BR') === diaStr && naoResolvido(t.status);
+  // Sem técnico atribuído E não resolvido
+  const semTecnico = emAberto.filter(t => !t.assignedTo);
+
+  // Agendados para hoje
+  const agendadosHoje = tickets.filter(t => {
+    if (t.status !== 'agendado' || !t.dueDate) return false;
+    const d = new Date(t.dueDate);
+    return d.toLocaleDateString('pt-BR') === diaStr;
   });
-  const contratoDia      = abertosHoje.filter(t => t.prioridade === 'contrato').length;
-  const garantiaDia      = abertosHoje.filter(t => t.prioridade === 'garantia').length;
-  const avulsoDia        = abertosHoje.filter(t => t.prioridade === 'avulso').length;
-  const totalAbertosHoje = abertosHoje.length;
 
-  // Mês atual
-  const doMes = tickets.filter(t => {
-    const d = new Date(t.time || 0);
-    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
-  });
-  // Abertos no mês = criados este mês e ainda não resolvidos
-  const abertosNoMes  = doMes.filter(t => naoResolvido(t.status)).length;
-  // Concluídos no mês = resolvidos independente de quando foram criados
-  const concluidosMes = tickets.filter(t => {
+  // Concluídos hoje (usando finalizadoEm se disponível)
+  const concluidosHoje = tickets.filter(t => {
     if (t.status !== 'resolvido') return false;
-    // Usa finalizadoEm se disponível, senão usa time
     if (t.finalizadoEm) {
-      const parts = t.finalizadoEm.split('/');
-      if (parts.length >= 3) {
-        const mes = parseInt(parts[1]) - 1;
-        const ano = parseInt(parts[2]);
-        return mes === mesAtual && ano === anoAtual;
-      }
+      const d = new Date(t.finalizadoEm);
+      return !isNaN(d) && d.toLocaleDateString('pt-BR') === diaStr;
     }
+    return false;
+  });
+
+  // Abertos no mês
+  const abertosNoMes = tickets.filter(t => {
     const d = new Date(t.time || 0);
-    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
-  }).length;
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual && t.status !== 'resolvido';
+  });
 
-  // Contratos ativos (em aberto agora)
-  const contratosAtivos = tickets.filter(t => t.prioridade === 'contrato' && naoResolvido(t.status)).length;
+  // Stats numéricos
+  if (el('stat-open'))             el('stat-open').textContent             = emAberto.length;
+  if (el('stat-sem-tecnico'))      el('stat-sem-tecnico').textContent      = semTecnico.length;
+  if (el('stat-agendados-hoje'))   el('stat-agendados-hoje').textContent   = agendadosHoje.length;
+  if (el('stat-resolved'))         el('stat-resolved').textContent         = concluidosHoje.length;
+  if (el('stat-month'))            el('stat-month').textContent            = abertosNoMes.length;
+  if (el('dash-sub'))              el('dash-sub').textContent              = `Hoje é ${diaStr}`;
+  if (el('stat-month-label'))      el('stat-month-label').textContent      = `📆 Abertos em ${mesLabel.split(' ')[0]}`;
 
-  const el = id => document.getElementById(id);
-  if (el('stat-contrato-dia'))  el('stat-contrato-dia').textContent  = contratoDia;
-  if (el('stat-garantia-dia'))  el('stat-garantia-dia').textContent  = garantiaDia;
-  if (el('stat-avulso-dia'))    el('stat-avulso-dia').textContent    = avulsoDia;
-  if (el('stat-open'))          el('stat-open').textContent          = totalAbertosHoje;
-  if (el('stat-month'))         el('stat-month').textContent         = abertosNoMes;
-  if (el('stat-resolved'))      el('stat-resolved').textContent      = concluidosMes;
-  if (el('stat-urgent'))        el('stat-urgent').textContent        = contratosAtivos;
-  if (el('stat-total'))         el('stat-total').textContent         = tickets.length;
-  if (el('stat-month-label'))   el('stat-month-label').textContent   = `Em aberto — ${mesLabel}`;
-  if (el('dash-mes-label'))     el('dash-mes-label').textContent     = `${mesLabel.toUpperCase()}`;
-  if (el('dash-sub'))           el('dash-sub').textContent           = `Hoje é ${diaStr}`;
+  // ── Online bar (técnicos online) ────────────────────────────────
+  const onlineBar = el('dash-online-bar');
+  if (onlineBar) {
+    const online = getUsuariosOnline();
+    if (online.length === 0) {
+      onlineBar.innerHTML = '<span style="font-size:11px;color:var(--text3)">Nenhum técnico online</span>';
+    } else {
+      onlineBar.innerHTML = online.map(u => {
+        const membros = getMembros();
+        const idx     = membros.findIndex(m => m.toLowerCase() === u.username.toLowerCase());
+        const cor     = idx >= 0 ? MEMBER_COLORS[idx % MEMBER_COLORS.length] : 'var(--accent)';
+        return `<div title="${u.username} — online" style="display:flex;align-items:center;gap:5px;background:${cor}18;border:1px solid ${cor}55;border-radius:20px;padding:4px 10px;font-size:11px">
+          <div style="width:7px;height:7px;border-radius:50%;background:${cor}"></div>
+          <span style="color:${cor};font-weight:600">${u.username}</span>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // ── Contratos sem técnico (urgentes) ───────────────────────────
+  const urgentesEl = el('dash-urgentes');
+  if (urgentesEl) {
+    const urgentes = emAberto
+      .filter(t => t.prioridade === 'contrato' && !t.assignedTo)
+      .sort((a,b) => (a.time||0) - (b.time||0)) // mais antigos primeiro
+      .slice(0, 6);
+    if (urgentes.length === 0) {
+      urgentesEl.innerHTML = '<div style="color:var(--accent);font-size:12px;padding:8px 0">✅ Nenhum contrato sem técnico!</div>';
+    } else {
+      urgentesEl.innerHTML = urgentes.map(t => `
+        <div onclick="showTicketDetail('${t.id}')" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,71,87,0.06);border:1px solid rgba(255,71,87,0.2);border-radius:8px;cursor:pointer" onmouseover="this.style.background='rgba(255,71,87,0.12)'" onmouseout="this.style.background='rgba(255,71,87,0.06)'">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.empresa}</div>
+            <div style="font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${getCategoryLabel(t.categoria) || t.categoria}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">${timeAgo(t.time)}</div>
+            <button onclick="event.stopPropagation();puxarChamado('${t.id}')" style="margin-top:3px;font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid var(--accent2);color:var(--accent2);background:transparent;cursor:pointer">Puxar</button>
+          </div>
+        </div>`).join('');
+    }
+  }
+
+  // ── Agendados para hoje ─────────────────────────────────────────
+  const agendadosEl = el('dash-agendados');
+  const agCount     = el('dash-agendados-count');
+  if (agCount) agCount.textContent = agendadosHoje.length > 0 ? agendadosHoje.length + ' agendado(s)' : '';
+  if (agendadosEl) {
+    if (agendadosHoje.length === 0) {
+      agendadosEl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">Nenhum agendamento para hoje.</div>';
+    } else {
+      const sorted = [...agendadosHoje].sort((a,b) => {
+        const ha = a.horaAgendada || '00:00';
+        const hb = b.horaAgendada || '00:00';
+        return ha.localeCompare(hb);
+      });
+      agendadosEl.innerHTML = sorted.map(t => `
+        <div onclick="showTicketDetail('${t.id}')" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:8px;cursor:pointer" onmouseover="this.style.background='rgba(168,85,247,0.12)'" onmouseout="this.style.background='rgba(168,85,247,0.06)'">
+          <div style="font-size:20px;flex-shrink:0">📅</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.empresa}</div>
+            <div style="font-size:11px;color:var(--text2)">${getCategoryLabel(t.categoria)||t.categoria}${t.assignedTo ? ' · ' + t.assignedTo : ''}</div>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:#c084fc;flex-shrink:0">${t.horaAgendada || '—'}</div>
+        </div>`).join('');
+    }
+  }
+
+  // ── Equipe agora ─────────────────────────────────────────────────
+  const equipeEl = el('dash-equipe');
+  if (equipeEl) {
+    const membros  = getMembros();
+    const online   = getUsuariosOnline().map(u => u.username.toLowerCase());
+    const rows = membros.map((m, idx) => {
+      const cor        = MEMBER_COLORS[idx % MEMBER_COLORS.length];
+      const atribuidos = emAberto.filter(t => t.assignedTo === m);
+      const isOnline   = online.includes(m.toLowerCase());
+      return { m, cor, atribuidos, isOnline };
+    });
+    if (rows.length === 0) {
+      equipeEl.innerHTML = '<div style="color:var(--text3);font-size:12px">Nenhum membro configurado.</div>';
+    } else {
+      equipeEl.innerHTML = rows.map(r => `
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;border-radius:50%;background:${r.cor}22;border:2px solid ${r.cor};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:${r.cor};flex-shrink:0">${r.m.charAt(0).toUpperCase()}</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:13px;font-weight:600">${r.m}</span>
+              <div style="width:6px;height:6px;border-radius:50%;background:${r.isOnline ? 'var(--accent)' : 'var(--border)'}"></div>
+            </div>
+            <div style="font-size:11px;color:var(--text2)">${r.atribuidos.length} chamado${r.atribuidos.length !== 1 ? 's' : ''} em mãos</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:13px;font-weight:700;color:${r.cor}">${r.atribuidos.length}</div>
+          </div>
+        </div>`).join('');
+    }
+  }
+
+  // ── Recém abertos ─────────────────────────────────────────────────
+  const recentesEl = el('dash-recentes');
+  if (recentesEl) {
+    const prioColors = { contrato:'var(--accent)', garantia:'var(--accent2)', avulso:'var(--text3)' };
+    const recentes = [...tickets]
+      .filter(t => t.status !== 'resolvido')
+      .sort((a,b) => (b.time||0) - (a.time||0))
+      .slice(0, 6);
+    if (recentes.length === 0) {
+      recentesEl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">Nenhum chamado em aberto.</div>';
+    } else {
+      recentesEl.innerHTML = recentes.map(t => `
+        <div onclick="showTicketDetail('${t.id}')" style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--surface2);border-radius:8px;cursor:pointer" onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background='var(--surface2)'">
+          <div style="width:8px;height:8px;border-radius:50%;background:${prioColors[t.prioridade]||'var(--text3)'};flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.empresa}</div>
+            <div style="font-size:11px;color:var(--text2)">${getCategoryLabel(t.categoria)||t.categoria}${t.assignedTo ? ' · '+t.assignedTo : ' · sem técnico'}</div>
+          </div>
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);flex-shrink:0">${timeAgo(t.time)}</div>
+        </div>`).join('');
+    }
+  }
 }
 
 function updateNavCounts() {
