@@ -2696,91 +2696,65 @@ function renderKanban(containerId, data) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  const prioOrder = { contrato: 0, garantia: 1, avulso: 2 };
-  const sortByPriority = arr => [...arr].sort((a,b) =>
-    (prioOrder[a.prioridade] ?? 2) - (prioOrder[b.prioridade] ?? 2)
-  );
+  const prioOrder  = { contrato: 0, garantia: 1, avulso: 2 };
+  const byPrio     = arr => [...arr].sort((a,b) => (prioOrder[a.prioridade]??2)-(prioOrder[b.prioridade]??2));
+  const membros    = getMembros();
 
-  function makeCol(label, color, colTickets, isMembro = false, memberIdx = -1) {
-    const memberColor = memberIdx >= 0 ? MEMBER_COLORS[memberIdx % MEMBER_COLORS.length] : color;
-    const headBg   = isMembro ? `rgba(${hexToRgb(memberColor)},0.06)` : '';
-    const dotStyle = isMembro
-      ? `width:22px;height:22px;border-radius:50%;background:${memberColor}22;border:1.5px solid ${memberColor};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${memberColor}`
+  function makeCol(label, color, tickets, isMembro = false, mIdx = -1) {
+    const cor   = mIdx >= 0 ? MEMBER_COLORS[mIdx % MEMBER_COLORS.length] : color;
+    const headBg = isMembro ? `rgba(${hexToRgb(cor)},0.06)` : '';
+    const dot    = isMembro
+      ? `width:22px;height:22px;border-radius:50%;background:${cor}22;border:1.5px solid ${cor};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${cor}`
       : `background:${color}`;
-    const dotContent = isMembro ? label.charAt(0).toUpperCase() : '';
     return `
     <div class="kanban-col">
-      <div class="kanban-head" style="${headBg ? 'background:'+headBg : ''}">
-        <div class="dot" style="${dotStyle}">${dotContent}</div>
+      <div class="kanban-head" style="${headBg?'background:'+headBg:''}">
+        <div class="dot" style="${dot}">${isMembro?label.charAt(0).toUpperCase():''}</div>
         ${label}
-        <span class="col-count">${colTickets.length}</span>
+        <span class="col-count">${tickets.length}</span>
       </div>
       <div class="kanban-cards">
-        ${colTickets.map(t => renderTicketCard(t)).join('') ||
-          '<div style="color:var(--text3);font-size:11px;padding:8px;text-align:center">Nenhum card</div>'}
+        ${tickets.map(t=>renderTicketCard(t)).join('')||
+          '<div style="color:var(--text3);font-size:11px;padding:12px;text-align:center">Nenhum card</div>'}
       </div>
     </div>`;
   }
 
-  const membros = getMembros();
+  // ── Buckets ──────────────────────────────────────────────────────────────
+  // Chamados: sem técnico, sem status especial
+  const chamados = byPrio(data.filter(t =>
+    !t.assignedTo &&
+    !['agendado','pendencia','nao-atendido','resolvido'].includes(t.status)
+  ));
 
-  // ── Buckets de tickets ─────────────────────────────────────────────────────
-  // "Chamados": abertos ou aguardando, SEM responsável
-  const chamados = sortByPriority(data.filter(t => {
-    if (['resolvido','pendencia','nao-atendido','agendado'].includes(t.status)) return false;
-    if (t.assignedTo) return false;
-    return true; // aberto + aguardando sem técnico
-  }));
-
-  // Uma coluna por técnico: todos que têm assignedTo = técnico e não estão encerrados
-  const colsMembros = membros.map((m, idx) => ({
-    label: m, idx,
-    tickets: sortByPriority(data.filter(t =>
+  // Por técnico: atribuídos e não finalizados
+  const colsTec = membros.map((m, i) => ({
+    label: m, i,
+    tickets: byPrio(data.filter(t =>
       t.assignedTo === m &&
-      !['resolvido','pendencia','nao-atendido'].includes(t.status)
+      !['pendencia','nao-atendido','resolvido'].includes(t.status)
     ))
   }));
 
-  // Colunas de status fixas
-  const buckets = {
-    'chamados':    chamados,
-    'agendado':    sortByPriority(data.filter(t => t.status === 'agendado')),
-    'pendencia':   sortByPriority(data.filter(t => t.status === 'pendencia')),
-    'nao-atendido':sortByPriority(data.filter(t => t.status === 'nao-atendido')),
-    'resolvido':   sortByPriority(data.filter(t => t.status === 'resolvido')),
-  };
+  // Status fixos
+  const agendados   = byPrio(data.filter(t => t.status === 'agendado'));
+  const pendencias  = byPrio(data.filter(t => t.status === 'pendencia'));
+  const naoAtendido = byPrio(data.filter(t => t.status === 'nao-atendido'));
+  const resolvido   = byPrio(data.filter(t => t.status === 'resolvido'));
 
-  // ── Ordem das colunas (configurável via getKanbanCols) ─────────────────────
-  // getKanbanCols() retorna a lista com ordem e label customizável
-  const colOrder = getKanbanCols();
-
-  // Colunas especiais na ordem salva, pulando 'resolvido' se vazio
-  const colsEspeciais = colOrder
-    .filter(col => col.key !== 'resolvido' || buckets['resolvido'].length > 0)
-    .map(col => {
-      const tickets = buckets[col.key] || [];
-      return makeCol(col.label, col.color, tickets);
-    });
-
-  // Colunas de técnicos (sempre entre "Chamados" e os status finais)
-  const colsEspeciaisAntes = colOrder.filter(col => col.key === 'chamados').length > 0
-    ? colsEspeciais.slice(0, colOrder.findIndex(c => c.key === 'chamados') + 1)
-    : colsEspeciais.slice(0, 1);
-
-  const idxChamados = colOrder.findIndex(c => c.key === 'chamados');
-  const colsAntes   = colOrder.slice(0, idxChamados + 1).map(col => makeCol(col.label, col.color, buckets[col.key] || []));
-  const colsDepois  = colOrder.slice(idxChamados + 1)
-    .filter(col => col.key !== 'resolvido' || buckets['resolvido'].length > 0)
-    .map(col => makeCol(col.label, col.color, buckets[col.key] || []));
-
-  const totalCols = colOrder.length + membros.length - (buckets['resolvido'].length === 0 ? 1 : 0);
-  container.style.gridTemplateColumns = `repeat(${Math.min(totalCols, 9)}, minmax(185px, 1fr))`;
+  // Total de colunas para o grid
+  const nCols = 1 + membros.length + 3 + (resolvido.length > 0 ? 1 : 0);
+  container.style.gridTemplateColumns = `repeat(${nCols}, minmax(210px, 1fr))`;
   container.style.overflowX = 'auto';
+  container.style.gap = '12px';
 
   container.innerHTML =
-    colsAntes.join('') +
-    colsMembros.map(c => makeCol(c.label, null, c.tickets, true, c.idx)).join('') +
-    colsDepois.join('');
+    makeCol('Chamados',    '#ff4757', chamados) +
+    colsTec.map(c => makeCol(c.label, null, c.tickets, true, c.i)).join('') +
+    makeCol('Agendados',   '#a855f7', agendados) +
+    makeCol('Pendências',  '#ff6b35', pendencias) +
+    makeCol('Não Atendido','#8a90a0', naoAtendido) +
+    (resolvido.length > 0 ? makeCol('Resolvido', '#00e5a0', resolvido) : '');
 }
 
 function hexToRgb(hex) {
@@ -2812,7 +2786,12 @@ function renderTicketCard(t) {
         <span class="tag ${t.sistema}">${t.sistema}</span>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+        <div style="display:flex;align-items:center;gap:6px">
         <div class="tc-time">${timeAgo(t.time)}</div>
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">
+          ${t.time ? new Date(t.time).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : ''}
+        </div>
+      </div>
         ${t.assignedTo
           ? `<div style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:var(--mono);color:${memberColor}">
                <div style="width:16px;height:16px;border-radius:50%;background:${memberColor}22;border:1.5px solid ${memberColor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">${t.assignedTo.charAt(0).toUpperCase()}</div>
@@ -3194,14 +3173,11 @@ async function setConfig(chave, valor) {
 
 // ─── Colunas do Kanban ────────────────────────────────────────────────────────
 const DEFAULT_KANBAN_COLS = [
-  // Colunas especiais — ordem configurável pelo usuário
-  // key 'chamados'    = tickets sem técnico (aberto + aguardando)
-  // key por técnico   = gerado dinamicamente via getMembros()
-  { key:'chamados',    label:'Chamados',      color:'#ff4757' },
-  { key:'agendado',    label:'Agendado',      color:'#a855f7' },
-  { key:'pendencia',   label:'Pendência',     color:'#ff6b35' },
-  { key:'nao-atendido',label:'Não Atendido',  color:'#8a90a0' },
-  { key:'resolvido',   label:'Resolvido',     color:'#00e5a0' },
+  { key:'chamados',     label:'Chamados',      color:'#ff4757' },
+  { key:'agendado',     label:'Agendados',     color:'#a855f7' },
+  { key:'pendencia',    label:'Pendências',    color:'#ff6b35' },
+  { key:'nao-atendido', label:'Não Atendido',  color:'#8a90a0' },
+  { key:'resolvido',    label:'Resolvido',     color:'#00e5a0' },
 ];
 let _kanbanColsCache = null;
 
@@ -4477,14 +4453,12 @@ function showTicketDetail(id) {
     </div>
   `).join('');
 
-  // Status buttons
+  // Status buttons — alinhados com as colunas do kanban
   const statuses = [
-    { key:'aberto',       label:'Aberto',       dot:'#ff4757' },
+    { key:'aberto',       label:'Chamados',      dot:'#ff4757' },
+    { key:'agendado',     label:'Agendado',      dot:'#a855f7' },
     { key:'pendencia',    label:'Pendência',     dot:'#ff6b35' },
     { key:'nao-atendido', label:'Não Atendido',  dot:'#8a90a0' },
-    { key:'em-andamento', label:'Em Andamento',  dot:'#ffcc00' },
-    { key:'aguardando',   label:'Aguardando',    dot:'#0090ff' },
-    { key:'agendado',     label:'Agendado',      dot:'#a855f7' },
     { key:'resolvido',    label:'Resolvido',     dot:'#00e5a0' },
   ];
   document.getElementById('modal-status-row').innerHTML = statuses.map(s => `
