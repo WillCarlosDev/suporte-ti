@@ -1244,19 +1244,19 @@
       <div class="page-header">
         <div style="flex:1">
           <div class="page-title">Relatórios</div>
-          <div class="page-sub">Análise real dos atendimentos</div>
+          <div class="page-sub" id="report-sub">Análise real dos atendimentos</div>
         </div>
         <button class="btn-primary" onclick="exportReport()">⬇ Exportar CSV</button>
       </div>
 
       <!-- Filtros -->
-      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
         <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">PERÍODO:</span>
         <button class="btn-ghost rep-period active" onclick="setReportPeriod('mes')"   id="rp-mes">Este mês</button>
         <button class="btn-ghost rep-period"        onclick="setReportPeriod('sem')"   id="rp-sem">Esta semana</button>
         <button class="btn-ghost rep-period"        onclick="setReportPeriod('todos')" id="rp-todos">Todos</button>
         <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:12px">TIPO:</span>
-        <button class="btn-ghost rep-period active" onclick="setReportTipo('todos')"   id="rt-todos">Todos</button>
+        <button class="btn-ghost rep-period active" onclick="setReportTipo('todos')"    id="rt-todos">Todos</button>
         <button class="btn-ghost rep-period"        onclick="setReportTipo('contrato')" id="rt-contrato">Contrato</button>
         <button class="btn-ghost rep-period"        onclick="setReportTipo('garantia')" id="rt-garantia">Garantia</button>
         <button class="btn-ghost rep-period"        onclick="setReportTipo('avulso')"   id="rt-avulso">Sem Garantia</button>
@@ -1265,45 +1265,44 @@
         <button class="btn-ghost rep-period"        onclick="setReportNivel('n1')"    id="rn-n1">N1</button>
         <button class="btn-ghost rep-period"        onclick="setReportNivel('n2')"    id="rn-n2">N2</button>
       </div>
-      <!-- Colunas visíveis -->
-      <div style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
-        <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">MOSTRAR:</span>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="rc-equipe"    checked onchange="renderReports()"> Equipe</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="rc-problemas" checked onchange="renderReports()"> Problemas</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="rc-contrato"  checked onchange="renderReports()"> Contrato</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="rc-sistemas"  checked onchange="renderReports()"> Sistemas</label>
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="rc-nivel"     checked onchange="renderReports()"> N1/N2</label>
+
+      <!-- Stats rápidas -->
+      <div id="report-stats-row" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px"></div>
+
+      <!-- Seção: Equipe -->
+      <div class="report-card" id="rc-equipe-card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <h3 style="margin:0">👥 Desempenho por Técnico</h3>
+          <span id="report-team-total" style="font-size:11px;color:var(--text3);font-family:var(--mono)"></span>
+        </div>
+        <div id="report-team"></div>
       </div>
 
-      <div id="report-grid-wrap">
-        <div class="report-card" id="rc-equipe-card" style="margin-bottom:20px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-            <h3 style="margin:0">👥 Desempenho da Equipe</h3>
-            <span id="report-team-total" style="font-size:12px;color:var(--text3);font-family:var(--mono)"></span>
-          </div>
-          <div id="report-team"></div>
+      <!-- Grid 2 colunas -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div class="report-card" id="rc-contrato-card">
+          <h3>📋 Por tipo de contrato</h3>
+          <div id="report-contrato-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px"></div>
+          <div id="report-contrato"></div>
         </div>
-        <div class="report-grid" id="report-cards-grid">
-          <div class="report-card" id="rc-problemas-card">
-            <h3>Problemas mais frequentes</h3>
-            <div id="report-issues"></div>
-          </div>
-          <div class="report-card" id="rc-contrato-card">
-            <h3>Distribuição por contrato</h3>
-            <div id="report-contrato"></div>
-          </div>
-          <div class="report-card" id="rc-sistemas-card">
-            <h3>Chamados por sistema / equipamento</h3>
-            <div id="report-systems"></div>
-          </div>
-          <div class="report-card" id="rc-nivel-card">
-            <h3>N1 vs N2</h3>
-            <div id="report-nivel"></div>
-          </div>
+        <div class="report-card" id="rc-problemas-card">
+          <h3>🔧 Problemas mais frequentes</h3>
+          <div id="report-issues"></div>
+        </div>
+      </div>
+
+      <!-- Grid 2 colunas -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="report-card" id="rc-sistemas-card">
+          <h3>🖥 Por sistema</h3>
+          <div id="report-systems"></div>
+        </div>
+        <div class="report-card" id="rc-nivel-card">
+          <h3>📊 N1 vs N2</h3>
+          <div id="report-nivel"></div>
         </div>
       </div>
     </div>
-
     <!-- CONFIG -->
     <div class="view" id="view-config">
       <div class="page-header">
@@ -3287,120 +3286,181 @@ function getNomeMembro(nome) {
 }
 
 function renderReports() {
-  const data = filtrarTicketsPeriodo();
+  const data  = filtrarTicketsPeriodo();
   const total = data.length;
+  const el    = id => document.getElementById(id);
+  const show  = (id, v) => { const e = el(id); if (e) e.style.display = v ? '' : 'none'; };
 
-  // ── Visibilidade dos cards ────────────────────────────────────────
-  const isChecked = id => { const el = document.getElementById(id); return !el || el.checked; };
-  const showCard = (cardId, show) => {
-    const el = document.getElementById(cardId);
-    if (el) el.style.display = show ? '' : 'none';
-  };
-  showCard('rc-equipe-card',    isChecked('rc-equipe'));
-  showCard('rc-problemas-card', isChecked('rc-problemas'));
-  showCard('rc-contrato-card',  isChecked('rc-contrato'));
-  showCard('rc-sistemas-card',  isChecked('rc-sistemas'));
-  showCard('rc-nivel-card',     isChecked('rc-nivel'));
+  // ── Helpers ───────────────────────────────────────────────────────
+  function statCard(valor, label, cor, sub) {
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px">
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:8px">${label}</div>
+      <div style="font-size:28px;font-weight:800;color:${cor};line-height:1">${valor}</div>
+      ${sub ? `<div style="font-size:10px;color:var(--text3);margin-top:4px">${sub}</div>` : ''}
+    </div>`;
+  }
 
-  // ── Equipe ────────────────────────────────────────────────────────
-  const teamEl = document.getElementById('report-team');
-  const teamTotalEl = document.getElementById('report-team-total');
+  function bar(label, n, denom, cor) {
+    const pct = denom > 0 ? Math.round(n / denom * 100) : 0;
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+        <span style="color:var(--text2)">${label}</span>
+        <span style="font-family:var(--mono);color:${cor};font-weight:700">${n} <span style="color:var(--text3);font-weight:400;font-size:10px">(${pct}%)</span></span>
+      </div>
+      <div style="background:var(--surface3);border-radius:4px;height:7px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${cor};border-radius:4px;transition:width .4s ease"></div>
+      </div>
+    </div>`;
+  }
+
+  // ── Stats rápidas ─────────────────────────────────────────────────
+  const statsEl = el('report-stats-row');
+  if (statsEl && total >= 0) {
+    const resolvidos   = data.filter(t => t.status === 'resolvido').length;
+    const emAberto     = data.filter(t => t.status !== 'resolvido').length;
+    const taxaGlobal   = total > 0 ? Math.round(resolvidos / total * 100) : 0;
+    const corTaxa      = taxaGlobal >= 80 ? 'var(--accent)' : taxaGlobal >= 50 ? 'var(--warn)' : 'var(--danger)';
+    const contrato     = data.filter(t => t.prioridade === 'contrato').length;
+    const garantia     = data.filter(t => t.prioridade === 'garantia').length;
+
+    statsEl.innerHTML =
+      statCard(total,       'TOTAL NO PERÍODO',    'var(--text)',    '') +
+      statCard(resolvidos,  'RESOLVIDOS',          'var(--accent)',  `${taxaGlobal}% de resolução`) +
+      statCard(emAberto,    'EM ABERTO',           'var(--warn)',    '') +
+      statCard(contrato,    'CONTRATO',            'var(--accent)',  '') +
+      statCard(garantia,    'GARANTIA',            'var(--accent2)', '');
+  }
+
+  // ── Atualizar label do período ────────────────────────────────────
+  const subEl = el('report-sub');
+  if (subEl) {
+    const labels = { mes: 'Este mês', sem: 'Esta semana', todos: 'Todos os períodos' };
+    subEl.textContent = (labels[reportPeriod] || '') + (total > 0 ? ` — ${total} chamados` : ' — sem dados');
+  }
+
+  // ── Desempenho por técnico ────────────────────────────────────────
+  const teamEl      = el('report-team');
+  const teamTotalEl = el('report-team-total');
   if (teamEl) {
     const membros = getMembros();
-    const memberMap = new Map();
+    // Usar TODOS os tickets resolvidos para contar finalizações (independente do filtro de período)
+    // mas usar `data` (filtrado) para contar atribuídos no período
+    const todosResolvidos = tickets.filter(t => t.status === 'resolvido');
 
-    // Inicializa todos os membros com zero
-    membros.forEach(m => memberMap.set(m, { total: 0, resolvidos: 0, pendentes: 0 }));
+    const rows = membros.map((nome, i) => {
+      const cor = MEMBER_COLORS[i % MEMBER_COLORS.length];
+      // Atribuídos no período (filtrado)
+      const atribPeriodo  = data.filter(t => t.assignedTo === nome || getNomeMembro(t.assignedTo || '') === nome);
+      // Total histórico resolvidos pelo técnico
+      const totalResolvidos = todosResolvidos.filter(t => t.assignedTo === nome || getNomeMembro(t.assignedTo || '') === nome).length;
+      const resolvidosPeriodo = atribPeriodo.filter(t => t.status === 'resolvido').length;
+      const emAberto          = atribPeriodo.filter(t => t.status !== 'resolvido').length;
+      const total             = atribPeriodo.length;
+      const taxa              = total > 0 ? Math.round(resolvidosPeriodo / total * 100) : 0;
+      const corTaxa           = taxa >= 80 ? 'var(--accent)' : taxa >= 50 ? 'var(--warn)' : total > 0 ? 'var(--danger)' : 'var(--text3)';
 
-    data.forEach(t => {
-      // Tenta identificar o membro pelo assignedTo ou pelo nome da coluna do Trello
-      const candidato = t.assignedTo || t.trelloList || '';
-      const membroReal = getNomeMembro(candidato);
-      if (membroReal) {
-        const m = memberMap.get(membroReal);
-        m.total++;
-        if (t.status === 'resolvido') m.resolvidos++;
-        else m.pendentes++;
-      }
-    });
+      return { nome, cor, total, resolvidosPeriodo, totalResolvidos, emAberto, taxa, corTaxa };
+    }).sort((a, b) => b.resolvidosPeriodo - a.resolvidosPeriodo);
 
-    const totalAtribuido = [...memberMap.values()].reduce((s, m) => s + m.total, 0);
+    const totalAtrib = rows.reduce((s, r) => s + r.total, 0);
+    if (teamTotalEl) teamTotalEl.textContent = `${totalAtrib} atribuídos no período`;
 
-    teamEl.innerHTML = membros.map((nome, i) => {
-      const m = memberMap.get(nome);
-      const pct = totalAtribuido > 0 ? Math.round((m.total / totalAtribuido) * 100) : 0;
-      const color = MEMBER_COLORS[i % MEMBER_COLORS.length];
-      const taxaResolucao = m.total > 0 ? Math.round((m.resolvidos / m.total) * 100) : 0;
-      return `
-      <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
-        <div style="width:36px;height:36px;border-radius:50%;background:${color}22;border:2px solid ${color};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:${color};flex-shrink:0">
-          ${nome.charAt(0).toUpperCase()}
+    if (totalAtrib === 0) {
+      teamEl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:12px 0">Nenhum chamado atribuído no período.</div>';
+    } else {
+      teamEl.innerHTML = `
+        <div style="display:grid;grid-template-columns:140px 1fr 80px 90px 90px 90px 70px;gap:8px;font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:4px">
+          <div>TÉCNICO</div><div>PROGRESSO</div><div>TOTAL</div><div>RESOLVIDOS</div><div>EM ABERTO</div><div>HISTÓRICO</div><div>TAXA</div>
         </div>
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:5px">
-            <span style="font-size:13px;font-weight:600">${nome}</span>
-            <span style="font-size:11px;color:var(--text3)">${m.total} chamado${m.total!==1?'s':''}</span>
-            <span style="font-size:12px;color:${color};font-family:var(--mono);margin-left:auto;font-weight:700">${pct}%</span>
+        ${rows.map(r => `
+        <div style="display:grid;grid-template-columns:140px 1fr 80px 90px 90px 90px 70px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:30px;height:30px;border-radius:50%;background:${r.cor}22;border:2px solid ${r.cor};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:${r.cor};flex-shrink:0">${r.nome.charAt(0)}</div>
+            <span style="font-size:13px;font-weight:600">${r.nome}</span>
           </div>
           <div style="background:var(--surface3);border-radius:4px;height:7px;overflow:hidden">
-            <div style="width:${pct}%;height:100%;background:${color};border-radius:4px;transition:width 0.5s ease"></div>
+            <div style="width:${r.total>0?Math.round(r.resolvidosPeriodo/r.total*100):0}%;height:100%;background:${r.cor};border-radius:4px;transition:width .5s"></div>
           </div>
-          <div style="display:flex;gap:14px;margin-top:5px;font-size:10px;color:var(--text3)">
-            <span style="color:#00e5a0">✅ ${m.resolvidos} resolvidos</span>
-            <span style="color:#ff6b35">⏳ ${m.pendentes} em aberto</span>
-            <span>📊 ${taxaResolucao}% resolução</span>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-
-    if (teamTotalEl) teamTotalEl.textContent = `${totalAtribuido} atribuídos · ${total} total no período`;
+          <div style="text-align:center;font-size:13px;font-weight:700;color:var(--text)">${r.total}</div>
+          <div style="text-align:center;font-size:13px;font-weight:700;color:var(--accent)">${r.resolvidosPeriodo}</div>
+          <div style="text-align:center;font-size:13px;font-weight:700;color:var(--warn)">${r.emAberto}</div>
+          <div style="text-align:center;font-size:11px;color:var(--text3)">${r.totalResolvidos} total</div>
+          <div style="text-align:right;font-size:15px;font-weight:800;color:${r.corTaxa}">${r.taxa}%</div>
+        </div>`).join('')}`;
+    }
   }
 
-  // ── Problemas frequentes ──────────────────────────────────────────
-  const issuesEl = document.getElementById('report-issues');
-  if (issuesEl) {
-    const catMap = new Map();
-    data.forEach(t => { catMap.set(t.categoria, (catMap.get(t.categoria)||0) + 1); });
-    const cats = [...catMap.entries()].sort((a,b) => b[1]-a[1]).slice(0,6);
-    const catColors = ['var(--accent)','var(--accent2)','var(--warn)','var(--accent3)','#a855f7','#2dd4bf'];
-    issuesEl.innerHTML = cats.length
-      ? cats.map(([cat, n], i) => barHtml(getCategoryLabel(cat)||cat, n, total, catColors[i%catColors.length])).join('')
-      : '<div style="color:var(--text3);font-size:12px">Sem dados</div>';
-  }
+  // ── Por tipo de contrato — cards + barras ─────────────────────────
+  const contrStatsEl = el('report-contrato-stats');
+  const contrEl      = el('report-contrato');
+  const contrato     = data.filter(t => t.prioridade === 'contrato');
+  const garantia     = data.filter(t => t.prioridade === 'garantia');
+  const avulso       = data.filter(t => t.prioridade === 'avulso');
 
-  // ── Contrato ──────────────────────────────────────────────────────
-  const contrEl = document.getElementById('report-contrato');
-  if (contrEl) {
-    const prioMap = { contrato:0, garantia:0, avulso:0 };
-    data.forEach(t => { if (prioMap[t.prioridade]!==undefined) prioMap[t.prioridade]++; });
-    contrEl.innerHTML = [
-      barHtml('Contrato',  prioMap.contrato, total, 'var(--accent)'),
-      barHtml('Garantia',  prioMap.garantia, total, 'var(--accent2)'),
-      barHtml('Sem garantia', prioMap.avulso, total, 'var(--accent3)'),
+  const contratoRes  = contrato.filter(t => t.status === 'resolvido').length;
+  const garantiaRes  = garantia.filter(t => t.status === 'resolvido').length;
+  const avulsoRes    = avulso.filter(t => t.status === 'resolvido').length;
+
+  if (contrStatsEl) {
+    contrStatsEl.innerHTML = [
+      `<div style="background:rgba(0,229,160,0.07);border:1px solid rgba(0,229,160,0.2);border-radius:8px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--accent)">${contrato.length}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px">Contrato</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${contratoRes} resolvidos</div>
+      </div>`,
+      `<div style="background:rgba(0,144,255,0.07);border:1px solid rgba(0,144,255,0.2);border-radius:8px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--accent2)">${garantia.length}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px">Garantia</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${garantiaRes} resolvidos</div>
+      </div>`,
+      `<div style="background:rgba(255,107,53,0.07);border:1px solid rgba(255,107,53,0.2);border-radius:8px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--accent3)">${avulso.length}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px">Sem Garantia</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${avulsoRes} resolvidos</div>
+      </div>`,
     ].join('');
   }
 
-  // ── Sistemas ──────────────────────────────────────────────────────
-  const sysEl = document.getElementById('report-systems');
+  if (contrEl) {
+    contrEl.innerHTML = total > 0 ? [
+      bar('Contrato',     contrato.length, total, 'var(--accent)'),
+      bar('Garantia',     garantia.length, total, 'var(--accent2)'),
+      bar('Sem Garantia', avulso.length,   total, 'var(--accent3)'),
+    ].join('') : '<div style="color:var(--text3);font-size:12px">Sem dados</div>';
+  }
+
+  // ── Problemas mais frequentes ─────────────────────────────────────
+  const issuesEl = el('report-issues');
+  if (issuesEl) {
+    const catMap = new Map();
+    data.forEach(t => { catMap.set(t.categoria, (catMap.get(t.categoria)||0)+1); });
+    const cats = [...catMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,7);
+    const cors = ['var(--accent)','var(--accent2)','var(--warn)','var(--accent3)','#a855f7','#2dd4bf','#f472b6'];
+    issuesEl.innerHTML = cats.length
+      ? cats.map(([cat,n],i) => bar(getCategoryLabel(cat)||cat, n, total, cors[i%cors.length])).join('')
+      : '<div style="color:var(--text3);font-size:12px">Sem dados</div>';
+  }
+
+  // ── Por sistema ───────────────────────────────────────────────────
+  const sysEl = el('report-systems');
   if (sysEl) {
     const sysMap = new Map();
-    data.forEach(t => { const s = t.sistema||'outros'; sysMap.set(s, (sysMap.get(s)||0)+1); });
-    const syss = [...sysMap.entries()].sort((a,b) => b[1]-a[1]).slice(0,8);
-    const sysColors = ['#c084fc','#4ade80','#fb923c','#0090ff','#f472b6','#2dd4bf','#ffcc00','#ff4757'];
+    data.forEach(t => { const s=(t.sistema||'outros').toLowerCase(); sysMap.set(s,(sysMap.get(s)||0)+1); });
+    const syss = [...sysMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8);
+    const cors = ['#c084fc','#4ade80','#fb923c','#0090ff','#f472b6','#2dd4bf','#ffcc00','#ff4757'];
     sysEl.innerHTML = syss.length
-      ? syss.map(([s, n], i) => barHtml(s.toUpperCase(), n, total, sysColors[i%sysColors.length])).join('')
+      ? syss.map(([s,n],i) => bar(s.toUpperCase(), n, total, cors[i%cors.length])).join('')
       : '<div style="color:var(--text3);font-size:12px">Sem dados</div>';
   }
 
   // ── N1 vs N2 ──────────────────────────────────────────────────────
-  const nivelEl = document.getElementById('report-nivel');
+  const nivelEl = el('report-nivel');
   if (nivelEl) {
-    const n1 = data.filter(t => t.nivel==='n1').length;
-    const n2 = data.filter(t => t.nivel==='n2').length;
+    const n1 = data.filter(t=>t.nivel==='n1').length;
+    const n2 = data.filter(t=>t.nivel==='n2').length;
     nivelEl.innerHTML = [
-      barHtml('N1 — Suporte Básico',   n1, total, 'var(--accent)'),
-      barHtml('N2 — Suporte Avançado', n2, total, 'var(--warn)'),
+      bar('N1 — Suporte Básico',   n1, total, 'var(--accent)'),
+      bar('N2 — Suporte Avançado', n2, total, 'var(--warn)'),
     ].join('');
   }
 }
@@ -5126,41 +5186,39 @@ async function processWAMessage(fromNumber, messageText) {
   try {
     const data = await anthropicFetch({
       max_tokens: 600,
-      system: `Você é ${config.agentName}, assistente de suporte via WhatsApp da empresa Acesso e Ponto.
+      system: `Você é ${config.agentName}, assistente de suporte técnico via WhatsApp da Acesso e Ponto — REVENDEDORA AUTORIZADA de sistemas de ponto eletrônico (RHID, iPonto, Atecsoft). NÃO somos os fabricantes.
 
-## QUEM SOMOS
-A Acesso e Ponto é uma REVENDEDORA AUTORIZADA de sistemas de ponto eletrônico. NÃO somos os fabricantes.
-Os sistemas que revendemos e suportamos são: RHID, iPonto e Atecsoft.
-Dúvidas sobre o funcionamento interno dos sistemas, atualizações, licenças e políticas de cada fabricante devem ser encaminhadas para a equipe técnica.
+═══════════ IDENTIDADE — CRÍTICO ═══════════
+Você representa a Acesso e Ponto (revendedora). NUNCA diga "nosso sistema", "nosso software".
+Diga sempre: "o sistema RHID", "o iPonto", "o Atecsoft" — são produtos de terceiros que revendemos.
+Se perguntarem sobre funcionalidades, atualizações ou políticas do fabricante: "Essa informação é com o fabricante. Nossa equipe pode verificar para você."
 
-## SEU PAPEL
+═══════════ MODO DE OPERAÇÃO ═══════════
 ${modeInstructions}
 
-## IDENTIDADE E LIMITES — CRÍTICO
-- Você representa a Acesso e Ponto (revendedora), NÃO a RHID, NÃO a iPonto, NÃO a Atecsoft.
-- NUNCA diga "nosso sistema", "nosso software" ou qualquer coisa que sugira que somos os fabricantes.
-- Diga sempre: "o sistema RHID", "o iPonto", "o Atecsoft" — referindo-se como produto de terceiros.
-- Se o cliente perguntar sobre funcionalidades específicas do sistema (ex: "vocês vão lançar X?"), responda: "Essa informação é com o fabricante. Nossa equipe pode te ajudar a verificar."
-- NUNCA invente funcionalidades, atualizações ou promessas do fabricante.
-
-## REGRAS ABSOLUTAS
-1. Responda SOMENTE com base na base de conhecimento abaixo. Nada fora disso.
-2. Se não souber: "Vou verificar com nossa equipe técnica e retornamos em breve."
-3. NÃO cite canais além deste WhatsApp (sem site, e-mail, telefone, outros chats).
-4. NÃO prometa prazos sem confirmação da equipe.
-5. NÃO mencione sistemas fora do escopo: RHID, iPonto e Atecsoft.
-6. Use linguagem simples, direta. Mensagens curtas — máximo 5 linhas por mensagem.
-7. Prioridade de atendimento: Contrato > Garantia > Avulso.
-8. Sempre colete ao iniciar: nome, razão social, CNPJ e sistema utilizado.
-${clienteCNPJ ? `\nCNPJ já identificado: ${clienteCNPJ}` : ''}
-${clienteEmpresa ? `\nEmpresa já identificada: ${clienteEmpresa}` : ''}
+═══════════ REGRAS ABSOLUTAS — NUNCA QUEBRE ESTAS REGRAS ═══════════
+1. SOMENTE responda se a resposta estiver EXPLICITAMENTE na base de conhecimento abaixo.
+2. Se a pergunta NÃO estiver coberta pela KB: "Não tenho certeza sobre isso. Vou registrar e nossa equipe técnica retorna em breve." — e NÃO tente ajudar.
+3. NUNCA invente passos, soluções, configurações ou procedimentos não listados na KB.
+4. NUNCA cite canais além deste WhatsApp.
+5. NUNCA prometa prazos ou resultados.
+6. Mensagens CURTAS: máximo 5 linhas. Se precisar de mais, divida em etapas e pergunte "Pode tentar o passo 1?"
+7. Se o cliente disser que o passo não funcionou: "Entendido. Vou registrar um chamado para nossa equipe técnica ir mais fundo."
+8. Prioridade: Contrato > Garantia > Avulso.
+${clienteCNPJ ? `\n9. CNPJ já identificado: ${clienteCNPJ}` : ''}
+${clienteEmpresa ? `\n10. Empresa já identificada: ${clienteEmpresa}` : ''}
 ${clienteHistorico}
 
-## BASE DE CONHECIMENTO (use SOMENTE isto)
-${kbContext}${fewShot}
+═══════════ COLETA OBRIGATÓRIA (faça no início se não tiver) ═══════════
+Colete: nome completo · razão social · CNPJ · sistema (RHID, iPonto ou Atecsoft)
 
-## ABERTURA DE CHAMADO
-Se identificar problema técnico, adicione ao FINAL (sem mostrar ao cliente):
+═══════════ BASE DE CONHECIMENTO — USE SOMENTE ISTO ═══════════
+${kbContext}
+
+${fewShot ? '═══════════ ATENDIMENTOS ANTERIORES RESOLVIDOS (use como referência de linguagem) ═══════════\n' + fewShot : ''}
+
+═══════════ ABERTURA DE CHAMADO ═══════════
+Quando identificar problema técnico CLARO, adicione ao final (invisível ao cliente):
 CHAMADO: <categoria>|<sistema>|<n1 ou n2>|<empresa>|<cnpj>|<nome>`,
       messages
     });
