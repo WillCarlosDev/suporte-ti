@@ -1949,6 +1949,7 @@ async function loadTicketsFromDB() {
         dueDate:       r.due_date       || null,
         horaAgendada:  r.hora_agendada  || null,
         finalizadoEm:  r.finalizado_em  || null,
+        finalizadoPor: r.finalizado_por || null,
         replies:       r.replies        || [],
         time:          new Date(r.created_at).getTime(),
       }));
@@ -1986,6 +1987,7 @@ async function saveTicketToDB(t) {
       tipo_chamado:   t.tipoChamado    || 'normal',
       due_date:       t.dueDate         || null,
       hora_agendada:  t.horaAgendada    || null,
+      finalizado_por: t.finalizadoPor   || null,
       created_at:     new Date().toISOString(),
       replies:        t.replies        || [],
     }, { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
@@ -2005,6 +2007,7 @@ async function updateTicketInDB(t) {
       due_date:      t.dueDate       || null,
       hora_agendada: t.horaAgendada  || null,
       finalizado_em: t.finalizadoEm  || null,
+      finalizado_por: t.finalizadoPor || null,
       updated_at:    new Date().toISOString(),
     });
   } catch(e) {
@@ -3350,9 +3353,16 @@ function renderReports() {
     const rows = membros.map((nome, i) => {
       const cor = MEMBER_COLORS[i % MEMBER_COLORS.length];
       // Atribuídos no período (filtrado)
-      const atribPeriodo  = data.filter(t => t.assignedTo === nome || getNomeMembro(t.assignedTo || '') === nome);
-      // Total histórico resolvidos pelo técnico
-      const totalResolvidos = todosResolvidos.filter(t => t.assignedTo === nome || getNomeMembro(t.assignedTo || '') === nome).length;
+      // Considera assignedTo OU finalizadoPor (quem fechou) como responsável
+      const pertence = t => {
+        const atrib = t.assignedTo     || '';
+        const final = t.finalizadoPor  || '';
+        return atrib === nome || getNomeMembro(atrib) === nome ||
+               final === nome || getNomeMembro(final) === nome;
+      };
+      const atribPeriodo    = data.filter(pertence);
+      // Total histórico resolvidos pelo técnico (assignedTo ou finalizadoPor)
+      const totalResolvidos = todosResolvidos.filter(pertence).length;
       const resolvidosPeriodo = atribPeriodo.filter(t => t.status === 'resolvido').length;
       const emAberto          = atribPeriodo.filter(t => t.status !== 'resolvido').length;
       const total             = atribPeriodo.length;
@@ -4951,9 +4961,14 @@ async function finalizeTicket() {
   }
 
   // Atualiza localmente
-  t.currentStatus = 'resolvido';
-  t.status        = 'resolvido';
-  t.finalizadoEm  = new Date().toISOString();
+  t.currentStatus  = 'resolvido';
+  t.status         = 'resolvido';
+  t.finalizadoEm   = new Date().toISOString();
+  t.finalizadoPor  = getDisplayName(currentUser?.username) || currentUser?.username || 'técnico';
+  // Se o chamado não tinha técnico atribuído, atribuir a quem finalizou
+  if (!t.assignedTo) {
+    t.assignedTo = t.finalizadoPor;
+  }
   if (listaFinalId) { t.trelloListId = listaFinalId; t.trelloList = listaFinalNome; }
   updateTicketInDB(t);
 
