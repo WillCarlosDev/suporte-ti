@@ -429,8 +429,11 @@
     <div style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
     <span style="font-size:12px;color:var(--text2)">Acesso e Ponto — N1 / N2</span>
     <div class="topbar-right">
-      <button onclick="syncFromTrello(false)" style="background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:var(--mono);letter-spacing:0.5px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--accent2)';this.style.color='var(--accent2)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">SYNC TRELLO</button>
-      <span id="trello-sync-time" style="font-size:10px;color:var(--text3);font-family:var(--mono)"></span>
+      <div id="trello-sync-group" style="display:flex;align-items:center;gap:6px">
+        <button onclick="syncFromTrello(false)" id="btn-sync-trello" style="background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:var(--mono);letter-spacing:0.5px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--accent2)';this.style.color='var(--accent2)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">SYNC TRELLO</button>
+        <button onclick="toggleTrelloPause()" id="btn-trello-pause" title="Pausar/retomar sincronização automática com o Trello" style="display:none;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:4px 8px;font-size:11px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--warn)';this.style.color='var(--warn)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">⏸</button>
+        <span id="trello-sync-time" style="font-size:10px;color:var(--text3);font-family:var(--mono)"></span>
+      </div>
       <span class="badge-online">ONLINE</span>
       <span class="time-display" id="clock">--:--:--</span>
       <!-- Sino de notificações -->
@@ -832,82 +835,103 @@
 
     <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
-      <div class="page-header">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
         <div>
-          <div class="page-title">Dashboard</div>
-          <div class="page-sub" id="dash-sub">Hoje</div>
+          <div style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.3px">Dashboard</div>
+          <div id="dash-sub" style="font-size:12px;color:var(--text3);margin-top:2px"></div>
         </div>
         <div id="dash-online-bar" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"></div>
       </div>
 
-      <!-- Linha de stats rápidos -->
-      <div class="stats-row" style="margin-bottom:20px">
-        <div class="stat-card warn" style="cursor:pointer" onclick="showView('chamados')" title="Ver chamados">
-          <div class="stat-num" id="stat-open" style="color:var(--warn)">0</div>
-          <div class="stat-label">⏳ Em aberto</div>
+      <!-- Stats row: 5 cartões -->
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px">
+
+        <div onclick="showView('chamados')" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--warn)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:10px">EM ABERTO</div>
+          <div id="stat-open" style="font-size:32px;font-weight:800;color:var(--warn);line-height:1">0</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">chamados</div>
         </div>
-        <div class="stat-card" style="cursor:pointer;--accent-line:#ff4757" onclick="showView('chamados')" title="Contratos sem técnico">
-          <div class="stat-num" id="stat-sem-tecnico" style="color:#ff4757">0</div>
-          <div class="stat-label">🚨 Sem técnico</div>
+
+        <div onclick="showView('chamados')" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='#ff4757'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:10px">SEM TÉCNICO</div>
+          <div id="stat-sem-tecnico" style="font-size:32px;font-weight:800;color:#ff4757;line-height:1">0</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">contratos</div>
         </div>
-        <div class="stat-card" style="cursor:pointer;--accent-line:#a855f7" onclick="showView('chamados')" title="Agendados para hoje">
-          <div class="stat-num" id="stat-agendados-hoje" style="color:#a855f7">0</div>
-          <div class="stat-label">📅 Hoje agendados</div>
+
+        <div onclick="showView('chamados')" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='#a855f7'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:10px">HOJE</div>
+          <div id="stat-agendados-hoje" style="font-size:32px;font-weight:800;color:#a855f7;line-height:1">0</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">agendados</div>
         </div>
-        <div class="stat-card" style="--accent-line:var(--accent)">
-          <div class="stat-num" id="stat-resolved" style="color:var(--accent)">0</div>
-          <div class="stat-label">✅ Concluídos hoje</div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;">
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:10px">CONCLUÍDOS HOJE</div>
+          <div id="stat-resolved" style="font-size:32px;font-weight:800;color:var(--accent);line-height:1">0</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">finalizados</div>
         </div>
-        <div class="stat-card blue">
-          <div class="stat-num" id="stat-month" style="color:var(--accent2)">0</div>
-          <div class="stat-label" id="stat-month-label">📆 No mês</div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;">
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:10px" id="stat-month-label">NO MÊS</div>
+          <div id="stat-month" style="font-size:32px;font-weight:800;color:var(--accent2);line-height:1">0</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">abertos</div>
         </div>
+
       </div>
 
-      <!-- Grid principal -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <!-- Grid principal: 3 colunas -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 300px;gap:14px;align-items:start">
 
-        <!-- Coluna 1: Chamados urgentes sem técnico -->
-        <div class="report-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-            <h3 style="margin:0;font-size:13px">🚨 Contratos sem técnico</h3>
-            <button onclick="showView('chamados')" style="font-size:11px;padding:3px 10px;border-radius:5px;border:1px solid var(--border);color:var(--text2);background:none;cursor:pointer">Ver kanban →</button>
+        <!-- Contratos sem técnico -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:rgba(255,71,87,0.04)">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:14px">🚨</span>
+              <span style="font-size:12px;font-weight:700;color:var(--text);letter-spacing:.5px">CONTRATOS SEM TÉCNICO</span>
+            </div>
+            <button onclick="showView('chamados')" style="font-size:11px;padding:4px 12px;border-radius:6px;border:1px solid var(--border);color:var(--text3);background:none;cursor:pointer">Ver kanban →</button>
           </div>
-          <div id="dash-urgentes" style="display:flex;flex-direction:column;gap:8px">
-            <div style="color:var(--text3);font-size:12px;padding:8px 0">Carregando...</div>
-          </div>
+          <div id="dash-urgentes" style="padding:10px 12px;display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto"></div>
         </div>
 
-        <!-- Coluna 2: Agendados para hoje -->
-        <div class="report-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-            <h3 style="margin:0;font-size:13px">📅 Agendados para hoje</h3>
-            <span id="dash-agendados-count" style="font-size:11px;color:var(--text3);font-family:var(--mono)"></span>
+        <!-- Recém abertos + Agendados hoje em coluna -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+
+          <!-- Recém abertos -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:14px">🕐</span>
+                <span style="font-size:12px;font-weight:700;color:var(--text);letter-spacing:.5px">RECÉM ABERTOS</span>
+              </div>
+              <button onclick="showView('novo')" style="font-size:11px;padding:4px 12px;border-radius:6px;border:1px solid var(--accent);color:var(--accent);background:rgba(0,229,160,0.06);cursor:pointer">＋ Novo</button>
+            </div>
+            <div id="dash-recentes" style="padding:10px 12px;display:flex;flex-direction:column;gap:6px;max-height:185px;overflow-y:auto"></div>
           </div>
-          <div id="dash-agendados" style="display:flex;flex-direction:column;gap:8px">
-            <div style="color:var(--text3);font-size:12px;padding:8px 0">Nenhum agendamento para hoje.</div>
+
+          <!-- Agendados para hoje -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:rgba(168,85,247,0.03)">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:14px">📅</span>
+                <span style="font-size:12px;font-weight:700;color:var(--text);letter-spacing:.5px">AGENDADOS HOJE</span>
+              </div>
+              <span id="dash-agendados-count" style="font-size:11px;color:#c084fc;font-family:var(--mono)"></span>
+            </div>
+            <div id="dash-agendados" style="padding:10px 12px;display:flex;flex-direction:column;gap:6px;max-height:130px;overflow-y:auto"></div>
           </div>
+
         </div>
 
-        <!-- Coluna 3: Chamados por técnico (snapshot) -->
-        <div class="report-card">
-          <div style="margin-bottom:14px">
-            <h3 style="margin:0;font-size:13px">👥 Equipe agora</h3>
+        <!-- Equipe (coluna lateral) -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:14px">👥</span>
+              <span style="font-size:12px;font-weight:700;color:var(--text);letter-spacing:.5px">EQUIPE AGORA</span>
+            </div>
           </div>
-          <div id="dash-equipe" style="display:flex;flex-direction:column;gap:10px">
-            <div style="color:var(--text3);font-size:12px;padding:8px 0">Carregando...</div>
-          </div>
-        </div>
-
-        <!-- Coluna 4: Últimos chamados abertos -->
-        <div class="report-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-            <h3 style="margin:0;font-size:13px">🕐 Recém abertos</h3>
-            <button onclick="showView('novo')" style="font-size:11px;padding:3px 10px;border-radius:5px;border:1px solid var(--accent);color:var(--accent);background:rgba(0,229,160,0.06);cursor:pointer">+ Novo</button>
-          </div>
-          <div id="dash-recentes" style="display:flex;flex-direction:column;gap:8px">
-            <div style="color:var(--text3);font-size:12px;padding:8px 0">Carregando...</div>
-          </div>
+          <div id="dash-equipe" style="padding:14px 16px;display:flex;flex-direction:column;gap:12px"></div>
         </div>
 
       </div>
@@ -1735,6 +1759,59 @@ function doLogout() {
   document.getElementById('login-error').classList.remove('show');
 }
 
+
+// ─── Controle de Pausa do Trello Sync ─────────────────────────────────────────
+function toggleTrelloPause() {
+  if (currentUser?.role !== 'adm') {
+    showNotif('🔒 Apenas ADM pode pausar a sincronização.', 'warn');
+    return;
+  }
+
+  trelloPaused = !trelloPaused;
+  const btn       = document.getElementById('btn-trello-pause');
+  const syncBtn   = document.getElementById('btn-sync-trello');
+  const timeLabel = document.getElementById('trello-sync-time');
+  const statusTxt = document.getElementById('trello-status-text');
+
+  if (trelloPaused) {
+    // Parar o polling automático
+    stopTrelloPolling();
+    if (btn) {
+      btn.textContent = '▶';
+      btn.title       = 'Retomar sincronização automática com o Trello';
+      btn.style.borderColor = 'var(--warn)';
+      btn.style.color       = 'var(--warn)';
+      btn.onmouseout = () => { btn.style.borderColor='var(--warn)'; btn.style.color='var(--warn)'; };
+    }
+    if (syncBtn) { syncBtn.style.opacity = '0.4'; syncBtn.style.pointerEvents = 'none'; syncBtn.title = 'Sincronização pausada pelo ADM'; }
+    if (timeLabel) timeLabel.textContent = '⏸ pausado';
+    if (statusTxt) statusTxt.textContent = '⏸ Sync pausado pelo ADM';
+    showNotif('⏸ Sincronização com o Trello pausada.');
+  } else {
+    // Retomar polling
+    if (btn) {
+      btn.textContent = '⏸';
+      btn.title       = 'Pausar sincronização automática com o Trello';
+      btn.style.borderColor = 'var(--border)';
+      btn.style.color       = 'var(--text3)';
+      btn.onmouseout = () => { btn.style.borderColor='var(--border)'; btn.style.color='var(--text3)'; };
+    }
+    if (syncBtn) { syncBtn.style.opacity = ''; syncBtn.style.pointerEvents = ''; syncBtn.title = ''; }
+    // Fazer sync imediato e re-iniciar polling
+    syncFromTrello(false);
+    showNotif('▶ Sincronização com o Trello retomada!');
+  }
+}
+
+// Mostrar/esconder botão de pause conforme role do usuário logado
+function atualizarBotaoPause() {
+  const btn = document.getElementById('btn-trello-pause');
+  if (!btn) return;
+  // Mostrar só se ADM e se o Trello estiver configurado (key + board presentes)
+  const trelloAtivo = TRELLO.key && TRELLO.board;
+  btn.style.display = (currentUser?.role === 'adm' && trelloAtivo) ? 'inline-flex' : 'none';
+}
+
 function stopTrelloPolling() {
   if (trelloPollingInterval) { clearInterval(trelloPollingInterval); trelloPollingInterval = null; }
 }
@@ -2022,6 +2099,7 @@ function mapearStatus(listName) {
 // ─── Trello Sync Bidirecional ─────────────────────────────────────────────────
 let trelloPollingInterval = null;
 let lastTrelloSync        = null;
+let trelloPaused          = false; // controle de pausa pelo ADM
 let isSyncing             = false;
 
 const STATUS_TO_LIST_HINT = {
@@ -2076,6 +2154,8 @@ async function updateTrelloCard(t, newStatus) {
 }
 
 async function syncFromTrello(silent = false) {
+  // Respeita pause — o polling automático chama com silent=true
+  if (trelloPaused && silent) return;
   if (isSyncing) return;
   isSyncing = true;
   if (!silent) showNotif('🔄 Sincronizando com Trello...');
@@ -2201,6 +2281,7 @@ async function initTrello() {
     document.getElementById('trello-key').value   = TRELLO.key;
     document.getElementById('trello-token').value = TRELLO.token;
     document.getElementById('trello-board').value = TRELLO.board;
+    atualizarBotaoPause();
     showNotif(`🟦 Trello conectado — "${board.name}"`);
     await loadBoardLabels();
     await syncFromTrello(false);
@@ -2488,18 +2569,18 @@ function renderStats() {
       .sort((a,b) => (a.time||0) - (b.time||0)) // mais antigos primeiro
       .slice(0, 6);
     if (urgentes.length === 0) {
-      urgentesEl.innerHTML = '<div style="color:var(--accent);font-size:12px;padding:8px 0">✅ Nenhum contrato sem técnico!</div>';
+      urgentesEl.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;padding:28px 16px;color:var(--text3)"><div style="font-size:28px;margin-bottom:8px">✅</div><div style="font-size:12px;font-weight:600;color:var(--accent)">Tudo atribuído!</div><div style="font-size:11px;margin-top:3px">Nenhum contrato sem técnico</div></div>';
     } else {
       urgentesEl.innerHTML = urgentes.map(t => `
-        <div onclick="showTicketDetail('${t.id}')" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,71,87,0.06);border:1px solid rgba(255,71,87,0.2);border-radius:8px;cursor:pointer" onmouseover="this.style.background='rgba(255,71,87,0.12)'" onmouseout="this.style.background='rgba(255,71,87,0.06)'">
+        <div onclick="showTicketDetail('${t.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,71,87,0.15);background:rgba(255,71,87,0.04);cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(255,71,87,0.09)';this.style.borderColor='rgba(255,71,87,0.35)'" onmouseout="this.style.background='rgba(255,71,87,0.04)';this.style.borderColor='rgba(255,71,87,0.15)'">
           <div style="flex:1;min-width:0">
-            <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.empresa}</div>
-            <div style="font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${getCategoryLabel(t.categoria) || t.categoria}</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+              <span style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px">${t.empresa}</span>
+              <span style="font-size:9px;font-family:var(--mono);color:var(--text3);flex-shrink:0">${timeAgo(t.time)}</span>
+            </div>
+            <div style="font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${getCategoryLabel(t.categoria) || t.categoria} · ${t.cnpj || '—'}</div>
           </div>
-          <div style="text-align:right;flex-shrink:0">
-            <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">${timeAgo(t.time)}</div>
-            <button onclick="event.stopPropagation();puxarChamado('${t.id}')" style="margin-top:3px;font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid var(--accent2);color:var(--accent2);background:transparent;cursor:pointer">Puxar</button>
-          </div>
+          <button onclick="event.stopPropagation();puxarChamado('${t.id}')" style="flex-shrink:0;font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--accent2);color:var(--accent2);background:rgba(0,144,255,0.06);cursor:pointer;font-weight:600;white-space:nowrap" onmouseover="this.style.background='rgba(0,144,255,0.15)'" onmouseout="this.style.background='rgba(0,144,255,0.06)'">↩ Puxar</button>
         </div>`).join('');
     }
   }
@@ -2510,7 +2591,7 @@ function renderStats() {
   if (agCount) agCount.textContent = agendadosHoje.length > 0 ? agendadosHoje.length + ' agendado(s)' : '';
   if (agendadosEl) {
     if (agendadosHoje.length === 0) {
-      agendadosEl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">Nenhum agendamento para hoje.</div>';
+      agendadosEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">📅 Sem agendamentos para hoje</div>';
     } else {
       const sorted = [...agendadosHoje].sort((a,b) => {
         const ha = a.horaAgendada || '00:00';
@@ -2518,13 +2599,15 @@ function renderStats() {
         return ha.localeCompare(hb);
       });
       agendadosEl.innerHTML = sorted.map(t => `
-        <div onclick="showTicketDetail('${t.id}')" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:8px;cursor:pointer" onmouseover="this.style.background='rgba(168,85,247,0.12)'" onmouseout="this.style.background='rgba(168,85,247,0.06)'">
-          <div style="font-size:20px;flex-shrink:0">📅</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.empresa}</div>
-            <div style="font-size:11px;color:var(--text2)">${getCategoryLabel(t.categoria)||t.categoria}${t.assignedTo ? ' · ' + t.assignedTo : ''}</div>
+        <div onclick="showTicketDetail('${t.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;border:1px solid rgba(168,85,247,0.15);background:rgba(168,85,247,0.04);cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(168,85,247,0.09)'" onmouseout="this.style.background='rgba(168,85,247,0.04)'">
+          <div style="flex-shrink:0;width:44px;height:44px;border-radius:10px;background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.25);display:flex;align-items:center;justify-content:center;flex-direction:column">
+            <span style="font-size:14px;font-weight:800;color:#c084fc;line-height:1">${t.horaAgendada ? t.horaAgendada.split(':')[0] : '—'}</span>
+            <span style="font-size:9px;color:#c084fc;opacity:.7">${t.horaAgendada ? ':'+t.horaAgendada.split(':')[1] : ''}</span>
           </div>
-          <div style="font-size:13px;font-weight:700;color:#c084fc;flex-shrink:0">${t.horaAgendada || '—'}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.empresa}</div>
+            <div style="font-size:11px;color:var(--text3)">${getCategoryLabel(t.categoria)||t.categoria}${t.assignedTo ? ' · <span style="color:var(--accent2)">'+t.assignedTo+'</span>' : ' · <span style="color:var(--text3)">sem técnico</span>'}</div>
+          </div>
         </div>`).join('');
     }
   }
@@ -2541,20 +2624,21 @@ function renderStats() {
       return { m, cor, atribuidos, isOnline };
     });
     if (rows.length === 0) {
-      equipeEl.innerHTML = '<div style="color:var(--text3);font-size:12px">Nenhum membro configurado.</div>';
+      equipeEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Nenhum membro configurado</div>';
     } else {
       equipeEl.innerHTML = rows.map(r => `
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:32px;height:32px;border-radius:50%;background:${r.cor}22;border:2px solid ${r.cor};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:${r.cor};flex-shrink:0">${r.m.charAt(0).toUpperCase()}</div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;background:var(--surface2)">
+          <div style="position:relative;flex-shrink:0">
+            <div style="width:38px;height:38px;border-radius:50%;background:${r.cor}22;border:2px solid ${r.cor};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:${r.cor}">${r.m.charAt(0).toUpperCase()}</div>
+            <div style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:${r.isOnline ? '#00e5a0' : 'var(--surface3)'};border:2px solid var(--surface2)"></div>
+          </div>
           <div style="flex:1">
-            <div style="display:flex;align-items:center;gap:6px">
-              <span style="font-size:13px;font-weight:600">${r.m}</span>
-              <div style="width:6px;height:6px;border-radius:50%;background:${r.isOnline ? 'var(--accent)' : 'var(--border)'}"></div>
-            </div>
-            <div style="font-size:11px;color:var(--text2)">${r.atribuidos.length} chamado${r.atribuidos.length !== 1 ? 's' : ''} em mãos</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">${r.m}</div>
+            <div style="font-size:11px;color:var(--text3)">${r.isOnline ? '<span style="color:var(--accent)">online</span>' : 'offline'}</div>
           </div>
           <div style="text-align:right">
-            <div style="font-size:13px;font-weight:700;color:${r.cor}">${r.atribuidos.length}</div>
+            <div style="font-size:22px;font-weight:800;color:${r.atribuidos.length > 0 ? r.cor : 'var(--text3)'};line-height:1">${r.atribuidos.length}</div>
+            <div style="font-size:10px;color:var(--text3)">em mãos</div>
           </div>
         </div>`).join('');
     }
@@ -2569,16 +2653,19 @@ function renderStats() {
       .sort((a,b) => (b.time||0) - (a.time||0))
       .slice(0, 6);
     if (recentes.length === 0) {
-      recentesEl.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">Nenhum chamado em aberto.</div>';
+      recentesEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Nenhum chamado em aberto</div>';
     } else {
       recentesEl.innerHTML = recentes.map(t => `
-        <div onclick="showTicketDetail('${t.id}')" style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:var(--surface2);border-radius:8px;cursor:pointer" onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background='var(--surface2)'">
-          <div style="width:8px;height:8px;border-radius:50%;background:${prioColors[t.prioridade]||'var(--text3)'};flex-shrink:0"></div>
+        <div onclick="showTicketDetail('${t.id}')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:var(--surface2);border:1px solid transparent;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--border)';this.style.background='var(--surface3)'" onmouseout="this.style.borderColor='transparent';this.style.background='var(--surface2)'">
+          <div style="width:4px;height:36px;border-radius:2px;background:${prioColors[t.prioridade]||'var(--text3)'};flex-shrink:0"></div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.empresa}</div>
-            <div style="font-size:11px;color:var(--text2)">${getCategoryLabel(t.categoria)||t.categoria}${t.assignedTo ? ' · '+t.assignedTo : ' · sem técnico'}</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.empresa}</div>
+            <div style="font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${getCategoryLabel(t.categoria)||t.categoria} · ${t.assignedTo || '<span style="opacity:.5">sem técnico</span>'}</div>
           </div>
-          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);flex-shrink:0">${timeAgo(t.time)}</div>
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);flex-shrink:0;text-align:right">
+            <div>${timeAgo(t.time)}</div>
+            <div style="margin-top:2px;font-size:9px;padding:1px 5px;border-radius:3px;background:${prioColors[t.prioridade]+'22'||'rgba(0,0,0,0)'};color:${prioColors[t.prioridade]||'var(--text3)'}">${t.prioridade||''}</div>
+          </div>
         </div>`).join('');
     }
   }
@@ -2595,69 +2682,90 @@ function renderKanban(containerId, data) {
   if (!container) return;
 
   const prioOrder = { contrato: 0, garantia: 1, avulso: 2 };
-  const sortByPriority = arr => [...arr].sort((a,b) => (prioOrder[a.prioridade]??2) - (prioOrder[b.prioridade]??2));
+  const sortByPriority = arr => [...arr].sort((a,b) =>
+    (prioOrder[a.prioridade] ?? 2) - (prioOrder[b.prioridade] ?? 2)
+  );
 
-  function makeCol(label, color, tickets, isчлен = false, memberIdx = -1) {
+  function makeCol(label, color, colTickets, isMembro = false, memberIdx = -1) {
     const memberColor = memberIdx >= 0 ? MEMBER_COLORS[memberIdx % MEMBER_COLORS.length] : color;
-    const headBg = isчлен ? `rgba(${hexToRgb(memberColor)},0.06)` : '';
-    const dotStyle = isчлен
+    const headBg   = isMembro ? `rgba(${hexToRgb(memberColor)},0.06)` : '';
+    const dotStyle = isMembro
       ? `width:22px;height:22px;border-radius:50%;background:${memberColor}22;border:1.5px solid ${memberColor};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${memberColor}`
       : `background:${color}`;
-    const dotContent = isчлен ? label.charAt(0).toUpperCase() : '';
+    const dotContent = isMembro ? label.charAt(0).toUpperCase() : '';
     return `
     <div class="kanban-col">
       <div class="kanban-head" style="${headBg ? 'background:'+headBg : ''}">
         <div class="dot" style="${dotStyle}">${dotContent}</div>
         ${label}
-        <span class="col-count">${tickets.length}</span>
+        <span class="col-count">${colTickets.length}</span>
       </div>
       <div class="kanban-cards">
-        ${tickets.map(t => renderTicketCard(t)).join('') || '<div style="color:var(--text3);font-size:11px;padding:8px;text-align:center">Nenhum card</div>'}
+        ${colTickets.map(t => renderTicketCard(t)).join('') ||
+          '<div style="color:var(--text3);font-size:11px;padding:8px;text-align:center">Nenhum card</div>'}
       </div>
     </div>`;
   }
 
-  // Modo painel próprio (sem Trello ou com Trello)
   const membros = getMembros();
 
-  // Chamados SEM responsável e em aberto → coluna "Fila"
-  const fila = sortByPriority(data.filter(t => {
-    if (t.status === 'resolvido' || t.status === 'pendencia' || t.status === 'nao-atendido' || t.status === 'aguardando' || t.status === 'agendado') return false;
-    if (t.trelloList && t.trelloList.toLowerCase().includes('agend')) return false;
+  // ── Buckets de tickets ─────────────────────────────────────────────────────
+  // "Chamados": abertos ou aguardando, SEM responsável
+  const chamados = sortByPriority(data.filter(t => {
+    if (['resolvido','pendencia','nao-atendido','agendado'].includes(t.status)) return false;
     if (t.assignedTo) return false;
-    return true;
+    return true; // aberto + aguardando sem técnico
   }));
 
-  // Colunas por técnico → tickets atribuídos a eles que não estão resolvidos/pendência/etc
+  // Uma coluna por técnico: todos que têm assignedTo = técnico e não estão encerrados
   const colsMembros = membros.map((m, idx) => ({
     label: m, idx,
     tickets: sortByPriority(data.filter(t =>
-      t.assignedTo === m && t.status !== 'resolvido' && t.status !== 'pendencia' && t.status !== 'nao-atendido'
+      t.assignedTo === m &&
+      !['resolvido','pendencia','nao-atendido'].includes(t.status)
     ))
   }));
 
-  // Colunas de status especiais
-  const agendado    = sortByPriority(data.filter(t =>
-    t.status === 'agendado' ||
-    (t.trelloList && t.trelloList.toLowerCase().includes('agend') && t.status !== 'resolvido')
-  ));
-  const aguardando  = sortByPriority(data.filter(t => t.status === 'aguardando'));
-  const pendencia   = sortByPriority(data.filter(t => t.status === 'pendencia'));
-  const naoAtendido = sortByPriority(data.filter(t => t.status === 'nao-atendido'));
-  const resolvido   = sortByPriority(data.filter(t => t.status === 'resolvido'));
+  // Colunas de status fixas
+  const buckets = {
+    'chamados':    chamados,
+    'agendado':    sortByPriority(data.filter(t => t.status === 'agendado')),
+    'pendencia':   sortByPriority(data.filter(t => t.status === 'pendencia')),
+    'nao-atendido':sortByPriority(data.filter(t => t.status === 'nao-atendido')),
+    'resolvido':   sortByPriority(data.filter(t => t.status === 'resolvido')),
+  };
 
-  const totalCols = 1 + membros.length + 3 + (resolvido.length > 0 ? 1 : 0);
-  container.style.gridTemplateColumns = `repeat(${Math.min(totalCols, 8)}, minmax(180px, 1fr))`;
+  // ── Ordem das colunas (configurável via getKanbanCols) ─────────────────────
+  // getKanbanCols() retorna a lista com ordem e label customizável
+  const colOrder = getKanbanCols();
+
+  // Colunas especiais na ordem salva, pulando 'resolvido' se vazio
+  const colsEspeciais = colOrder
+    .filter(col => col.key !== 'resolvido' || buckets['resolvido'].length > 0)
+    .map(col => {
+      const tickets = buckets[col.key] || [];
+      return makeCol(col.label, col.color, tickets);
+    });
+
+  // Colunas de técnicos (sempre entre "Chamados" e os status finais)
+  const colsEspeciaisAntes = colOrder.filter(col => col.key === 'chamados').length > 0
+    ? colsEspeciais.slice(0, colOrder.findIndex(c => c.key === 'chamados') + 1)
+    : colsEspeciais.slice(0, 1);
+
+  const idxChamados = colOrder.findIndex(c => c.key === 'chamados');
+  const colsAntes   = colOrder.slice(0, idxChamados + 1).map(col => makeCol(col.label, col.color, buckets[col.key] || []));
+  const colsDepois  = colOrder.slice(idxChamados + 1)
+    .filter(col => col.key !== 'resolvido' || buckets['resolvido'].length > 0)
+    .map(col => makeCol(col.label, col.color, buckets[col.key] || []));
+
+  const totalCols = colOrder.length + membros.length - (buckets['resolvido'].length === 0 ? 1 : 0);
+  container.style.gridTemplateColumns = `repeat(${Math.min(totalCols, 9)}, minmax(185px, 1fr))`;
   container.style.overflowX = 'auto';
 
   container.innerHTML =
-    makeCol('Fila', '#ff4757', fila) +
+    colsAntes.join('') +
     colsMembros.map(c => makeCol(c.label, null, c.tickets, true, c.idx)).join('') +
-    makeCol('Agendado', '#a855f7', agendado) +
-    makeCol('Aguardando', '#0090ff', aguardando) +
-    makeCol('Pendência', '#ff6b35', pendencia) +
-    makeCol('Não Atendido', '#8a90a0', naoAtendido) +
-    (resolvido.length > 0 ? makeCol('Resolvido', '#00e5a0', resolvido) : '');
+    colsDepois.join('');
 }
 
 function hexToRgb(hex) {
@@ -3071,12 +3179,14 @@ async function setConfig(chave, valor) {
 
 // ─── Colunas do Kanban ────────────────────────────────────────────────────────
 const DEFAULT_KANBAN_COLS = [
-  { key:'aberto',       label:'Aberto',       color:'#ff4757' },
-  { key:'em-andamento', label:'Em Andamento',  color:'#ffcc00' },
-  { key:'aguardando',   label:'Aguardando',    color:'#0090ff' },
-  { key:'pendencia',    label:'Pendência',     color:'#ff6b35' },
-  { key:'nao-atendido', label:'Não Atendido',  color:'#8a90a0' },
-  { key:'resolvido',    label:'Resolvido',     color:'#00e5a0' },
+  // Colunas especiais — ordem configurável pelo usuário
+  // key 'chamados'    = tickets sem técnico (aberto + aguardando)
+  // key por técnico   = gerado dinamicamente via getMembros()
+  { key:'chamados',    label:'Chamados',      color:'#ff4757' },
+  { key:'agendado',    label:'Agendado',      color:'#a855f7' },
+  { key:'pendencia',   label:'Pendência',     color:'#ff6b35' },
+  { key:'nao-atendido',label:'Não Atendido',  color:'#8a90a0' },
+  { key:'resolvido',   label:'Resolvido',     color:'#00e5a0' },
 ];
 let _kanbanColsCache = null;
 
@@ -3303,20 +3413,34 @@ function toggleGerenciarColunas() {
 }
 
 function renderColunasLista() {
-  const cols = getKanbanCols();
+  const cols  = getKanbanCols();
   const lista = document.getElementById('colunas-lista');
+  if (!lista) return;
+
+  // Colunas fixas que não podem ser removidas
+  const fixas = ['chamados', 'resolvido'];
+
   lista.innerHTML = cols.map((col, i) => `
-    <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:8px;padding:8px 12px">
-      <div style="width:14px;height:14px;border-radius:3px;background:${col.color};flex-shrink:0"></div>
-      <input class="form-input" value="${col.label}" onchange="renomearColuna(${i}, this.value)"
-        style="flex:1;font-size:13px;padding:4px 8px;height:32px"/>
-      <div style="display:flex;gap:3px">
-        ${i > 0 ? `<button onclick="moverColuna(${i},-1)" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:4px;padding:2px 7px;cursor:pointer;font-size:12px">↑</button>` : '<div style="width:28px"></div>'}
-        ${i < cols.length-1 ? `<button onclick="moverColuna(${i},1)" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:4px;padding:2px 7px;cursor:pointer;font-size:12px">↓</button>` : '<div style="width:28px"></div>'}
+    <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:8px;padding:10px 12px">
+      <div style="width:12px;height:12px;border-radius:3px;background:${col.color};flex-shrink:0"></div>
+      <div style="font-size:13px;font-weight:600;flex:1;color:var(--text)">${col.label}</div>
+      ${fixas.includes(col.key)
+        ? '<span style="font-size:10px;color:var(--text3);font-family:var(--mono)">fixa</span>'
+        : ''
+      }
+      <div style="display:flex;gap:4px;align-items:center">
+        ${i > 0 && !fixas.includes(cols[i-1]?.key) || i > 1
+          ? `<button onclick="moverColuna(${i},-1)" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:4px;padding:3px 8px;cursor:pointer;font-size:12px">↑</button>`
+          : '<div style="width:32px"></div>'}
+        ${i < cols.length - 1
+          ? `<button onclick="moverColuna(${i},1)" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:4px;padding:3px 8px;cursor:pointer;font-size:12px">↓</button>`
+          : '<div style="width:32px"></div>'}
+        ${fixas.includes(col.key)
+          ? '<div style="width:44px"></div>'
+          : `<button onclick="removerColuna(${i})" style="background:rgba(255,71,87,0.1);border:1px solid rgba(255,71,87,0.3);color:var(--danger);border-radius:4px;padding:3px 10px;cursor:pointer;font-size:11px">✕</button>`
+        }
       </div>
-      ${cols.length > 2 ? `<button onclick="removerColuna(${i})" style="background:rgba(255,71,87,0.1);border:1px solid rgba(255,71,87,0.3);color:var(--danger);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px">✕</button>` : ''}
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 function selectColColor(c) {
@@ -3343,11 +3467,15 @@ function adicionarColuna() {
 }
 
 function removerColuna(idx) {
-  const cols = getKanbanCols();
-  const col = cols[idx];
-  if (!confirm(`Remover a coluna "${col.label}"? Os chamados nela voltam para "Aberto".`)) return;
+  const cols  = getKanbanCols();
+  const fixas = ['chamados', 'resolvido'];
+  const col   = cols[idx];
+  if (fixas.includes(col.key)) { showNotif('⚠️ Esta coluna não pode ser removida.', 'warn'); return; }
+  if (cols.length <= 3) { showNotif('⚠️ O kanban precisa ter ao menos 3 colunas.', 'warn'); return; }
+  if (!confirm(`Remover a coluna "${col.label}"? Chamados nela voltam para "Chamados".`)) return;
   tickets.forEach(t => { if (t.status === col.key) t.status = 'aberto'; });
   cols.splice(idx, 1);
+  _kanbanColsCache = cols;
   saveKanbanCols();
   renderColunasLista();
   renderAll();
@@ -3363,10 +3491,14 @@ function renomearColuna(idx, novoNome) {
 }
 
 function moverColuna(idx, dir) {
-  const cols = getKanbanCols();
+  const cols   = getKanbanCols();
+  const fixas  = ['chamados', 'resolvido'];
   const novoIdx = idx + dir;
   if (novoIdx < 0 || novoIdx >= cols.length) return;
+  // Não mover colunas fixas nem mover para posição de coluna fixa no meio
+  if (fixas.includes(cols[idx].key)) { showNotif('⚠️ Esta coluna é fixa e não pode ser movida.', 'warn'); return; }
   [cols[idx], cols[novoIdx]] = [cols[novoIdx], cols[idx]];
+  _kanbanColsCache = cols;
   saveKanbanCols();
   renderColunasLista();
   renderAll();
@@ -5155,6 +5287,7 @@ async function initApp(user) {
   await loadTicketsFromDB();
   renderAll();
   loadTrelloConfig();
+  atualizarBotaoPause();
   selectChat(0);
   popularSelectCategorias('f-categoria');
   initTrello();
