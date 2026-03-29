@@ -1715,6 +1715,21 @@ function bloquearLeitor(acao = 'esta ação') {
 const SESSION_KEY = 'suporte_ti_session';
 let currentUser = null;
 
+// Mapa de nomes de exibição por username
+// Permite que o login 'adm' apareça como 'Willian' no sistema
+const DISPLAY_NAMES = {
+  'adm':     'Willian',
+  'willian': 'Willian',
+  // Adicione outros mapeamentos aqui se necessário
+};
+
+// Retorna o nome de exibição do usuário (usa displayName se disponível, senão username)
+function getDisplayName(username) {
+  if (!username) return '';
+  return DISPLAY_NAMES[username.toLowerCase()] || 
+         (username.charAt(0).toUpperCase() + username.slice(1));
+}
+
 async function doLogin() {
   const username = document.getElementById('login-user').value.trim().toLowerCase();
   const password = document.getElementById('login-pass').value;
@@ -1734,7 +1749,7 @@ async function doLogin() {
       return;
     }
     const user = rows[0];
-    currentUser = { username: user.username, role: user.role, id: user.id };
+    currentUser = { username: user.username, role: user.role, id: user.id, displayName: getDisplayName(user.username) };
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
     errEl.classList.remove('show');
     await initApp(currentUser);
@@ -2553,7 +2568,7 @@ function renderStats() {
         const membros = getMembros();
         const idx     = membros.findIndex(m => m.toLowerCase() === u.username.toLowerCase());
         const cor     = idx >= 0 ? MEMBER_COLORS[idx % MEMBER_COLORS.length] : 'var(--accent)';
-        return `<div title="${u.username} — online" style="display:flex;align-items:center;gap:5px;background:${cor}18;border:1px solid ${cor}55;border-radius:20px;padding:4px 10px;font-size:11px">
+        return `<div title="${u.displayName || u.username} — online" style="display:flex;align-items:center;gap:5px;background:${cor}18;border:1px solid ${cor}55;border-radius:20px;padding:4px 10px;font-size:11px">
           <div style="width:7px;height:7px;border-radius:50%;background:${cor}"></div>
           <span style="color:${cor};font-weight:600">${u.username}</span>
         </div>`;
@@ -4540,7 +4555,8 @@ async function puxarChamado(ticketId) {
     if (!confirm(`Este chamado já está com ${t.assignedTo}. Quer puxar para você mesmo assim?`)) return;
   }
   // Usa o nome do membro que corresponde ao username logado, ou o username direto
-  const meuNome = currentUser?.username || '';
+  // getDisplayName resolve 'adm' → 'Willian' antes de casar com a lista de membros
+  const meuNome   = getDisplayName(currentUser?.username) || currentUser?.username || '';
   const meuMembro = getMembros().find(m => m.toLowerCase() === meuNome.toLowerCase()) || meuNome;
 
   t.assignedTo = meuMembro;
@@ -4657,7 +4673,7 @@ async function submitReply(isAI = false) {
   if (t.fromTrello && t.trelloCardId) {
     try {
       await trelloPOST(`/cards/${t.trelloCardId}/actions/comments`, {
-        text: `[${isAI ? '✨ IA' : currentUser?.username || 'Técnico'}] ${text}`
+        text: `[${isAI ? '✨ IA' : getDisplayName(currentUser?.username) || 'Técnico'}] ${text}`
       });
       showNotif('🟦 Resposta registrada no Trello e no banco');
     } catch(e) {
@@ -5258,7 +5274,7 @@ async function initApp(user) {
   currentUser = user;
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-app').style.display     = 'grid';
-  document.getElementById('topbar-user').textContent    = `👤 ${user.username} (${user.role.toUpperCase()})`;
+  document.getElementById('topbar-user').textContent    = `👤 ${getDisplayName(user.username)} (${user.role.toUpperCase()})`;
   if (user.role !== 'adm') {
     // Oculta seção inteira de Administração
     ['nav-section-admin','nav-config','nav-acl','nav-users'].forEach(id => {
@@ -5393,7 +5409,10 @@ function marcarOnline() {
   if (!currentUser) return;
   try {
     localStorage.setItem('suporte_ti_online_' + currentUser.username, JSON.stringify({
-      username: currentUser.username, role: currentUser.role, ts: Date.now()
+      username:    currentUser.username,
+      displayName: getDisplayName(currentUser.username),
+      role:        currentUser.role,
+      ts:          Date.now()
     }));
   } catch(e) {}
 }
