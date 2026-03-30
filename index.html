@@ -1540,100 +1540,106 @@
       </div>
     </div>
     <div id="ticket-modal" class="modal-overlay hidden">
-  <div class="modal-box">
+  <div class="modal-box" style="max-width:680px">
+
+    <!-- HEADER: ID + empresa + fechar -->
     <div class="modal-header">
-      <div>
+      <div style="flex:1;min-width:0">
         <div class="modal-title" id="modal-ticket-id">—</div>
-        <div style="font-size:11px;color:var(--text2)" id="modal-ticket-sub">—</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px" id="modal-ticket-sub">—</div>
       </div>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
-    <div class="modal-body">
-      <!-- Meta info -->
+
+    <div class="modal-body" style="padding:20px 22px;display:flex;flex-direction:column;gap:16px">
+
+      <!-- BLOCO 1: Meta info compacta -->
       <div class="ticket-meta" id="modal-meta"></div>
 
-      <!-- Etiquetas -->
-      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:8px;margin-top:4px">ETIQUETAS</div>
-      <div id="modal-labels-area" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px">
-        <div id="modal-labels-chips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
-        <button onclick="toggleLabelPicker()" style="background:rgba(255,255,255,0.06);border:1px dashed var(--border);color:var(--text2);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">＋ Etiqueta</button>
-      </div>
-      <!-- Label Picker melhorado -->
-      <div id="label-picker" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;max-width:400px;box-shadow:0 8px 24px rgba(0,0,0,0.3)">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <span style="font-size:11px;font-weight:700;color:var(--text2)">ETIQUETAS</span>
-          <input id="label-search" class="form-input" placeholder="🔍 Buscar etiqueta..." oninput="filtrarEtiquetas(this.value)" style="flex:1;font-size:12px;padding:4px 8px;height:28px"/>
+      <!-- BLOCO 2: Etiquetas -->
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:6px">ETIQUETAS</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+          <div id="modal-labels-chips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+          <button onclick="toggleLabelPicker()" style="background:rgba(255,255,255,0.06);border:1px dashed var(--border);color:var(--text2);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">＋ Etiqueta</button>
         </div>
-        <div id="label-picker-list" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto"></div>
-        <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono);letter-spacing:1px">CRIAR NOVA ETIQUETA</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-            <input id="new-label-name" class="form-input" placeholder="Nome da etiqueta" style="flex:1;min-width:120px;font-size:12px;padding:5px 8px"/>
-            <div style="display:flex;gap:4px;flex-wrap:wrap" id="color-swatches">
-              <div onclick="selectLabelColor('green')"  id="swatch-green"  title="Verde"   style="width:20px;height:20px;border-radius:4px;background:#00e5a0;cursor:pointer;border:2px solid transparent"></div>
-              <div onclick="selectLabelColor('blue')"   id="swatch-blue"   title="Azul"    style="width:20px;height:20px;border-radius:4px;background:#0090ff;cursor:pointer;border:2px solid transparent"></div>
-              <div onclick="selectLabelColor('purple')" id="swatch-purple" title="Roxo"    style="width:20px;height:20px;border-radius:4px;background:#a855f7;cursor:pointer;border:2px solid transparent"></div>
-              <div onclick="selectLabelColor('red')"    id="swatch-red"    title="Vermelho" style="width:20px;height:20px;border-radius:4px;background:#ff4757;cursor:pointer;border:2px solid transparent"></div>
-              <div onclick="selectLabelColor('yellow')" id="swatch-yellow" title="Amarelo"  style="width:20px;height:20px;border-radius:4px;background:#ffcc00;cursor:pointer;border:2px solid transparent"></div>
-              <div onclick="selectLabelColor('orange')" id="swatch-orange" title="Laranja"  style="width:20px;height:20px;border-radius:4px;background:#ff6b35;cursor:pointer;border:2px solid transparent"></div>
-              <div onclick="selectLabelColor('pink')"   id="swatch-pink"   title="Rosa"     style="width:20px;height:20px;border-radius:4px;background:#f472b6;cursor:pointer;border:2px solid transparent"></div>
-              <div onclick="selectLabelColor('teal')"   id="swatch-teal"   title="Teal"     style="width:20px;height:20px;border-radius:4px;background:#2dd4bf;cursor:pointer;border:2px solid transparent"></div>
+        <!-- Label Picker -->
+        <div id="label-picker" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:8px;max-width:400px;box-shadow:0 8px 24px rgba(0,0,0,0.3)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <span style="font-size:11px;font-weight:700;color:var(--text2)">ETIQUETAS</span>
+            <input id="label-search" class="form-input" placeholder="🔍 Buscar etiqueta..." oninput="filtrarEtiquetas(this.value)" style="flex:1;font-size:12px;padding:4px 8px;height:28px"/>
+          </div>
+          <div id="label-picker-list" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto"></div>
+          <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono);letter-spacing:1px">CRIAR NOVA ETIQUETA</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+              <input id="new-label-name" class="form-input" placeholder="Nome da etiqueta" style="flex:1;min-width:120px;font-size:12px;padding:5px 8px"/>
+              <div style="display:flex;gap:4px;flex-wrap:wrap" id="color-swatches">
+                <div onclick="selectLabelColor('green')"  id="swatch-green"  title="Verde"   style="width:20px;height:20px;border-radius:4px;background:#00e5a0;cursor:pointer;border:2px solid transparent"></div>
+                <div onclick="selectLabelColor('blue')"   id="swatch-blue"   title="Azul"    style="width:20px;height:20px;border-radius:4px;background:#0090ff;cursor:pointer;border:2px solid transparent"></div>
+                <div onclick="selectLabelColor('purple')" id="swatch-purple" title="Roxo"    style="width:20px;height:20px;border-radius:4px;background:#a855f7;cursor:pointer;border:2px solid transparent"></div>
+                <div onclick="selectLabelColor('red')"    id="swatch-red"    title="Vermelho" style="width:20px;height:20px;border-radius:4px;background:#ff4757;cursor:pointer;border:2px solid transparent"></div>
+                <div onclick="selectLabelColor('yellow')" id="swatch-yellow" title="Amarelo"  style="width:20px;height:20px;border-radius:4px;background:#ffcc00;cursor:pointer;border:2px solid transparent"></div>
+                <div onclick="selectLabelColor('orange')" id="swatch-orange" title="Laranja"  style="width:20px;height:20px;border-radius:4px;background:#ff6b35;cursor:pointer;border:2px solid transparent"></div>
+                <div onclick="selectLabelColor('pink')"   id="swatch-pink"   title="Rosa"     style="width:20px;height:20px;border-radius:4px;background:#f472b6;cursor:pointer;border:2px solid transparent"></div>
+                <div onclick="selectLabelColor('teal')"   id="swatch-teal"   title="Teal"     style="width:20px;height:20px;border-radius:4px;background:#2dd4bf;cursor:pointer;border:2px solid transparent"></div>
+              </div>
+              <button onclick="createAndAddLabel()" class="btn-primary" style="font-size:12px;padding:5px 12px">＋ Criar</button>
             </div>
-            <button onclick="createAndAddLabel()" class="btn-primary" style="font-size:12px;padding:5px 12px">＋ Criar</button>
+            <input type="hidden" id="new-label-color" value="blue"/>
           </div>
-          <input type="hidden" id="new-label-color" value="blue"/>
         </div>
       </div>
 
-      <!-- Status + Atribuição lado a lado -->
-      <div style="display:grid;grid-template-columns:1fr auto;gap:12px;margin-bottom:16px;align-items:start">
-        <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;">
-          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px;margin-bottom:10px">STATUS DO CHAMADO</div>
+      <!-- BLOCO 3: Status + Atribuído (lado a lado) -->
+      <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start">
+        <!-- Status -->
+        <div style="background:var(--surface2);border-radius:10px;padding:12px 14px">
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:10px">STATUS DO CHAMADO</div>
           <div class="status-select-row" id="modal-status-row"></div>
-
-      <!-- Agendamento — compacto e colapsável -->
-      <div id="modal-agendamento-box" style="display:none;margin-top:10px;margin-bottom:4px">
-        <div onclick="toggleAgendaExpand()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 10px;border-radius:7px;border:1px solid rgba(168,85,247,0.2);background:rgba(168,85,247,0.04)" onmouseover="this.style.background='rgba(168,85,247,0.09)'" onmouseout="this.style.background='rgba(168,85,247,0.04)'">
-          <span style="font-size:12px">📅</span>
-          <span id="modal-agenda-preview" style="font-size:12px;color:var(--text3);font-family:var(--mono);flex:1">Agendar para...</span>
-          <span id="agenda-expand-icon" style="font-size:10px;color:var(--text3)">▼</span>
-          <button onclick="event.stopPropagation();limparAgendamento()" id="btn-limpar-agenda" style="display:none;background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px" title="Remover">✕</button>
-        </div>
-        <div id="agenda-expanded" style="display:none;padding:10px 10px 6px;border:1px solid rgba(168,85,247,0.15);border-top:none;border-radius:0 0 7px 7px;background:rgba(168,85,247,0.03)">
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <input type="date" class="form-input" id="modal-data-agenda" onchange="salvarAgendamento()" style="flex:1;min-width:140px;padding:6px 10px;font-size:12px"/>
-            <input type="time" class="form-input" id="modal-hora-agenda" onchange="salvarAgendamento()" style="width:110px;padding:6px 10px;font-size:12px"/>
+          <!-- Agendamento colapsável -->
+          <div id="modal-agendamento-box" style="display:none;margin-top:10px">
+            <div onclick="toggleAgendaExpand()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 10px;border-radius:7px;border:1px solid rgba(168,85,247,0.2);background:rgba(168,85,247,0.04)">
+              <span style="font-size:12px">📅</span>
+              <span id="modal-agenda-preview" style="font-size:12px;color:var(--text3);font-family:var(--mono);flex:1">Agendar para...</span>
+              <span id="agenda-expand-icon" style="font-size:10px;color:var(--text3)">▼</span>
+              <button onclick="event.stopPropagation();limparAgendamento()" id="btn-limpar-agenda" style="display:none;background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px">✕</button>
+            </div>
+            <div id="agenda-expanded" style="display:none;padding:10px;border:1px solid rgba(168,85,247,0.15);border-top:none;border-radius:0 0 7px 7px;background:rgba(168,85,247,0.03)">
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <input type="date" class="form-input" id="modal-data-agenda" onchange="salvarAgendamento()" style="flex:1;min-width:140px;padding:6px 10px;font-size:12px"/>
+                <input type="time" class="form-input" id="modal-hora-agenda" onchange="salvarAgendamento()" style="width:110px;padding:6px 10px;font-size:12px"/>
+              </div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">
+                <button onclick="atalhoAgenda(0)" style="font-size:10px;padding:3px 9px;border-radius:4px;border:1px solid rgba(168,85,247,0.25);color:#c084fc;background:transparent;cursor:pointer">Hoje</button>
+                <button onclick="atalhoAgenda(1)" style="font-size:10px;padding:3px 9px;border-radius:4px;border:1px solid rgba(168,85,247,0.25);color:#c084fc;background:transparent;cursor:pointer">Amanhã</button>
+                <button onclick="atalhoAgenda(2)" style="font-size:10px;padding:3px 9px;border-radius:4px;border:1px solid rgba(168,85,247,0.25);color:#c084fc;background:transparent;cursor:pointer">+2 dias</button>
+                <button onclick="atalhoAgenda(7)" style="font-size:10px;padding:3px 9px;border-radius:4px;border:1px solid rgba(168,85,247,0.25);color:#c084fc;background:transparent;cursor:pointer">+1 semana</button>
+              </div>
+            </div>
           </div>
-          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">
-            <button onclick="atalhoAgenda(0)" style="font-size:10px;padding:3px 9px;border-radius:4px;border:1px solid rgba(168,85,247,0.25);color:#c084fc;background:transparent;cursor:pointer">Hoje</button>
-            <button onclick="atalhoAgenda(1)" style="font-size:10px;padding:3px 9px;border-radius:4px;border:1px solid rgba(168,85,247,0.25);color:#c084fc;background:transparent;cursor:pointer">Amanhã</button>
-            <button onclick="atalhoAgenda(2)" style="font-size:10px;padding:3px 9px;border-radius:4px;border:1px solid rgba(168,85,247,0.25);color:#c084fc;background:transparent;cursor:pointer">+2 dias</button>
-            <button onclick="atalhoAgenda(7)" style="font-size:10px;padding:3px 9px;border-radius:4px;border:1px solid rgba(168,85,247,0.25);color:#c084fc;background:transparent;cursor:pointer">+1 semana</button>
-          </div>
         </div>
-      </div>
-        </div>
-        <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;min-width:180px">
-          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px;margin-bottom:8px">ATRIBUÍDO A</div>
+        <!-- Atribuído a -->
+        <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;min-width:160px">
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:8px">ATRIBUÍDO A</div>
           <div id="modal-atribuido-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px"></div>
-          <div style="font-size:10px;color:var(--text3);line-height:1.5">
-            Adicione uma etiqueta com o nome do técnico para atribuir o chamado automaticamente.
-          </div>
-          <!-- select mantido oculto para compatibilidade -->
+          <div style="font-size:10px;color:var(--text3);line-height:1.5">Via etiqueta com o nome do técnico.</div>
           <select id="modal-atribuir-select" onchange="atribuirChamado(this.value)" style="display:none">
             <option value="">— Atribuir para...</option>
           </select>
         </div>
       </div>
 
-      <!-- Histórico de respostas -->
-      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px">
+      <!-- BLOCO 4: Histórico desta empresa -->
+      <div style="background:var(--surface2);border-radius:10px;padding:12px 14px">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:8px">HISTÓRICO DESTA EMPRESA</div>
+        <div id="modal-hist-cliente" style="display:flex;flex-direction:column;gap:2px"></div>
+      </div>
+
+      <!-- BLOCO 5: Histórico de atendimento -->
+      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border)">
-          <div style="margin-bottom:14px;padding:10px 14px;background:var(--surface2);border-radius:8px">
-          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:6px">HISTÓRICO DESTA EMPRESA</div>
-          <div id="modal-hist-cliente" style="display:flex;flex-direction:column;gap:2px"></div>
-        </div>
-        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px">HISTÓRICO DE ATENDIMENTO</div>
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px">HISTÓRICO DE ATENDIMENTO</div>
           <div id="modal-replies-count" style="font-size:10px;color:var(--text3);font-family:var(--mono)"></div>
         </div>
         <div class="reply-history" id="modal-replies" style="padding:12px 14px;min-height:60px;max-height:200px">
@@ -1641,13 +1647,12 @@
         </div>
       </div>
 
-      <!-- Nova resposta -->
+      <!-- BLOCO 6: Nova resposta -->
       <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden">
         <div style="padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border)">
           <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px">NOVA RESPOSTA / OBSERVAÇÃO</div>
         </div>
         <div style="padding:12px 14px">
-          <!-- Modelos de resposta rápida -->
           <div style="margin-bottom:8px">
             <select id="reply-template-sel" onchange="aplicarModeloResposta(this.value)" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--text2);cursor:pointer">
               <option value="">💬 Modelos de resposta rápida...</option>
@@ -1671,24 +1676,23 @@
             </select>
           </div>
           <textarea class="form-textarea" id="modal-reply-text" placeholder="Digite sua resposta ou observação interna..." style="margin-bottom:12px;border-radius:8px;min-height:80px"></textarea>
-
-          <!-- Linha 1: ações primárias -->
+          <!-- Ações primárias -->
           <div style="display:flex;gap:8px;margin-bottom:10px">
             <button class="btn-primary" onclick="submitReply(false)" style="flex:1">Registrar</button>
-            <button class="btn-ghost" onclick="generateAIReply()" id="ai-reply-btn" style="flex:1">Sugerir IA</button>
+            <button class="btn-ghost" onclick="generateAIReply()" id="ai-reply-btn" style="flex:1">✨ Sugerir IA</button>
           </div>
-
-          <!-- Linha 2: ações de status -->
+          <!-- Ações de status -->
           <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border)">
-            <button onclick="moveTicketTo('pendencia')"   style="flex:1;min-width:100px;font-size:11px;padding:6px 8px;border-radius:7px;border:1px solid #ff6b35;color:#ff6b35;background:rgba(255,107,53,0.08);cursor:pointer;font-family:var(--sans);font-weight:600;transition:all 0.15s" onmouseover="this.style.background='rgba(255,107,53,0.18)'" onmouseout="this.style.background='rgba(255,107,53,0.08)'">Pendência</button>
-            <button onclick="moveTicketTo('nao-atendido')" style="flex:1;min-width:100px;font-size:11px;padding:6px 8px;border-radius:7px;border:1px solid var(--text3);color:var(--text2);background:rgba(138,144,160,0.08);cursor:pointer;font-family:var(--sans);font-weight:600;transition:all 0.15s" onmouseover="this.style.background='rgba(138,144,160,0.18)'" onmouseout="this.style.background='rgba(138,144,160,0.08)'">Não Atendido</button>
-            <button onclick="reativarTicket()" id="btn-reativar" style="display:none;flex:1;min-width:100px;font-size:11px;padding:6px 8px;border-radius:7px;border:1px solid var(--accent2);color:var(--accent2);background:rgba(0,144,255,0.08);cursor:pointer;font-family:var(--sans);font-weight:600">Reativar</button>
+            <button onclick="moveTicketTo('pendencia')"    style="flex:1;min-width:90px;font-size:11px;padding:6px 8px;border-radius:7px;border:1px solid #ff6b35;color:#ff6b35;background:rgba(255,107,53,0.08);cursor:pointer;font-weight:600" onmouseover="this.style.background='rgba(255,107,53,0.18)'" onmouseout="this.style.background='rgba(255,107,53,0.08)'">⏳ Pendência</button>
+            <button onclick="moveTicketTo('nao-atendido')" style="flex:1;min-width:90px;font-size:11px;padding:6px 8px;border-radius:7px;border:1px solid var(--text3);color:var(--text2);background:rgba(138,144,160,0.08);cursor:pointer;font-weight:600" onmouseover="this.style.background='rgba(138,144,160,0.18)'" onmouseout="this.style.background='rgba(138,144,160,0.08)'">📵 Não Atendido</button>
+            <button onclick="reativarTicket()" id="btn-reativar" style="display:none;flex:1;min-width:90px;font-size:11px;padding:6px 8px;border-radius:7px;border:1px solid var(--accent2);color:var(--accent2);background:rgba(0,144,255,0.08);cursor:pointer;font-weight:600">🔄 Reativar</button>
             <div style="flex-grow:1"></div>
-            <button onclick="deleteTicket()" style="font-size:11px;padding:6px 12px;border-radius:7px;border:1px solid var(--danger);color:var(--danger);background:rgba(255,71,87,0.08);cursor:pointer;font-family:var(--sans);font-weight:600;transition:all 0.15s" onmouseover="this.style.background='rgba(255,71,87,0.18)'" onmouseout="this.style.background='rgba(255,71,87,0.08)'">Excluir</button>
-            <button onclick="finalizeTicket()" style="font-size:11px;padding:6px 16px;border-radius:7px;border:none;background:var(--accent);color:#000;cursor:pointer;font-family:var(--sans);font-weight:700;transition:all 0.15s" onmouseover="this.style.background='#00ffb3'" onmouseout="this.style.background='var(--accent)'">Finalizar</button>
+            <button onclick="deleteTicket()" style="font-size:11px;padding:6px 12px;border-radius:7px;border:1px solid var(--danger);color:var(--danger);background:rgba(255,71,87,0.08);cursor:pointer;font-weight:600" onmouseover="this.style.background='rgba(255,71,87,0.18)'" onmouseout="this.style.background='rgba(255,71,87,0.08)'">Excluir</button>
+            <button onclick="finalizeTicket()" style="font-size:11px;padding:6px 16px;border-radius:7px;border:none;background:var(--accent);color:#000;cursor:pointer;font-weight:700" onmouseover="this.style.background='#00ffb3'" onmouseout="this.style.background='var(--accent)'">✅ Finalizar</button>
           </div>
         </div>
       </div>
+
     </div>
   </div>
 </div>
@@ -4588,7 +4592,7 @@ const LABEL_COLORS = {
   red:    { bg:'rgba(255,71,87,0.18)',  text:'#ff4757', dot:'🔴' },
   yellow: { bg:'rgba(255,200,0,0.18)',  text:'#ffc800', dot:'🟡' },
   purple: { bg:'rgba(160,100,255,0.18)',text:'#a064ff', dot:'🟣' },
-  pink:   { bg:'rgba(244,114,182,0.18)',text:'#f472b6', dot:'🩷' },
+  pink:   { bg:'rgba(244,114,182,0.18)',text:'#f472b6', dot:'🩵' },
   teal:   { bg:'rgba(45,212,191,0.18)', text:'#2dd4bf', dot:'🩵' },
 };
 
@@ -4973,8 +4977,10 @@ function showTicketDetail(id) {
   const histEl = document.getElementById('modal-hist-cliente');
   if (histEl && t.cnpj) {
     const cnpjNum = t.cnpj.replace(/\D/g,'');
+    // Só mostrar se CNPJ tem ao menos 11 dígitos (válido) — evita cruzar empresas sem CNPJ
+    if (cnpjNum.length >= 11) {
     const hist = tickets
-      .filter(h => h.id !== t.id && h.cnpj && h.cnpj.replace(/\D/g,'') === cnpjNum)
+      .filter(h => h.id !== t.id && h.cnpj && h.cnpj.replace(/\D/g,'').length >= 11 && h.cnpj.replace(/\D/g,'') === cnpjNum)
       .sort((a,b) => (b.time||0)-(a.time||0))
       .slice(0,4);
     if (hist.length === 0) {
@@ -4992,6 +4998,7 @@ function showTicketDetail(id) {
           + '</div></div>';
       }).join('');
     }
+  }
   }
 
   document.getElementById('modal-reply-text').value = '';
