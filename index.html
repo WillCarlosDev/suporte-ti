@@ -2852,7 +2852,7 @@ function makeColResolvido(resolvido) {
   <div class="kanban-col">
     <div class="kanban-head">
       <div class="dot" style="background:#00e5a0"></div>
-      Resolvido
+      Resolvido — ${new Date().toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}
       <span class="col-count">${resolvido.length}</span>
     </div>
     <div class="kanban-cards">
@@ -2910,7 +2910,15 @@ function renderKanban(containerId, data) {
   const agendados   = byPrio(data.filter(t => t.status === 'agendado'));
   const pendencias  = byPrio(data.filter(t => t.status === 'pendencia'));
   const naoAtendido = byPrio(data.filter(t => t.status === 'nao-atendido'));
-  const resolvido   = byPrio(data.filter(t => t.status === 'resolvido'));
+  // Resolvido: apenas do mês atual (reinicia todo mês; histórico fica nos relatórios)
+  const _agora     = new Date();
+  const _mesCurrent = _agora.getMonth();
+  const _anoCurrent = _agora.getFullYear();
+  const resolvido   = byPrio(data.filter(t => {
+    if (t.status !== 'resolvido') return false;
+    const ref = t.finalizadoEm ? new Date(t.finalizadoEm) : new Date(t.time || 0);
+    return ref.getMonth() === _mesCurrent && ref.getFullYear() === _anoCurrent;
+  }));
 
   // Total de colunas para o grid
   const nCols = 1 + membros.length + 3 + (resolvido.length > 0 ? 1 : 0);
