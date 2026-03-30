@@ -2617,7 +2617,13 @@ function renderAll() {
   const subEl = document.getElementById('chamados-sub');
   if (subEl) {
     const total  = tickets.filter(t => t.status !== 'resolvido').length;
-    const slaVio = tickets.filter(t => t.prioridade === 'contrato' && t.status !== 'resolvido' && (Date.now()-(t.time||0))/3600000 >= 8).length;
+    // SLA crítico: APENAS chamados na coluna "Chamados" (sem técnico, sem status especial, contrato, +8h)
+    const slaVio = tickets.filter(t =>
+      t.prioridade === 'contrato' &&
+      !t.assignedTo &&
+      !['agendado','pendencia','nao-atendido','resolvido'].includes(t.status) &&
+      (Date.now()-(t.time||0))/3600000 >= 8
+    ).length;
     const filtAtivo = _filtroPrio !== 'todos' || _filtroTecnico || _filtroSLA;
     subEl.textContent = filtAtivo
       ? `${ticketsFiltrados.filter(t=>t.status!=='resolvido').length} de ${total} em aberto (filtrado)${slaVio > 0 ? ' · 🔴 '+slaVio+' SLA crítico' : ''}`
@@ -3133,6 +3139,50 @@ function discardGeneratedKB() {
   document.getElementById('kb-ai-status').textContent = '';
 }
 
+
+
+async function editarKBItem(dbId) {
+  if (bloquearLeitor('editar procedimentos')) return;
+  if (!dbId) { showNotif('❌ ID não encontrado.', 'warn'); return; }
+
+  const item = (window._customKB || []).find(k => k.dbId === dbId);
+  if (!item) { showNotif('❌ Procedimento não encontrado.', 'warn'); return; }
+
+  // Modal de edição simples
+  const novoTitulo = prompt('Título do procedimento:', item.title);
+  if (novoTitulo === null) return;
+  if (!novoTitulo.trim()) { showNotif('⚠️ Título não pode ser vazio.', 'warn'); return; }
+
+  const novoSub = prompt('Descrição resumida:', item.sub);
+  if (novoSub === null) return;
+
+  try {
+    await sbFetch(`kb_custom?id=eq.${dbId}`, 'PATCH', {
+      title: novoTitulo.trim(),
+      sub:   (novoSub || '').trim(),
+    });
+    window._customKB = await loadCustomKBItems();
+    renderKB();
+    showNotif('✅ Procedimento atualizado!');
+  } catch(e) {
+    showNotif('❌ Erro ao editar: ' + e.message, 'warn');
+  }
+}
+
+async function deleteCustomKBById(dbId) {
+  if (bloquearLeitor('remover procedimentos')) return;
+  if (!dbId) { showNotif('❌ ID não encontrado para este procedimento.', 'warn'); return; }
+  if (!confirm('Remover este procedimento da base de conhecimento?')) return;
+  try {
+    await deleteCustomKBFromDB(dbId);
+    window._customKB = await loadCustomKBItems();
+    renderKB();
+    showNotif('🗑️ Procedimento removido!');
+  } catch(e) {
+    showNotif('❌ Erro ao remover: ' + e.message, 'warn');
+  }
+}
+
 async function deleteCustomKB(realIdx) {
   if (bloquearLeitor('remover procedimentos')) return;
   if (!confirm('Remover este procedimento?')) return;
@@ -3170,7 +3220,7 @@ function renderKB() {
           ${isCustom ? `<div style="font-size:10px;color:var(--accent);font-family:var(--mono);margin-top:2px">✨ IA · ${item.createdAt}</div>` : ''}
         </div>
         <span class="kb-badge">${item.badge}</span>
-        ${isCustom && currentUser?.role === 'adm' ? `<button onclick="event.stopPropagation();deleteCustomKB(${realIdx})" class="btn-danger" style="margin-left:8px;padding:2px 8px">✕</button>` : ''}
+        ${isCustom && currentUser?.role === 'adm' ? `<button onclick="event.stopPropagation();editarKBItem('${item.dbId}')" style="margin-left:4px;padding:2px 8px;border-radius:4px;border:1px solid var(--border);color:var(--text2);background:none;cursor:pointer;font-size:11px" title="Editar">✏️</button>` + `<button onclick="event.stopPropagation();deleteCustomKBById('${item.dbId}')" class="btn-danger" style="margin-left:4px;padding:2px 8px" title="Excluir">✕</button>` : ''}
       </div>
       <div class="kb-card-sub">${item.sub}</div>
       <div class="kb-steps" id="kb-${realIdx}">
