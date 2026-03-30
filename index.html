@@ -5424,7 +5424,7 @@ async function deleteTicket() {
   if (!t) return;
   if (!confirm(`Tem certeza que deseja excluir o chamado ${t.id}? Esta ação não pode ser desfeita.`)) return;
   try {
-    await sbFetch(`tickets?id=eq.${t.dbId}`, 'DELETE');
+    await sbFetch(`chamados?id=eq.${encodeURIComponent(t.id)}`, 'DELETE');
     tickets = tickets.filter(x => x.id !== modalId);
     closeModal();
     renderAll();
