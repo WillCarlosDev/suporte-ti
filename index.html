@@ -2851,7 +2851,19 @@ function renderKanban(containerId, data) {
   if (!container) return;
 
   const prioOrder  = { contrato: 0, garantia: 1, avulso: 2 };
-  const byPrio     = arr => [...arr].sort((a,b) => (prioOrder[a.prioridade]??2)-(prioOrder[b.prioridade]??2));
+  // Ordenação por prioridade (contrato>garantia>avulso) e depois por data de criação (mais antigo primeiro)
+  const byPrio = arr => [...arr].sort((a,b) => {
+    const pDiff = (prioOrder[a.prioridade]??2) - (prioOrder[b.prioridade]??2);
+    if (pDiff !== 0) return pDiff;
+    return (a.time||0) - (b.time||0); // mais antigo primeiro dentro da mesma prioridade
+  });
+
+  // Ordenação para coluna Agendados: por data/hora do agendamento (mais próximo primeiro)
+  const byAgendamento = arr => [...arr].sort((a,b) => {
+    const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+    const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+    return da - db; // mais próximo primeiro
+  });
   const membros    = getMembros();
 
   function makeCol(label, color, tickets, isMembro = false, mIdx = -1) {
@@ -2891,7 +2903,7 @@ function renderKanban(containerId, data) {
   }));
 
   // Status fixos
-  const agendados   = byPrio(data.filter(t => t.status === 'agendado')); // todos, com ou sem técnico
+  const agendados   = byAgendamento(data.filter(t => t.status === 'agendado')); // ordenado por data/hora
   const pendencias  = byPrio(data.filter(t => t.status === 'pendencia'));
   const naoAtendido = byPrio(data.filter(t => t.status === 'nao-atendido'));
   // Resolvido: apenas do mês atual (reinicia todo mês; histórico fica nos relatórios)
