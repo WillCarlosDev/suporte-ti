@@ -4957,10 +4957,7 @@ async function puxarChamado(ticketId) {
 
   t.assignedTo = meuMembro;
   // Se o chamado estava em "aberto", move para "em-andamento" automaticamente
-  if (t.status === 'aberto') {
-    t.status = 'em-andamento';
-    t.currentStatus = 'em-andamento';
-  }
+
   await updateTicketInDB(t);
   renderAll();
   showNotif(`↙ Chamado ${t.id} puxado para ${meuMembro}!`);
@@ -5291,8 +5288,7 @@ async function moveTicketTo(status) {
     'pendencia': '⏳ Pendência',
     'nao-atendido': '🚫 Não Atendido',
     'aberto': '🔴 Aberto',
-    'em-andamento': '🟡 Em Andamento',
-  };
+    };
   t.status = status;
   t.currentStatus = status;
   await updateTicketInDB(t);
