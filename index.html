@@ -2922,6 +2922,12 @@ function renderKanban(containerId, data) {
   container.style.overflowX = 'auto';
   container.style.gap = '12px';
 
+  // Salvar posição de scroll de cada coluna antes de re-renderizar
+  const _scrollPositions = [];
+  container.querySelectorAll('.kanban-cards').forEach(col => {
+    _scrollPositions.push(col.scrollTop);
+  });
+
   container.innerHTML =
     makeCol('Chamados',    '#ff4757', chamados) +
     colsTec.map(c => makeCol(c.label, null, c.tickets, true, c.i)).join('') +
@@ -2929,6 +2935,14 @@ function renderKanban(containerId, data) {
     makeCol('Pendências',  '#ff6b35', pendencias) +
     makeCol('Não Atendido','#8a90a0', naoAtendido) +
     (resolvido.length > 0 ? makeColResolvido(resolvido) : '');
+
+  // Restaurar posição de scroll de cada coluna
+  container.querySelectorAll('.kanban-cards').forEach((col, i) => {
+    if (_scrollPositions[i] !== undefined) {
+      col.scrollTop = _scrollPositions[i];
+    }
+  });
+
 }
 
 function hexToRgb(hex) {
