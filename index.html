@@ -1614,9 +1614,13 @@
       </div>
         </div>
         <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;min-width:180px">
-          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px;margin-bottom:10px">ATRIBUÍDO A</div>
-          <div id="modal-atribuido-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px"></div>
-          <select id="modal-atribuir-select" onchange="atribuirChamado(this.value)" class="form-select" style="font-size:12px;padding:5px 8px">
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px;margin-bottom:8px">ATRIBUÍDO A</div>
+          <div id="modal-atribuido-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px"></div>
+          <div style="font-size:10px;color:var(--text3);line-height:1.5">
+            Adicione uma etiqueta com o nome do técnico para atribuir o chamado automaticamente.
+          </div>
+          <!-- select mantido oculto para compatibilidade -->
+          <select id="modal-atribuir-select" onchange="atribuirChamado(this.value)" style="display:none">
             <option value="">— Atribuir para...</option>
           </select>
         </div>
@@ -4678,21 +4682,56 @@ function filtrarEtiquetas(termo) {
   renderLabelPickerItens(filtradas, list._todas);
 }
 
-function renderLabelPickerItens(lista, todas) {
+function renderLabelPickerItens(lista, todas, frequentes) {
   const modalId = document.getElementById('ticket-modal')._currentId;
   const t = tickets.find(x => x.id === modalId);
   const current = (t?.labels||[]).map(l => l.trelloId||l.name);
   const list = document.getElementById('label-picker-list');
-  list.innerHTML = lista.map((l, i) => {
+
+  function renderItem(l) {
     const realIdx = todas.indexOf(l);
-    const c = LABEL_COLORS[l.color]||LABEL_COLORS.blue;
+    const clr = LABEL_COLORS[l.color] || LABEL_COLORS.blue;
     const sel = current.includes(l.trelloId||l.name);
-    return `<div onclick="toggleLabel(${realIdx})" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;background:${sel?c.bg:'transparent'};border:1px solid ${sel?c.text:'transparent'};transition:all 0.1s" onmouseover="if(!${sel})this.style.background='var(--surface2)'" onmouseout="if(!${sel})this.style.background='transparent'">
-      <span style="width:12px;height:12px;background:${c.text};border-radius:3px;display:inline-block;flex-shrink:0"></span>
-      <span style="font-size:12px;color:var(--text1);flex:1">${l.name||l.color}</span>
-      ${sel?`<span style="color:${c.text};font-size:11px;font-weight:700">✓</span>`:''}
+    return `<div onclick="toggleLabel(${realIdx})" style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;cursor:pointer;background:${sel?clr.bg:'transparent'};border:1px solid ${sel?clr.text:'transparent'}" onmouseover="if(!${sel})this.style.background='var(--surface2)'" onmouseout="if(!${sel})this.style.background='${sel?clr.bg:'transparent'}'">
+      <span style="width:12px;height:12px;background:${clr.text};border-radius:3px;flex-shrink:0"></span>
+      <span style="font-size:12px;color:var(--text);flex:1">${l.name||l.color}</span>
+      ${sel?`<span style="color:${clr.text};font-size:11px;font-weight:700">✓</span>`:''}
     </div>`;
-  }).join('') || '<div style="font-size:12px;color:var(--text3);padding:8px">Nenhuma etiqueta encontrada</div>';
+  }
+
+  function renderGrupo(titulo, items) {
+    if (!items.length) return '';
+    return `<div style="margin-bottom:8px">
+      <div style="font-size:9px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px;padding:4px 8px 3px;margin-top:4px">${titulo}</div>
+      ${items.map(renderItem).join('')}
+    </div>`;
+  }
+
+  // Se busca ativa, mostrar lista plana
+  const srch = document.getElementById('label-search');
+  const q = (srch?.value||'').toLowerCase().trim();
+  if (q) {
+    const filtrado = lista.filter(l => (l.name||'').toLowerCase().includes(q));
+    list.innerHTML = filtrado.map(renderItem).join('') ||
+      '<div style="font-size:12px;color:var(--text3);padding:8px">Nenhuma etiqueta encontrada</div>';
+    return;
+  }
+
+  // Grupos
+  const grupos = ['Frequentes', 'Técnicos', 'Sistemas', 'Prioridade', 'Status', 'Outros'];
+  const porGrupo = {};
+  grupos.forEach(g => porGrupo[g] = []);
+
+  if (frequentes?.length) porGrupo['Frequentes'] = frequentes;
+  lista.forEach(l => {
+    const g = l.grupo || 'Outros';
+    if (grupos.includes(g) && g !== 'Frequentes') {
+      porGrupo[g].push(l);
+    }
+  });
+
+  list.innerHTML = grupos.map(g => renderGrupo(g, porGrupo[g])).join('') ||
+    '<div style="font-size:12px;color:var(--text3);padding:8px">Nenhuma etiqueta</div>';
 }
 
 let boardLabels = [];
@@ -4708,10 +4747,10 @@ function renderModalLabels(t) {
   const chips = document.getElementById('modal-labels-chips');
   if (!chips) return;
   chips.innerHTML = (t.labels||[]).map((l,i) => {
-    const c = LABEL_COLORS[l.color] || LABEL_COLORS.blue;
-    return `<span style="background:${c.bg};color:${c.text};border-radius:5px;padding:2px 8px;font-size:11px;font-family:var(--mono);display:flex;align-items:center;gap:4px">
-      ${c.dot} ${l.name||l.color}
-      <span onclick="removeLabel(${i})" style="cursor:pointer;opacity:0.6;margin-left:2px">✕</span>
+    const clr = LABEL_COLORS[l.color] || LABEL_COLORS.blue;
+    return `<span style="background:${clr.bg};color:${clr.text};border-radius:5px;padding:2px 8px;font-size:11px;font-family:var(--mono);display:inline-flex;align-items:center;gap:4px">
+      ${clr.dot} <span ondblclick="editarLabel(${i})" title="Clique duplo para editar" style="cursor:text">${l.name||l.color}</span>
+      <span onclick="removeLabel(${i})" style="cursor:pointer;opacity:0.6;margin-left:2px" title="Remover etiqueta">✕</span>
     </span>`;
   }).join('');
 }
@@ -4724,26 +4763,68 @@ function toggleLabelPicker() {
 }
 
 function renderLabelPicker() {
+  const membros = getMembros();
+
   const padrao = [
-    {name:'Contrato',    color:'green',  trelloId:null},
-    {name:'Garantia',    color:'blue',   trelloId:null},
-    {name:'Sem garantia',color:'orange', trelloId:null},
-    {name:'RHID',        color:'purple', trelloId:null},
-    {name:'iPonto',      color:'teal',   trelloId:null},
-    {name:'Atecsoft',    color:'yellow', trelloId:null},
-    {name:'IDSecure',    color:'blue',   trelloId:null},
-    {name:'Urgente',     color:'red',    trelloId:null},
-    {name:'Aguardando',  color:'pink',   trelloId:null},
-    {name:'N1',          color:'green',  trelloId:null},
-    {name:'N2',          color:'yellow', trelloId:null},
+    // Prioridade
+    {name:'Contrato',    color:'green',  grupo:'Prioridade', trelloId:null},
+    {name:'Garantia',    color:'blue',   grupo:'Prioridade', trelloId:null},
+    {name:'Sem garantia',color:'orange', grupo:'Prioridade', trelloId:null},
+    // Sistemas
+    {name:'RHID',        color:'purple', grupo:'Sistemas',   trelloId:null},
+    {name:'iPonto',      color:'teal',   grupo:'Sistemas',   trelloId:null},
+    {name:'Atecsoft',    color:'yellow', grupo:'Sistemas',   trelloId:null},
+    {name:'IDSecure',    color:'blue',   grupo:'Sistemas',   trelloId:null},
+    // Status
+    {name:'Urgente',     color:'red',    grupo:'Status',     trelloId:null},
+    {name:'Aguardando',  color:'pink',   grupo:'Status',     trelloId:null},
+    {name:'N1',          color:'green',  grupo:'Status',     trelloId:null},
+    {name:'N2',          color:'yellow', grupo:'Status',     trelloId:null},
   ];
-  const todas = [...boardLabels, ...padrao.filter(p => !boardLabels.find(b => b.name.toLowerCase()===p.name.toLowerCase()))];
+
+  // Técnicos como grupo próprio
+  const labelsTec = membros.map(m => ({
+    name: m, color: 'blue', grupo: 'Técnicos', trelloId: null
+  }));
+
+  // Labels do Trello (sem duplicar com padrão)
+  const trelloLabs = (boardLabels || []).map(l => ({
+    ...l,
+    grupo: (() => {
+      if (membros.some(m => m.toLowerCase() === (l.name||'').toLowerCase())) return 'Técnicos';
+      if (['RHID','iPonto','Atecsoft','IDSecure','Atec Web'].some(s => l.name?.toLowerCase().includes(s.toLowerCase()))) return 'Sistemas';
+      if (['Contrato','Garantia','garantia','Avulso'].some(s => l.name?.toLowerCase().includes(s.toLowerCase()))) return 'Prioridade';
+      return 'Outros';
+    })()
+  }));
+
+  // Juntar tudo sem duplicatas
+  const todas = [...trelloLabs];
+  padrao.filter(p => !todas.find(b => b.name.toLowerCase() === p.name.toLowerCase()))
+    .forEach(p => todas.push(p));
+  labelsTec.filter(l => !todas.find(b => b.name.toLowerCase() === l.name.toLowerCase()))
+    .forEach(l => todas.push(l));
+
+  // Calcular frequência de uso (excluindo técnicos)
+  const freq = {};
+  tickets.forEach(t => (t.labels||[]).forEach(l => {
+    if (!membros.some(m => m.toLowerCase() === (l.name||'').toLowerCase())) {
+      freq[l.name||l.color] = (freq[l.name||l.color] || 0) + 1;
+    }
+  }));
+  const frequentes = Object.entries(freq)
+    .sort((a,b) => b[1]-a[1])
+    .slice(0, 8)
+    .map(([name]) => todas.find(l => l.name === name))
+    .filter(Boolean);
+
   const list = document.getElementById('label-picker-list');
-  list._todas = todas;
-  // Limpa busca
+  list._todas  = todas;
+  list._freq   = frequentes;
+
   const srch = document.getElementById('label-search');
   if (srch) srch.value = '';
-  renderLabelPickerItens(todas, todas);
+  renderLabelPickerItens(todas, todas, frequentes);
 }
 
 async function toggleLabel(idx) {
@@ -4762,6 +4843,13 @@ async function toggleLabel(idx) {
     }
   } else {
     t.labels.push(label);
+    // Se a label tem nome de técnico, atribuir automaticamente
+    const membros = getMembros();
+    const membro = membros.find(m => m.toLowerCase() === (label.name||'').toLowerCase());
+    if (membro && !t.assignedTo) {
+      t.assignedTo = membro;
+      showNotif(`↙ Atribuído a ${membro} pela etiqueta`);
+    }
     if (t.trelloCardId && label.trelloId) {
       try { await trelloPOST(`/cards/${t.trelloCardId}/idLabels`,{value:label.trelloId}); } catch(e){}
     }
@@ -4778,6 +4866,14 @@ async function removeLabel(idx) {
   if (!t||!t.labels) return;
   const label = t.labels[idx];
   t.labels.splice(idx, 1);
+  // Se a label removida era de técnico e era o assignedTo, limpar
+  const membros = getMembros();
+  const eraMembro = membros.find(m => m.toLowerCase() === (label?.name||'').toLowerCase());
+  if (eraMembro && t.assignedTo === eraMembro) {
+    // Verificar se ainda tem outra label de técnico
+    const outraMembro = (t.labels||[]).find(l => membros.some(m => m.toLowerCase() === (l.name||'').toLowerCase()));
+    t.assignedTo = outraMembro ? membros.find(m => m.toLowerCase() === (outraMembro.name||'').toLowerCase()) : null;
+  }
   if (t.trelloCardId && label?.trelloId) {
     try { await fetch(`https://api.trello.com/1/cards/${t.trelloCardId}/idLabels/${label.trelloId}?key=${TRELLO.key}&token=${TRELLO.token}`,{method:'DELETE'}); } catch(e){}
   }
@@ -5909,6 +6005,36 @@ async function atribuirTecnicosPorLabels() {
   } else {
     showNotif('Nenhum chamado resolvido sem técnico encontrado com etiqueta de membro.', 'warn');
   }
+}
+
+
+async function editarLabel(idx) {
+  if (bloquearLeitor('editar etiquetas')) return;
+  const modalId = document.getElementById('ticket-modal')._currentId;
+  const t = tickets.find(x => x.id === modalId);
+  if (!t || !t.labels || !t.labels[idx]) return;
+
+  const label = t.labels[idx];
+  const novoNome = prompt('Editar nome da etiqueta:', label.name || label.color);
+  if (novoNome === null) return; // cancelou
+  if (!novoNome.trim()) { showNotif('⚠️ Nome não pode ser vazio.', 'warn'); return; }
+
+  t.labels[idx].name = novoNome.trim();
+
+  // Se o novo nome bate com um técnico, atualizar assignedTo
+  const membros = getMembros();
+  const membro = membros.find(m => m.toLowerCase() === novoNome.trim().toLowerCase());
+  if (membro && !t.assignedTo) {
+    t.assignedTo = membro;
+    showNotif(`✅ Etiqueta editada e chamado atribuído a ${membro}`);
+  } else {
+    showNotif('✅ Etiqueta atualizada');
+  }
+
+  await updateTicketInDB(t);
+  renderModalLabels(t);
+  renderModalAtribuicao(t);
+  renderAll();
 }
 
 function updateClock() {
