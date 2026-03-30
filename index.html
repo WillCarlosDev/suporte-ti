@@ -82,7 +82,7 @@
   }
   .modal-close:hover { border-color: var(--danger); color: var(--danger); }
   .modal-body { padding: 20px 24px; }
-  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+  
   .ticket-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
   .ticket-meta-item { background: var(--surface2); border-radius: 8px; padding: 10px 12px; }
   .ticket-meta-label { font-size: 10px; color: var(--text3); font-family: var(--mono); letter-spacing: 1px; margin-bottom: 4px; }
@@ -100,8 +100,6 @@
   }
   .status-btn:hover { border-color: var(--text); color: var(--text); }
   .status-btn.sel-aberto { border-color: #ff4757; color: #ff4757; background: rgba(255,71,87,0.08); }
-  .status-btn.sel-em-andamento { border-color: var(--warn); color: var(--warn); background: rgba(255,204,0,0.08); }
-  .status-btn.sel-aguardando { border-color: var(--accent2); color: var(--accent2); background: rgba(0,144,255,0.08); }
   .status-btn.sel-resolvido { border-color: var(--accent); color: var(--accent); background: rgba(0,229,160,0.08); }
 
   /* ── WhatsApp Agent View ── */
@@ -197,17 +195,14 @@
   .page-sub { color: var(--text2); font-size: 13px; }
 
   /* ── Stats Row ── */
-  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-  .stat-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 16px 20px; position: relative; overflow: hidden;
-  }
+  
+  
   .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent-line, var(--accent)); }
   .stat-card.warn::before { --accent-line: var(--warn); }
   .stat-card.danger::before { --accent-line: var(--danger); }
   .stat-card.blue::before { --accent-line: var(--accent2); }
-  .stat-num { font-family: var(--mono); font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
-  .stat-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; font-family: var(--mono); }
+  
+  
 
   /* ── Kanban ── */
   .kanban { display: grid; gap: 14px; overflow-x: auto; }
@@ -225,6 +220,37 @@
   .kanban-head .dot { width: 6px; height: 6px; border-radius: 1px; flex-shrink: 0; transform: rotate(45deg); }
   .kanban-head .col-count { margin-left: auto; color: var(--text3); font-size: 11px; }
   .kanban-cards { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 80px; max-height: 520px; overflow-y: auto; }
+
+  /* ── Utilitários de layout frequentes ── */
+  .flex-center { display: flex; align-items: center; }
+  .flex-between { display: flex; align-items: center; justify-content: space-between; }
+  .flex-col { display: flex; flex-direction: column; }
+  .text-mono { font-family: var(--mono); }
+  .text-sm { font-size: 11px; }
+  .text-xs { font-size: 10px; }
+  .text-muted { color: var(--text3); }
+  .text-secondary { color: var(--text2); }
+  .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .section-label { font-size: 10px; color: var(--text3); font-family: var(--mono); letter-spacing: 1.2px; margin-bottom: 8px; }
+  .card-surface { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .badge-pill { font-size: 9px; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-family: var(--mono); }
+  .btn-icon { background: none; border: none; cursor: pointer; color: var(--text3); padding: 4px 6px; border-radius: 4px; font-size: 13px; line-height: 1; transition: color .15s; }
+  .btn-icon:hover { color: var(--text); background: var(--surface3); }
+
+  /* ── Responsividade básica ── */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0 !important; }
+    .topbar-right .topbar-search { display: none; }
+    .kanban { grid-template-columns: repeat(2, minmax(200px, 1fr)) !important; }
+    .report-grid-2col { grid-template-columns: 1fr !important; }
+    .modal-box { max-width: 98vw !important; margin: 4px; }
+  }
+  @media (max-width: 600px) {
+    .kanban { grid-template-columns: 1fr !important; }
+    .stats-bar { grid-template-columns: repeat(2, 1fr) !important; }
+    .page-header { flex-direction: column; align-items: flex-start !important; }
+  }
   .ticket-card {
     background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
     padding: 12px; cursor: pointer; transition: all 0.15s; position: relative;
@@ -349,7 +375,7 @@
   .qr-btn:hover { border-color: var(--accent); color: var(--accent); }
 
   /* ── Reports ── */
-  .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  
   .report-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
   .report-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 16px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; font-family: var(--mono); }
   .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
@@ -359,15 +385,11 @@
   .rep-period.active { background:rgba(0,229,160,0.15); border-color:var(--accent); color:var(--accent); }
   .bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
   .bar-val { font-family: var(--mono); font-size: 11px; color: var(--text3); min-width: 24px; text-align: right; }
-  .pie-row { display: flex; gap: 20px; align-items: center; }
-  .pie-legend { display: flex; flex-direction: column; gap: 8px; }
-  .pie-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-  .pie-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .pie-chart-placeholder {
-    width: 100px; height: 100px; border-radius: 50%; flex-shrink: 0;
-    background: conic-gradient(var(--accent) 0% 52%, var(--accent2) 52% 78%, var(--accent3) 78% 100%);
-    position: relative;
-  }
+  
+  
+  
+  
+  
   .pie-chart-placeholder::after {
     content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
     width: 50px; height: 50px; border-radius: 50%; background: var(--surface);
@@ -435,7 +457,7 @@
     <div class="topbar-right">
       <!-- Busca global -->
       <div style="position:relative" id="search-wrapper">
-        <input id="global-search" type="text" placeholder="🔍 buscar empresa, CNPJ, chamado..."
+        <input id="global-search" type="text" placeholder="🔍 buscar empresa, CNPJ, chamado..." aria-label="Busca global de chamados"
           style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:5px 12px;font-size:11px;color:var(--text);width:220px;font-family:var(--font);transition:width .2s,border-color .2s"
           oninput="onGlobalSearch(this.value)"
           onfocus="this.style.width='280px';this.style.borderColor='var(--accent)'"
@@ -451,13 +473,13 @@
       <span class="badge-online">ONLINE</span>
       <span class="time-display" id="clock">--:--:--</span>
       <!-- Badge WA -->
-      <div style="position:relative;display:inline-flex;align-items:center;cursor:pointer" onclick="showView('whatsapp')" title="Mensagens WhatsApp">
+      <div style="position:relative;display:inline-flex;align-items:center;cursor:pointer" onclick="showView('whatsapp')" title="Mensagens WhatsApp" aria-label="Abrir WhatsApp">
         <span style="font-size:16px">📲</span>
         <span id="wa-badge" style="display:none;position:absolute;top:-5px;right:-7px;background:#ff4757;color:#fff;font-size:8px;font-weight:700;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center;line-height:14px">0</span>
       </div>
       <!-- Sino de notificações -->
       <div style="position:relative">
-        <button onclick="toggleNotifPanel()" id="notif-btn" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;font-size:14px;cursor:pointer;position:relative" title="Notificações">
+        <button onclick="toggleNotifPanel()" id="notif-btn" aria-label="Notificações" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;font-size:14px;cursor:pointer;position:relative" title="Notificações">
           🔔
           <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:9px;font-family:var(--mono);border-radius:10px;padding:1px 4px;min-width:14px;text-align:center"></span>
         </button>
@@ -1356,8 +1378,12 @@
     <div class="view" id="view-config">
       <div class="page-header">
         <div class="page-title">Configurações</div>
-        <div class="page-sub">Chave de IA, Trello e WhatsApp</div>
+        <div class="page-sub">Trello, equipe, categorias e permissões</div>
       </div>
+
+      <!-- Campo oculto para API key (compatibilidade) -->
+      <input type="hidden" id="global-api-key"/>
+      <div id="api-key-status" style="display:none"></div>
 
       <!-- Alterar Senha -->
       <div class="config-box" style="border-color:rgba(255,204,0,0.2);background:rgba(255,204,0,0.03)">
@@ -1548,7 +1574,7 @@
         <div class="modal-title" id="modal-ticket-id">—</div>
         <div style="font-size:11px;color:var(--text2);margin-top:3px" id="modal-ticket-sub">—</div>
       </div>
-      <button class="modal-close" onclick="closeModal()">✕</button>
+      <button class="modal-close" onclick="closeModal()" aria-label="Fechar chamado">✕</button>
     </div>
 
     <div class="modal-body" style="padding:20px 22px;display:flex;flex-direction:column;gap:16px">
@@ -1714,6 +1740,7 @@ document.querySelector('.main').insertAdjacentHTML('beforeend', `
             🔒 IA configurada via servidor (Groq) — nenhuma chave necessária aqui.
           </div>
         </div>
+        <div class='form-group' style='display:none'><input class='form-input' id='wa-api-key' value=''/></div>
         <div class="form-group">
           <label class="form-label">Nome do Agente</label>
           <input class="form-input" id="wa-agent-name" value="Suporte TI" />
@@ -1783,30 +1810,13 @@ Para iniciar, informe:
 
 <script>
 function saveGlobalApiKey() {
-  const key = document.getElementById('global-api-key')?.value.trim();
-  if (!key || !key.startsWith('sk-ant-')) {
-    showNotif('⚠️ Chave inválida — deve começar com sk-ant-', 'warn');
-    return;
-  }
-  localStorage.setItem('suporte_ti_api_key', key);
-  document.getElementById('api-key-status').textContent = '✅ Chave salva com sucesso!';
-  document.getElementById('api-key-status').style.color = 'var(--accent)';
-  showNotif('✅ Chave API salva — funções de IA ativadas!');
-  // Sincroniza com o agente WhatsApp também
-  const waConf = loadWAConfig() || {};
-  waConf.apiKey = key;
-  localStorage.setItem(WA_CONFIG_KEY, JSON.stringify(waConf));
+  // Chave gerenciada pelo servidor (proxy Vercel) — não necessária no cliente
+  showNotif('ℹ️ Chave de IA gerenciada pelo servidor — nenhuma configuração necessária.', '');
 }
 
-function loadGlobalApiKey() {
-  const key = localStorage.getItem('suporte_ti_api_key') || '';
-  const el  = document.getElementById('global-api-key');
-  const st  = document.getElementById('api-key-status');
-  if (el && key) {
-    el.value = key;
-    if (st) { st.textContent = '✅ Chave configurada'; st.style.color = 'var(--accent)'; }
-  }
-}
+
+function loadGlobalApiKey() { /* chave gerenciada no servidor */ }
+
 
 // ─── Supabase ─────────────────────────────────────────────────────────────────
 const SB_URL = 'https://civxugoribdwlnghbzbx.supabase.co';
@@ -2239,13 +2249,7 @@ function detectarPrioridade(labels) {
   return 'avulso';
 }
 
-function mapearStatus(listName) {
-  const n = (listName || '').toLowerCase();
-  if (n.includes('andamento') || n.includes('progress') || n.includes('fazendo')) return 'em-andamento';
-  if (n.includes('aguard') || n.includes('espera') || n.includes('hold'))          return 'aguardando';
-  if (n.includes('resolv') || n.includes('conclu') || n.includes('done') || n.includes('feito')) return 'resolvido';
-  return 'aberto';
-}
+
 
 // ─── Trello Sync Bidirecional ─────────────────────────────────────────────────
 let trelloPollingInterval = null;
@@ -2255,8 +2259,7 @@ let isSyncing             = false;
 
 const STATUS_TO_LIST_HINT = {
   'aberto':        ['aberto', 'open', 'novo', 'new', 'a fazer', 'to do', 'chamado', 'fila'],
-  'em-andamento':  ['andamento', 'progress', 'fazendo', 'doing', 'atendimento'],
-  'aguardando':    ['aguard', 'espera', 'hold', 'pendente', 'waiting'],
+
   'agendado':      ['agend', 'scheduled', 'agendam'],
   'pendencia':     ['pendên', 'pendenc', 'pend'],
   'nao-atendido':  ['não atend', 'nao atend', 'n/a', 'sem atend'],
@@ -2308,9 +2311,9 @@ function detectarStatusPorLista(listName) {
   if (n.includes('andament') || n.includes('progress') || n.includes('em atend'))             return 'em-andamento';
   if (n.includes('agend'))                                                                      return 'agendado';
   if (n.includes('aguard') || n.includes('espera') || n.includes('hold'))                     return 'aguardando';
-  // Colunas de pessoas = em-andamento
+  // Colunas de técnicos = aberto (assignedTo já é setado no sync)
   const membros = getMembros();
-  if (membros.some(m => n.includes(m.toLowerCase()))) return 'em-andamento';
+  if (membros.some(m => n.includes(m.toLowerCase()))) return 'aberto';
   return 'aberto';
 }
 
@@ -2428,8 +2431,8 @@ async function initTrello() {
 }
 const defaultTickets = [
   { id:'#001', nome:'Maria Santos', empresa:'Empresa ABC Ltda', cnpj:'12.345.678/0001-90', sistema:'rhid', prioridade:'contrato', categoria:'relogio-offline', nivel:'n1', status:'aberto', desc:'Relógio modelo W3 offline desde ontem às 14h.', time: Date.now()-3600000 },
-  { id:'#002', nome:'João Pereira', empresa:'Distribuidora XYZ', cnpj:'98.765.432/0001-11', sistema:'iponto', prioridade:'garantia', categoria:'ponto-manual', nivel:'n1', status:'em-andamento', desc:'Funcionário esqueceu de bater ponto na sexta-feira.', time: Date.now()-7200000 },
-  { id:'#003', nome:'Ana Lima', empresa:'Comércio Beta ME', cnpj:'11.222.333/0001-44', sistema:'atecsoft', prioridade:'avulso', categoria:'relatorio', nivel:'n2', status:'aguardando', desc:'Horas extras não estão aparecendo no relatório mensal.', time: Date.now()-10800000 },
+  { id:'#002', nome:'João Pereira', empresa:'Distribuidora XYZ', cnpj:'98.765.432/0001-11', sistema:'iponto', prioridade:'garantia', categoria:'ponto-manual', nivel:'n1', status:'aberto', desc:'Funcionário esqueceu de bater ponto na sexta-feira.', time: Date.now()-7200000 },
+  { id:'#003', nome:'Ana Lima', empresa:'Comércio Beta ME', cnpj:'11.222.333/0001-44', sistema:'atecsoft', prioridade:'avulso', categoria:'relatorio', nivel:'n2', status:'aberto', desc:'Horas extras não estão aparecendo no relatório mensal.', time: Date.now()-10800000 },
   { id:'#004', nome:'Pedro Costa', empresa:'Indústria Gama S/A', cnpj:'55.666.777/0001-22', sistema:'rhid', prioridade:'contrato', categoria:'integracao', nivel:'n2', status:'resolvido', desc:'Integração com Domínio não está exportando corretamente.', time: Date.now()-86400000 },
 ];
 let tickets = [...defaultTickets];
@@ -4120,6 +4123,14 @@ const DESB_CONFIGS = {
 
 let currentDesbloqueioTipo = null;
 
+
+function initDeskAtendentes() {
+  deskAtendentes = [];
+  const chips = document.getElementById('desb-atendentes-chips');
+  if (chips) chips.innerHTML = '';
+  renderSugestoesAtendentes();
+}
+
 function abrirDesbloqueio(tipo) {
   currentDesbloqueioTipo = tipo;
   const cfg = DESB_CONFIGS[tipo];
@@ -4298,7 +4309,7 @@ function mostrarHistoricoCliente(lista, cnpj) {
   `;
   count.textContent = `${lista.length} chamado${lista.length > 1 ? 's' : ''} anterior${lista.length > 1 ? 'es' : ''}`;
 
-  const statusColors = { aberto:'#ff4757', 'em-andamento':'#ffa502', aguardando:'#0090ff', resolvido:'#00e5a0', pendencia:'#ff6b35', 'nao-atendido':'#8a90a0' };
+  const statusColors = { aberto:'#ff4757', agendado:'#a855f7', resolvido:'#00e5a0', pendencia:'#ff6b35', 'nao-atendido':'#8a90a0' };
   listEl.innerHTML = lista.slice(0, 5).map(t => `
     <div style="background:var(--surface2);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:10px;font-size:11px">
       <span style="font-family:var(--mono);color:var(--text3);min-width:36px">${t.id}</span>
@@ -5036,7 +5047,7 @@ function showTicketDetail(id) {
     if (hist.length === 0) {
       histEl.innerHTML = '<div style="color:var(--text3);font-size:11px;padding:6px 0">Primeiro atendimento desta empresa.</div>';
     } else {
-      const statusCor = { resolvido:'var(--accent)', pendencia:'var(--warn)', 'nao-atendido':'var(--text3)', agendado:'#a855f7', aberto:'#ff4757' };
+      const statusCor = { resolvido:'var(--accent)', pendencia:'#ff6b35', 'nao-atendido':'var(--text3)', agendado:'#a855f7', aberto:'#ff4757' };
       histEl.innerHTML = hist.map(h => {
         const cor = statusCor[h.status] || 'var(--text3)';
         const data = h.time ? new Date(h.time).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '';
@@ -5111,8 +5122,6 @@ async function puxarChamado(ticketId) {
   const meuMembro = getMembros().find(m => m.toLowerCase() === meuNome.toLowerCase()) || meuNome;
 
   t.assignedTo = meuMembro;
-  // Se o chamado estava em "aberto", move para "em-andamento" automaticamente
-
   await updateTicketInDB(t);
   renderAll();
   showNotif(`↙ Chamado ${t.id} puxado para ${meuMembro}!`);
@@ -5194,7 +5203,7 @@ function setTicketStatus(id, newStatus, skipTrello = false) {
   updateTicketInDB(t);
   renderAll();
 
-  const labels = { 'aberto':'Aberto','em-andamento':'Em Andamento','aguardando':'Aguardando','resolvido':'Resolvido' };
+  const labels = { 'aberto':'Aberto','agendado':'Agendado','pendencia':'Pendência','nao-atendido':'Não Atendido','resolvido':'Resolvido' };
   showNotif(`🔄 ${labels[oldStatus] || oldStatus} → ${labels[newStatus] || newStatus}`);
 }
 
@@ -5217,19 +5226,7 @@ async function submitReply(isAI = false) {
   document.getElementById('modal-reply-text').value = '';
   updateTicketInDB(t);
 
-  // Adiciona como comentário no Trello se for card do Trello
-  if (t.fromTrello && t.trelloCardId) {
-    try {
-      await trelloPOST(`/cards/${t.trelloCardId}/actions/comments`, {
-        text: `[${isAI ? '✨ IA' : getDisplayName(currentUser?.username) || 'Técnico'}] ${text}`
-      });
-      showNotif('🟦 Resposta registrada no Trello e no banco');
-    } catch(e) {
-      showNotif('💬 Resposta salva no banco — erro no Trello: ' + e.message, 'warn');
-    }
-  } else {
-    showNotif('💬 Resposta registrada');
-  }
+  showNotif('💬 Resposta registrada');
 }
 
 async function generateAIReply() {
@@ -5237,14 +5234,6 @@ async function generateAIReply() {
   const modalId = document.getElementById('ticket-modal')._currentId;
   const t = tickets.find(x => x.id === modalId);
   if (!t) return;
-
-  // Busca chave da API salva nas configs do agente
-  const waConf = loadWAConfig();
-  const apiKey = waConf?.apiKey || '';
-  if (!apiKey) {
-    showNotif('⚠️ Configure a chave API em "Agente WhatsApp" primeiro.', 'warn');
-    return;
-  }
 
   const btn = document.getElementById('ai-reply-btn');
   btn.textContent = '⏳ Gerando...';
@@ -5254,6 +5243,18 @@ async function generateAIReply() {
     const kbContext = getAllKBItems().slice(0, 6).map(k =>
       `${k.title}: ${k.steps.map(s => s.text).join(' | ')}`
     ).join('\n');
+
+    // Últimos atendimentos resolvidos como referência de linguagem
+    const fewShot = tickets
+      .filter(t => t.status === 'resolvido' && t.replies?.length > 0)
+      .sort((a,b) => (b.time||0)-(a.time||0))
+      .slice(0,4)
+      .map((t,i) => {
+        const resp = t.replies.filter(r=>!r.isAI).at(-1)||t.replies.at(-1);
+        return `Ex.${i+1}: "${(t.desc||'').slice(0,100)}" → "${(resp?.text||'').slice(0,150)}"`;
+      }).join('\n');
+
+    const clienteHistorico = '';
 
     const data = await anthropicFetch({
       model: 'claude-sonnet-4-20250514',
@@ -5394,7 +5395,7 @@ async function quickMove(ticketId, status) {
   if (bloquearLeitor('mover chamados')) return;
   const t = tickets.find(x => x.id === ticketId);
   if (!t) return;
-  const labels = { 'pendencia': 'Pendência', 'nao-atendido': 'Não Atendido', 'aguardando': 'Aguardando', 'agendado': 'Agendado', 'aberto': 'Aberto' };
+  const labels = { 'pendencia': '⏳ Pendência', 'nao-atendido': '📵 Não Atendido', 'agendado': '📅 Agendado', 'aberto': '📥 Chamados' };
   t.status = status;
   t.currentStatus = status;
   await updateTicketInDB(t);
@@ -5440,10 +5441,11 @@ async function moveTicketTo(status) {
   const t = tickets.find(x => x.id === modalId);
   if (!t) return;
   const labels = {
-    'pendencia': '⏳ Pendência',
-    'nao-atendido': '🚫 Não Atendido',
-    'aberto': '🔴 Aberto',
-    };
+    'pendencia':    '⏳ Pendência',
+    'nao-atendido': '📵 Não Atendido',
+    'aberto':       '📥 Chamados',
+    'agendado':     '📅 Agendado',
+  };
   t.status = status;
   t.currentStatus = status;
   await updateTicketInDB(t);
@@ -6038,6 +6040,9 @@ async function atribuirTecnicosPorLabels() {
     t.labels.length > 0
   );
 
+  const btn = document.getElementById('btn-fix-labels');
+  if (btn) { btn.textContent = '⏳ Processando...'; btn.disabled = true; }
+  try {
   for (const t of paraAtualizar) {
     // Procurar label cujo nome bate com um membro da equipe
     const labelTecnico = t.labels.find(l =>
@@ -6056,11 +6061,14 @@ async function atribuirTecnicosPorLabels() {
     }
   }
 
+  } finally {
+    if (btn) { btn.textContent = '🔖 Corrigir atribuições'; btn.disabled = false; }
+  }
   if (count > 0) {
     renderAll();
-    showNotif(`✅ ${count} chamado(s) atribuído(s) pelo técnico da etiqueta!`);
+    showNotif(`✅ ${count} chamado(s) atribuído(s)!`);
   } else {
-    showNotif('Nenhum chamado resolvido sem técnico encontrado com etiqueta de membro.', 'warn');
+    showNotif('Nenhum chamado sem técnico encontrado.', 'warn');
   }
 }
 
