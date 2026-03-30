@@ -211,6 +211,10 @@
 
   /* ── Kanban ── */
   .kanban { display: grid; gap: 14px; overflow-x: auto; }
+  @keyframes sla-pulse {
+    0%,100% { opacity:1; }
+    50%      { opacity:0.5; }
+  }
   .kanban-col { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   .kanban-head {
     padding: 12px 16px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
@@ -429,6 +433,16 @@
     <div style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
     <span style="font-size:12px;color:var(--text2)">Acesso e Ponto — N1 / N2</span>
     <div class="topbar-right">
+      <!-- Busca global -->
+      <div style="position:relative" id="search-wrapper">
+        <input id="global-search" type="text" placeholder="🔍 buscar empresa, CNPJ, chamado..."
+          style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:5px 12px;font-size:11px;color:var(--text);width:220px;font-family:var(--font);transition:width .2s,border-color .2s"
+          oninput="onGlobalSearch(this.value)"
+          onfocus="this.style.width='280px';this.style.borderColor='var(--accent)'"
+          onblur="setTimeout(()=>{this.style.width='220px';this.style.borderColor='var(--border)';fecharBusca()},200)"/>
+        <div id="search-results" style="display:none;position:absolute;top:calc(100% + 6px);left:0;width:360px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:200;max-height:320px;overflow-y:auto"></div>
+      </div>
+      
       <div id="trello-sync-group" style="display:flex;align-items:center;gap:6px">
         <button onclick="syncFromTrello(false)" id="btn-sync-trello" style="background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:4px 10px;font-size:10px;font-weight:600;cursor:pointer;font-family:var(--mono);letter-spacing:0.5px;transition:all 0.15s" onmouseover="this.style.borderColor='var(--accent2)';this.style.color='var(--accent2)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">SYNC TRELLO</button>
         <button onclick="toggleTrelloPause()" id="btn-trello-pause" title="Pausar/retomar sincronização automática com o Trello" style="display:none;background:transparent;border:1px solid var(--border);color:var(--text3);border-radius:4px;padding:4px 8px;font-size:11px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='var(--warn)';this.style.color='var(--warn)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">⏸</button>
@@ -436,6 +450,11 @@
       </div>
       <span class="badge-online">ONLINE</span>
       <span class="time-display" id="clock">--:--:--</span>
+      <!-- Badge WA -->
+      <div style="position:relative;display:inline-flex;align-items:center;cursor:pointer" onclick="showView('whatsapp')" title="Mensagens WhatsApp">
+        <span style="font-size:16px">📲</span>
+        <span id="wa-badge" style="display:none;position:absolute;top:-5px;right:-7px;background:#ff4757;color:#fff;font-size:8px;font-weight:700;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center;line-height:14px">0</span>
+      </div>
       <!-- Sino de notificações -->
       <div style="position:relative">
         <button onclick="toggleNotifPanel()" id="notif-btn" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:4px 10px;font-size:14px;cursor:pointer;position:relative" title="Notificações">
@@ -939,12 +958,40 @@
 
     <!-- CHAMADOS (KANBAN) -->
     <div class="view" id="view-chamados">
-      <div class="page-header">
-        <div>
+      <div class="page-header" style="flex-wrap:wrap;gap:10px">
+        <div style="flex:1">
           <div class="page-title">Chamados</div>
-          <div class="page-sub">Gerencie e acompanhe todos os atendimentos</div>
+          <div class="page-sub" id="chamados-sub">Gerencie e acompanhe todos os atendimentos</div>
         </div>
-        <button class="btn-ghost" onclick="toggleGerenciarColunas()" id="btn-gerenciar-cols" style="font-size:12px">⚙ Gerenciar Colunas</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn-ghost" onclick="toggleGerenciarColunas()" id="btn-gerenciar-cols" style="font-size:12px">⚙ Colunas</button>
+          <button onclick="limparFiltrosChamados()" id="btn-limpar-filtros" style="display:none;font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--warn);color:var(--warn);background:rgba(255,204,0,0.07);cursor:pointer">✕ Limpar filtros</button>
+        </div>
+      </div>
+
+      <!-- Barra de filtros rápidos -->
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">FILTRAR:</span>
+
+        <div style="display:flex;gap:4px">
+          <button class="filtro-btn active" id="fb-prio-todos"   onclick="setFiltroPrio('todos')"    style="font-size:11px;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--surface3);cursor:pointer;color:var(--text2)">Todos</button>
+          <button class="filtro-btn"        id="fb-prio-contrato" onclick="setFiltroPrio('contrato')" style="font-size:11px;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--accent)">Contrato</button>
+          <button class="filtro-btn"        id="fb-prio-garantia" onclick="setFiltroPrio('garantia')" style="font-size:11px;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--accent2)">Garantia</button>
+          <button class="filtro-btn"        id="fb-prio-avulso"   onclick="setFiltroPrio('avulso')"   style="font-size:11px;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--text3)">Sem garantia</button>
+        </div>
+
+        <div style="width:1px;height:18px;background:var(--border)"></div>
+
+        <select id="filtro-tecnico" onchange="setFiltroTecnico(this.value)" style="font-size:11px;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--surface3);color:var(--text2);cursor:pointer">
+          <option value="">Todos os técnicos</option>
+        </select>
+
+        <div style="width:1px;height:18px;background:var(--border)"></div>
+
+        <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);cursor:pointer">
+          <input type="checkbox" id="filtro-sla" onchange="setFiltroSLA(this.checked)" style="accent-color:#ff4757">
+          <span>🔴 Só SLA crítico</span>
+        </label>
       </div>
 
       <!-- Painel de gerenciar colunas -->
@@ -1059,6 +1106,7 @@
             <option value="n2">N2 — Suporte Avançado</option>
           </select>
         </div>
+
         <div class="form-group full">
           <label class="form-label">Descrição do Problema</label>
           <textarea class="form-textarea" id="f-descricao" placeholder="Descreva o problema em detalhes..."></textarea>
@@ -1469,7 +1517,28 @@
 </div>
 
 <!-- TICKET MODAL -->
-<div class="modal-overlay hidden" id="ticket-modal">
+<div class="modal-overlay hidden" id="modal-solucao" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1001;align-items:center;justify-content:center">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:460px;max-width:92vw;box-shadow:0 16px 48px rgba(0,0,0,0.5)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div style="font-size:15px;font-weight:700;color:var(--accent)">✅ Finalizar Chamado</div>
+          <button onclick="fecharModalSolucao()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px">✕</button>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6">Registre como o problema foi resolvido. Isso alimenta a base de conhecimento do bot.</div>
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="form-label">Como foi resolvido?</label>
+          <textarea id="solucao-texto" class="form-textarea" placeholder="Ex: Cabo de rede estava solto. Reconectamos e o relógio voltou a sincronizar..." style="min-height:90px;border-radius:8px;margin-top:6px"></textarea>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.2);border-radius:8px;margin-bottom:18px">
+          <input type="checkbox" id="solucao-kb" style="width:16px;height:16px;accent-color:var(--accent);flex-shrink:0">
+          <label for="solucao-kb" style="font-size:12px;color:var(--text2);cursor:pointer">📚 Salvar na Base de Conhecimento para o bot aprender</label>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button onclick="confirmarFinalizacao()" class="btn-primary" style="flex:1">✅ Finalizar chamado</button>
+          <button onclick="fecharModalSolucao()" class="btn-ghost" style="padding:0 18px">Cancelar</button>
+        </div>
+      </div>
+    </div>
+    <div id="ticket-modal">
   <div class="modal-box">
     <div class="modal-header">
       <div>
@@ -1555,7 +1624,11 @@
       <!-- Histórico de respostas -->
       <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border)">
-          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px">HISTÓRICO DE ATENDIMENTO</div>
+          <div style="margin-bottom:14px;padding:10px 14px;background:var(--surface2);border-radius:8px">
+          <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:6px">HISTÓRICO DESTA EMPRESA</div>
+          <div id="modal-hist-cliente" style="display:flex;flex-direction:column;gap:2px"></div>
+        </div>
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px">HISTÓRICO DE ATENDIMENTO</div>
           <div id="modal-replies-count" style="font-size:10px;color:var(--text3);font-family:var(--mono)"></div>
         </div>
         <div class="reply-history" id="modal-replies" style="padding:12px 14px;min-height:60px;max-height:200px">
@@ -1569,6 +1642,29 @@
           <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:1.5px">NOVA RESPOSTA / OBSERVAÇÃO</div>
         </div>
         <div style="padding:12px 14px">
+          <!-- Modelos de resposta rápida -->
+          <div style="margin-bottom:8px">
+            <select id="reply-template-sel" onchange="aplicarModeloResposta(this.value)" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--text2);cursor:pointer">
+              <option value="">💬 Modelos de resposta rápida...</option>
+              <optgroup label="Agendamento">
+                <option value="Agendado para contato. Iremos te retornar em breve. Fique à disposição!">📅 Agendado para contato</option>
+                <option value="Confirmamos seu agendamento. Um técnico entrará em contato no horário combinado.">📅 Agendamento confirmado</option>
+              </optgroup>
+              <optgroup label="Aguardando cliente">
+                <option value="Aguardando retorno do cliente para prosseguir com o atendimento.">⏳ Aguardando retorno do cliente</option>
+                <option value="Tentamos contato mas não obtivemos resposta. Por favor, retorne quando possível.">📞 Sem resposta — aguardando</option>
+                <option value="Ficamos no aguardo do acesso remoto para dar continuidade ao suporte.">🖥 Aguardando acesso remoto</option>
+              </optgroup>
+              <optgroup label="Encaminhamento">
+                <option value="Chamado encaminhado para equipe técnica N2. Em breve retornaremos com uma solução.">🔼 Encaminhado para N2</option>
+                <option value="Situação encaminhada ao fabricante para análise. Retornaremos com a resposta assim que possível.">🏭 Encaminhado ao fabricante</option>
+              </optgroup>
+              <optgroup label="Encerramento">
+                <option value="Problema identificado e resolvido. Qualquer dúvida, estamos à disposição!">✅ Resolvido</option>
+                <option value="Atendimento encerrado. Caso o problema retorne, abra um novo chamado e teremos prazer em atender.">✅ Encerrado com sucesso</option>
+              </optgroup>
+            </select>
+          </div>
           <textarea class="form-textarea" id="modal-reply-text" placeholder="Digite sua resposta ou observação interna..." style="margin-bottom:12px;border-radius:8px;min-height:80px"></textarea>
 
           <!-- Linha 1: ações primárias -->
@@ -2514,13 +2610,26 @@ function showView(name) {
   if (name === 'clientes') renderClientesTabela();
   if (name === 'novo')     popularSelectCategorias('f-categoria');
   if (name === 'reports')  renderReports();
+  if (name === 'whatsapp') zerarWABadge();
   if (name === 'chat')     renderChatList();
 }
 
 function renderAll() {
   renderStats();
   // dashboard usa apenas totalizadores — sem kanban
-  renderKanban('full-kanban', tickets);
+  popularFiltroTecnico();
+  const ticketsFiltrados = getTicketsFiltrados();
+  renderKanban('full-kanban', ticketsFiltrados);
+  // Atualizar sub do header com contagem
+  const subEl = document.getElementById('chamados-sub');
+  if (subEl) {
+    const total  = tickets.filter(t => t.status !== 'resolvido').length;
+    const slaVio = tickets.filter(t => t.prioridade === 'contrato' && t.status !== 'resolvido' && (Date.now()-(t.time||0))/3600000 >= 8).length;
+    const filtAtivo = _filtroPrio !== 'todos' || _filtroTecnico || _filtroSLA;
+    subEl.textContent = filtAtivo
+      ? `${ticketsFiltrados.filter(t=>t.status!=='resolvido').length} de ${total} em aberto (filtrado)${slaVio > 0 ? ' · 🔴 '+slaVio+' SLA crítico' : ''}`
+      : `${total} em aberto${slaVio > 0 ? ' · 🔴 '+slaVio+' SLA crítico' : ''}`;
+  }
   renderKB();
   renderReports();
   updateNavCounts();
@@ -2703,8 +2812,54 @@ function renderStats() {
 
 function updateNavCounts() {
   const open = tickets.filter(t => t.status !== 'resolvido').length;
-  document.getElementById('nav-open').textContent = open;
-  document.getElementById('nav-open').className = 'nav-count ' + (open > 3 ? 'danger' : 'warn');
+  const slaViolados = tickets.filter(t =>
+    t.status !== 'resolvido' &&
+    t.prioridade === 'contrato' &&
+    (Date.now() - (t.time||0)) / 3600000 >= 8
+  ).length;
+
+  const navCount = document.getElementById('nav-open');
+  if (navCount) {
+    navCount.textContent = open;
+    // Vermelho piscando se há SLA violado, laranja se tem chamados, amarelo se poucos
+    navCount.className = 'nav-count ' +
+      (slaViolados > 0 ? 'danger' : open > 3 ? 'warn' : 'warn');
+    navCount.title = slaViolados > 0
+      ? `${open} em aberto — ⚠️ ${slaViolados} contrato(s) com SLA violado!`
+      : `${open} chamado(s) em aberto`;
+  }
+
+  // Badge SLA no título da aba (browser)
+  if (slaViolados > 0) {
+    document.title = `🔴 ${slaViolados} SLA | SPT.TI`;
+  } else if (open > 0) {
+    document.title = `(${open}) SPT.TI`;
+  } else {
+    document.title = 'SPT.TI';
+  }
+}
+
+
+function makeColResolvido(resolvido) {
+  const limit   = window._verMaisResolvido ? resolvido.length : 20;
+  const visible = resolvido.slice(0, limit);
+  const extra   = resolvido.length - 20;
+  const btnHtml = resolvido.length > 20
+    ? '<div onclick="window._verMaisResolvido=!window._verMaisResolvido;renderAll()" style="text-align:center;padding:8px;font-size:11px;color:var(--text3);cursor:pointer;border-top:1px solid var(--border)">'
+      + (window._verMaisResolvido ? '↑ Mostrar menos' : '↓ Ver mais ' + extra + ' resolvidos') + '</div>'
+    : '';
+  return `
+  <div class="kanban-col">
+    <div class="kanban-head">
+      <div class="dot" style="background:#00e5a0"></div>
+      Resolvido
+      <span class="col-count">${resolvido.length}</span>
+    </div>
+    <div class="kanban-cards">
+      ${visible.map(t => renderTicketCard(t)).join('') || '<div style="color:var(--text3);font-size:11px;padding:12px;text-align:center">Nenhum card</div>'}
+    </div>
+    ${btnHtml}
+  </div>`;
 }
 
 function renderKanban(containerId, data) {
@@ -2769,7 +2924,7 @@ function renderKanban(containerId, data) {
     makeCol('Agendados',   '#a855f7', agendados) +
     makeCol('Pendências',  '#ff6b35', pendencias) +
     makeCol('Não Atendido','#8a90a0', naoAtendido) +
-    (resolvido.length > 0 ? makeCol('Resolvido', '#00e5a0', resolvido) : '');
+    (resolvido.length > 0 ? makeColResolvido(resolvido) : '');
 }
 
 function hexToRgb(hex) {
@@ -2789,16 +2944,25 @@ function renderTicketCard(t) {
   return `
   <div class="ticket-card" style="border-left: 3px solid ${prioColor}">
     <div onclick="showTicketDetail('${t.id}')">
-      <div class="tc-id">${t.id}
-        ${t.fromTrello ? '<span style="font-size:9px;background:rgba(0,144,255,0.12);color:var(--accent2);padding:1px 5px;border-radius:3px;font-family:var(--mono)">TRL</span>' : ''}
-        ${t.fromWhatsApp ? '<span style="font-size:9px;background:rgba(0,229,160,0.12);color:var(--accent);padding:1px 5px;border-radius:3px;font-family:var(--mono)">WA</span>' : ''}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+        <div class="tc-id" style="margin:0">${t.id}
+          ${t.fromTrello ? '<span style="font-size:9px;background:rgba(0,144,255,0.12);color:var(--accent2);padding:1px 5px;border-radius:3px;font-family:var(--mono)">TRL</span>' : ''}
+          ${t.fromWhatsApp ? '<span style="font-size:9px;background:rgba(0,229,160,0.12);color:var(--accent);padding:1px 5px;border-radius:3px;font-family:var(--mono)">WA</span>' : ''}
+        </div>
+        ${(() => {
+          if (t.status === 'resolvido' || t.prioridade !== 'contrato') return '';
+          const _h = Math.floor((Date.now() - (t.time||0)) / 3600000);
+          if (_h >= 8) return '<span style="font-size:9px;background:rgba(255,71,87,0.2);color:#ff4757;padding:2px 7px;border-radius:4px;font-weight:700;font-family:var(--mono);animation:sla-pulse 1.2s infinite">🔴 SLA ' + _h + 'h</span>';
+          if (_h >= 4) return '<span style="font-size:9px;background:rgba(255,204,0,0.15);color:var(--warn);padding:2px 7px;border-radius:4px;font-weight:700;font-family:var(--mono)">⚠️ ' + _h + 'h</span>';
+          return '';
+        })()}
       </div>
       <div class="tc-title">${getCategoryLabel(t.categoria)}</div>
       <div class="tc-company">${t.empresa}</div>
       <div class="tc-tags">
         <span class="tag ${t.prioridade}">${getPrioLabel(t.prioridade)}</span>
         <span class="tag ${t.nivel}">${t.nivel.toUpperCase()}</span>
-        <span class="tag ${t.sistema}">${t.sistema}</span>
+        <span style="font-size:9px;background:var(--surface3);color:var(--text2);padding:2px 7px;border-radius:3px;font-family:var(--mono)">${(t.sistema||'—').toLowerCase()}</span>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
         <div style="display:flex;align-items:center;gap:6px">
@@ -2832,12 +2996,13 @@ function renderTicketCard(t) {
            </button>`
         : `<button onclick="event.stopPropagation();quickMove('${t.id}','pendencia')"
              style="flex:1;font-size:10px;padding:4px 6px;border-radius:4px;border:1px solid rgba(255,107,53,0.4);color:#ff6b35;background:transparent;cursor:pointer;font-family:var(--mono)">
-             Pend.
+             ⏳ Pend.
            </button>`
       }
       <button onclick="event.stopPropagation();quickMove('${t.id}','nao-atendido')"
-        style="flex:1;font-size:10px;padding:4px 6px;border-radius:4px;border:1px solid rgba(138,144,160,0.3);color:var(--text3);background:transparent;cursor:pointer;font-family:var(--mono)">
-        N/A
+        title="Mover para Não Atendido"
+        style="flex:1;font-size:10px;padding:4px 6px;border-radius:4px;border:1px solid rgba(138,144,160,0.3);color:var(--text3);background:transparent;cursor:pointer">
+        📵 N.At.
       </button>
       <button onclick="event.stopPropagation();quickDelete('${t.id}')"
         style="font-size:10px;padding:4px 6px;border-radius:4px;border:1px solid rgba(255,71,87,0.3);color:var(--danger);background:transparent;cursor:pointer;font-family:var(--mono)">
@@ -4133,7 +4298,7 @@ function createTicket() {
   const cnpj     = document.getElementById('f-cnpj').value.trim();
   const sistema  = document.getElementById('f-sistema').value;
   const categoria= document.getElementById('f-categoria').value;
-  const nivel    = document.getElementById('f-nivel').value;
+  const nivel      = document.getElementById('f-nivel').value;
   const desc     = document.getElementById('f-descricao').value.trim();
 
   if (!nome || !contato || !empresa || !cnpj || !sistema || !selectedPriority) {
@@ -4688,6 +4853,31 @@ function showTicketDetail(id) {
   const picker = document.getElementById('label-picker');
   if (picker) picker.style.display = 'none';
 
+  // ── Histórico do cliente no modal ──────────────────────────────
+  const histEl = document.getElementById('modal-hist-cliente');
+  if (histEl && t.cnpj) {
+    const cnpjNum = t.cnpj.replace(/\D/g,'');
+    const hist = tickets
+      .filter(h => h.id !== t.id && h.cnpj && h.cnpj.replace(/\D/g,'') === cnpjNum)
+      .sort((a,b) => (b.time||0)-(a.time||0))
+      .slice(0,4);
+    if (hist.length === 0) {
+      histEl.innerHTML = '<div style="color:var(--text3);font-size:11px;padding:6px 0">Primeiro atendimento desta empresa.</div>';
+    } else {
+      const statusCor = { resolvido:'var(--accent)', pendencia:'var(--warn)', 'nao-atendido':'var(--text3)', agendado:'#a855f7', aberto:'#ff4757' };
+      histEl.innerHTML = hist.map(h => {
+        const cor = statusCor[h.status] || 'var(--text3)';
+        const data = h.time ? new Date(h.time).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '';
+        return '<div onclick="showTicketDetail(\'' + h.id + '\')" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'var(--surface3)\'" onmouseout="this.style.background=\'\'">'
+          + '<div style="width:7px;height:7px;border-radius:50%;background:' + cor + ';flex-shrink:0"></div>'
+          + '<div style="flex:1;min-width:0">'
+          +   '<div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (getCategoryLabel(h.categoria)||h.categoria) + '</div>'
+          +   '<div style="font-size:10px;color:var(--text3)">' + data + ' · ' + h.status + (h.assignedTo ? ' · ' + h.assignedTo : '') + '</div>'
+          + '</div></div>';
+      }).join('');
+    }
+  }
+
   document.getElementById('modal-reply-text').value = '';
   document.getElementById('ticket-modal').classList.remove('hidden');
   abrirAgendamento(t);
@@ -4921,15 +5111,36 @@ Base de conhecimento:\n${kbContext}${fewShot}${clienteHistorico}`,
 
 async function finalizeTicket() {
   if (bloquearLeitor('finalizar chamados')) return;
-  const modalId   = document.getElementById('ticket-modal')._currentId;
-  const t         = tickets.find(x => x.id === modalId);
+  const modalId = document.getElementById('ticket-modal')._currentId;
+  const t = tickets.find(x => x.id === modalId);
+  if (!t) return;
+  // Abrir modal de solução antes de finalizar
+  document.getElementById('solucao-texto').value = '';
+  const kbCb = document.getElementById('solucao-kb');
+  if (kbCb) kbCb.checked = false;
+  window._pendingFinalizeId = modalId;
+  document.getElementById('modal-solucao').style.display = 'flex';
+}
+
+function fecharModalSolucao() {
+  document.getElementById('modal-solucao').style.display = 'none';
+  window._pendingFinalizeId = null;
+}
+
+async function confirmarFinalizacao() {
+  const modalId = window._pendingFinalizeId;
+  if (!modalId) return;
+  const t = tickets.find(x => x.id === modalId);
   if (!t) return;
 
+  fecharModalSolucao();
+
+  const solucao   = (document.getElementById('solucao-texto')?.value || '').trim();
+  const addToKB   = document.getElementById('solucao-kb')?.checked;
   const replyText = document.getElementById('modal-reply-text').value.trim();
   if (replyText) await submitReply(false);
 
-  // Localiza coluna de finalizados do mês atual no Trello
-  const mesLongo  = new Date().toLocaleDateString('pt-BR', { month: 'long' });     // ex: "março"
+const mesLongo  = new Date().toLocaleDateString('pt-BR', { month: 'long' });     // ex: "março"
   const mesNum    = String(new Date().getMonth() + 1).padStart(2,'0');              // ex: "03"
   const mesAbrev  = new Date().toLocaleDateString('pt-BR', { month: 'short' })
                     .replace('.','').toLowerCase();                                  // ex: "mar"
@@ -4990,6 +5201,32 @@ async function finalizeTicket() {
   renderAll();
   closeModal();
   showNotif(`✅ Chamado ${t.id} finalizado${listaFinalId ? ` → "${listaFinalNome}"` : ''}!`);
+
+
+  // Salvar solução como reply se preenchida
+  if (solucao) {
+    t.replies = t.replies || [];
+    t.replies.push({
+      author: getDisplayName(currentUser?.username) || 'Técnico',
+      time:   new Date().toLocaleString('pt-BR'),
+      text:   '✅ Solução: ' + solucao,
+      isSolucao: true,
+    });
+    // Adicionar à KB se marcado
+    if (addToKB && t.categoria) {
+      const novoItem = {
+        icon: '✅', title: getCategoryLabel(t.categoria) || t.categoria,
+        sub: 'Solução registrada em atendimento',
+        badge: t.nivel?.toUpperCase() || 'N1',
+        sistema: t.sistema || '',
+        nivel: t.nivel || 'n1',
+        steps: [{ num: '01', text: solucao }],
+      };
+      await saveCustomKBItems(novoItem);
+      await loadCustomKBItems().then(items => { window._customKB = items; });
+      showNotif('📚 Solução salva na base de conhecimento!');
+    }
+  }
 }
 
 
@@ -5010,12 +5247,12 @@ async function quickDelete(ticketId) {
   if (bloquearLeitor('excluir chamados')) return;
   const t = tickets.find(x => x.id === ticketId);
   if (!t) return;
-  if (!confirm(`Excluir o chamado ${t.id}? Esta ação não pode ser desfeita.`)) return;
+  if (!confirm(`Excluir o chamado ${t.id} (${t.empresa})? Esta ação não pode ser desfeita.`)) return;
   try {
-    await sbFetch(`tickets?id=eq.${t.dbId}`, 'DELETE');
+    await sbFetch(`chamados?id=eq.${encodeURIComponent(t.id)}`, 'DELETE');
     tickets = tickets.filter(x => x.id !== ticketId);
     renderAll();
-    showNotif(`🗑️ Chamado ${t.id} excluído!`);
+    showNotif(`🗑️ Chamado ${t.id} excluído.`);
   } catch(e) {
     showNotif('❌ Erro ao excluir: ' + e.message, 'warn');
   }
@@ -5137,6 +5374,7 @@ async function processWAMessage(fromNumber, messageText) {
   const config = loadWAConfig();
   if (!config) { waLog('error', 'Agente WhatsApp não configurado.'); return; }
 
+  atualizarWABadge(1);
   waLog('incoming', `📲 <strong>${fromNumber}</strong>: ${messageText}`);
   waStats.today++;
   updateWAStats();
@@ -5464,6 +5702,163 @@ function atalhoAgenda(dias) {
   if (exp)  exp.style.display  = 'none';
   if (icon) icon.textContent   = '▼';
   salvarAgendamento();
+}
+
+
+// ─── Badge WA no topbar ───────────────────────────────────────────────────────
+let _waBadgeCount = 0;
+
+function atualizarWABadge(delta = 0) {
+  _waBadgeCount = Math.max(0, _waBadgeCount + delta);
+  const badge = document.getElementById('wa-badge');
+  if (!badge) return;
+  badge.style.display = _waBadgeCount > 0 ? 'block' : 'none';
+  badge.textContent   = _waBadgeCount > 9 ? '9+' : _waBadgeCount;
+}
+
+function zerarWABadge() {
+  _waBadgeCount = 0;
+  atualizarWABadge(0);
+}
+
+
+// ─── Busca Global ─────────────────────────────────────────────────────────────
+function onGlobalSearch(q) {
+  const res = document.getElementById('search-results');
+  if (!res) return;
+  q = (q || '').trim().toLowerCase();
+  if (q.length < 2) { res.style.display = 'none'; return; }
+
+  const matches = tickets.filter(t => {
+    const fields = [t.id, t.nome, t.empresa, t.cnpj, t.desc, t.sistema, t.assignedTo]
+      .map(f => (f||'').toLowerCase());
+    return fields.some(f => f.includes(q));
+  }).slice(0, 8);
+
+  if (matches.length === 0) {
+    res.style.display = 'block';
+    res.innerHTML = '<div style="padding:14px;color:var(--text3);font-size:12px;text-align:center">Nenhum resultado para "' + q + '"</div>';
+    return;
+  }
+
+  const prioColor = { contrato:'var(--accent)', garantia:'var(--accent2)', avulso:'var(--text3)' };
+  const statusLabel = { resolvido:'✅', pendencia:'⏳', agendado:'📅', 'nao-atendido':'🚫', aberto:'🔴' };
+  res.style.display = 'block';
+  res.innerHTML = matches.map(t => {
+    const cor = prioColor[t.prioridade] || 'var(--text3)';
+    return '<div onclick="abrirResultadoBusca(\'' + t.id + '\')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s" onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'\'">'
+      + '<div style="width:4px;height:36px;border-radius:2px;background:' + cor + ';flex-shrink:0"></div>'
+      + '<div style="flex:1;min-width:0">'
+      +   '<div style="display:flex;align-items:center;gap:6px">'
+      +     '<span style="font-size:10px;font-family:var(--mono);color:var(--text3)">' + t.id + '</span>'
+      +     '<span style="font-size:11px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px">' + (t.empresa||t.nome) + '</span>'
+      +     '<span style="margin-left:auto;font-size:11px">' + (statusLabel[t.status]||'') + '</span>'
+      +   '</div>'
+      +   '<div style="font-size:10px;color:var(--text3)">' + (getCategoryLabel(t.categoria)||t.categoria) + (t.assignedTo ? ' · ' + t.assignedTo : '') + '</div>'
+      + '</div></div>';
+  }).join('')
+    + (tickets.filter(t => [t.id,t.nome,t.empresa,t.cnpj].some(f=>(f||'').toLowerCase().includes(q))).length > 8
+        ? '<div style="padding:8px 14px;font-size:10px;color:var(--text3);text-align:center">' + (tickets.length - 8) + ' mais — refine a busca</div>'
+        : '');
+}
+
+function abrirResultadoBusca(id) {
+  fecharBusca();
+  showView('chamados');
+  setTimeout(() => showTicketDetail(id), 100);
+}
+
+function fecharBusca() {
+  const res = document.getElementById('search-results');
+  if (res) res.style.display = 'none';
+  const inp = document.getElementById('global-search');
+  if (inp) inp.value = '';
+}
+
+
+// ─── Modelos de Resposta Rápida ────────────────────────────────────────────────
+function aplicarModeloResposta(texto) {
+  if (!texto) return;
+  const el = document.getElementById('modal-reply-text');
+  if (!el) return;
+  // Adiciona ao existente se já tiver conteúdo
+  el.value = el.value ? el.value + '\n\n' + texto : texto;
+  el.focus();
+  el.setSelectionRange(el.value.length, el.value.length);
+  // Resetar select
+  const sel = document.getElementById('reply-template-sel');
+  if (sel) sel.value = '';
+}
+
+
+// ─── Filtros do Kanban ────────────────────────────────────────────────────────
+let _filtroPrio    = 'todos';
+let _filtroTecnico = '';
+let _filtroSLA     = false;
+
+function setFiltroPrio(prio) {
+  _filtroPrio = prio;
+  document.querySelectorAll('.filtro-btn').forEach(b => {
+    b.style.background = b.id === 'fb-prio-' + prio ? 'var(--surface3)' : 'none';
+    b.style.fontWeight = b.id === 'fb-prio-' + prio ? '700' : '400';
+    b.style.borderColor = b.id === 'fb-prio-' + prio ? 'var(--accent)' : 'var(--border)';
+  });
+  atualizarBotaoLimparFiltros();
+  renderAll();
+}
+
+function setFiltroTecnico(tec) {
+  _filtroTecnico = tec;
+  atualizarBotaoLimparFiltros();
+  renderAll();
+}
+
+function setFiltroSLA(ativo) {
+  _filtroSLA = ativo;
+  atualizarBotaoLimparFiltros();
+  renderAll();
+}
+
+function limparFiltrosChamados() {
+  _filtroPrio    = 'todos';
+  _filtroTecnico = '';
+  _filtroSLA     = false;
+  const slaCb = document.getElementById('filtro-sla');
+  if (slaCb) slaCb.checked = false;
+  const tecSel = document.getElementById('filtro-tecnico');
+  if (tecSel) tecSel.value = '';
+  document.querySelectorAll('.filtro-btn').forEach(b => {
+    b.style.background  = b.id === 'fb-prio-todos' ? 'var(--surface3)' : 'none';
+    b.style.fontWeight  = b.id === 'fb-prio-todos' ? '700' : '400';
+    b.style.borderColor = 'var(--border)';
+  });
+  atualizarBotaoLimparFiltros();
+  renderAll();
+}
+
+function atualizarBotaoLimparFiltros() {
+  const btn = document.getElementById('btn-limpar-filtros');
+  if (btn) btn.style.display = (_filtroPrio !== 'todos' || _filtroTecnico || _filtroSLA) ? 'block' : 'none';
+}
+
+function getTicketsFiltrados() {
+  return tickets.filter(t => {
+    if (_filtroPrio !== 'todos' && t.prioridade !== _filtroPrio) return false;
+    if (_filtroTecnico && t.assignedTo !== _filtroTecnico) return false;
+    if (_filtroSLA) {
+      if (t.status === 'resolvido' || t.prioridade !== 'contrato') return false;
+      if ((Date.now() - (t.time||0)) / 3600000 < 8) return false;
+    }
+    return true;
+  });
+}
+
+function popularFiltroTecnico() {
+  const sel = document.getElementById('filtro-tecnico');
+  if (!sel) return;
+  const membros = getMembros();
+  sel.innerHTML = '<option value="">Todos os técnicos</option>'
+    + membros.map(m => `<option value="${m}"${_filtroTecnico === m ? ' selected' : ''}>${m}</option>`).join('');
 }
 
 function updateClock() {
