@@ -1538,7 +1538,7 @@
         </div>
       </div>
     </div>
-    <div id="ticket-modal">
+    <div id="ticket-modal" class="modal-overlay hidden">
   <div class="modal-box">
     <div class="modal-header">
       <div>
@@ -4879,7 +4879,9 @@ function showTicketDetail(id) {
   }
 
   document.getElementById('modal-reply-text').value = '';
-  document.getElementById('ticket-modal').classList.remove('hidden');
+  const _tm = document.getElementById('ticket-modal');
+  _tm.classList.remove('hidden');
+  _tm.style.display = 'flex';
   abrirAgendamento(t);
   document.getElementById('ticket-modal')._currentId = id;
 
@@ -5309,7 +5311,9 @@ async function reativarTicket() {
 }
 
 function closeModal() {
-  document.getElementById('ticket-modal').classList.add('hidden');
+  const _tmClose = document.getElementById('ticket-modal');
+  _tmClose.classList.add('hidden');
+  _tmClose.style.display = 'none';
   renderAll();
 }
 
