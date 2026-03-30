@@ -965,6 +965,7 @@
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <button class="btn-ghost" onclick="toggleGerenciarColunas()" id="btn-gerenciar-cols" style="font-size:12px">⚙ Colunas</button>
+          <button onclick="atribuirTecnicosPorLabels()" id="btn-fix-labels" style="font-size:12px;padding:5px 10px;border-radius:7px;border:1px solid rgba(0,229,160,0.4);color:var(--accent);background:rgba(0,229,160,0.07);cursor:pointer" title="Atribuir técnico nos resolvidos que têm etiqueta com nome do técnico">🔖 Corrigir atribuições</button>
           <button onclick="limparFiltrosChamados()" id="btn-limpar-filtros" style="display:none;font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--warn);color:var(--warn);background:rgba(255,204,0,0.07);cursor:pointer">✕ Limpar filtros</button>
         </div>
       </div>
@@ -5865,6 +5866,49 @@ function popularFiltroTecnico() {
   const membros = getMembros();
   sel.innerHTML = '<option value="">Todos os técnicos</option>'
     + membros.map(m => `<option value="${m}"${_filtroTecnico === m ? ' selected' : ''}>${m}</option>`).join('');
+}
+
+
+async function atribuirTecnicosPorLabels() {
+  if (currentUser?.role !== 'adm') {
+    showNotif('🔒 Apenas ADM pode executar esta ação.', 'warn');
+    return;
+  }
+
+  const membros = getMembros();
+  let count = 0;
+
+  const paraAtualizar = tickets.filter(t =>
+    t.status === 'resolvido' &&
+    !t.assignedTo &&
+    Array.isArray(t.labels) &&
+    t.labels.length > 0
+  );
+
+  for (const t of paraAtualizar) {
+    // Procurar label cujo nome bate com um membro da equipe
+    const labelTecnico = t.labels.find(l =>
+      membros.some(m => (l.name || '').toLowerCase() === m.toLowerCase())
+    );
+    if (labelTecnico) {
+      const membro = membros.find(m =>
+        m.toLowerCase() === (labelTecnico.name || '').toLowerCase()
+      );
+      if (membro) {
+        t.assignedTo    = membro;
+        t.finalizadoPor = t.finalizadoPor || membro;
+        await updateTicketInDB(t);
+        count++;
+      }
+    }
+  }
+
+  if (count > 0) {
+    renderAll();
+    showNotif(`✅ ${count} chamado(s) atribuído(s) pelo técnico da etiqueta!`);
+  } else {
+    showNotif('Nenhum chamado resolvido sem técnico encontrado com etiqueta de membro.', 'warn');
+  }
 }
 
 function updateClock() {
