@@ -2245,10 +2245,13 @@ let trelloPaused          = false; // controle de pausa pelo ADM
 let isSyncing             = false;
 
 const STATUS_TO_LIST_HINT = {
-  'aberto':       ['aberto', 'open', 'novo', 'new', 'a fazer', 'to do'],
-  'em-andamento': ['andamento', 'progress', 'fazendo', 'doing', 'atendimento'],
-  'aguardando':   ['aguard', 'espera', 'hold', 'pendente', 'waiting'],
-  'resolvido':    ['resolv', 'conclu', 'done', 'feito', 'fechado', 'closed'],
+  'aberto':        ['aberto', 'open', 'novo', 'new', 'a fazer', 'to do', 'chamado'],
+  'em-andamento':  ['andamento', 'progress', 'fazendo', 'doing', 'atendimento'],
+  'aguardando':    ['aguard', 'espera', 'hold', 'pendente', 'waiting'],
+  'agendado':      ['agend', 'scheduled', 'agendam'],
+  'pendencia':     ['pendên', 'pendenc', 'pend'],
+  'nao-atendido':  ['não atend', 'nao atend', 'n/a', 'sem atend'],
+  'resolvido':     ['resolv', 'conclu', 'done', 'feito', 'fechado', 'closed', 'finaliz'],
 };
 
 function findListIdByStatus(status) {
@@ -2262,37 +2265,21 @@ function findListIdByStatus(status) {
 }
 
 async function trelloPUT(path, body) {
-  const url = `https://api.trello.com/1${path}?key=${TRELLO.key}&token=${TRELLO.token}`;
-  const res = await fetch(url, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-  if (!res.ok) throw new Error(`Trello PUT ${res.status}`);
-  return res.json();
+  // SOMENTE LEITURA — painel não escreve no Trello
+  console.log('[Trello READ-ONLY] PUT bloqueado:', path);
+  return null;
 }
 
 async function trelloPOST(path, body) {
-  const url = `https://api.trello.com/1${path}?key=${TRELLO.key}&token=${TRELLO.token}`;
-  const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
-  if (!res.ok) throw new Error(`Trello POST ${res.status}`);
-  return res.json();
+  // SOMENTE LEITURA — painel não escreve no Trello
+  console.log('[Trello READ-ONLY] POST bloqueado:', path);
+  return null;
 }
 
 async function updateTrelloCard(t, newStatus) {
-  try {
-    const statusLabel = {'aberto':'Aberto','em-andamento':'Em Andamento','aguardando':'Aguardando','resolvido':'Resolvido'}[newStatus] || newStatus;
-    const targetListId = findListIdByStatus(newStatus);
-
-    if (targetListId && targetListId !== t.trelloListId) {
-      await trelloPUT(`/cards/${t.trelloCardId}`, { idList: targetListId });
-      t.trelloListId = targetListId;
-      t.trelloList   = TRELLO.lists[targetListId] || statusLabel;
-      showNotif(`🟦 Card movido para "${t.trelloList}" no Trello`);
-    }
-
-    await trelloPOST(`/cards/${t.trelloCardId}/actions/comments`, {
-      text: `[Painel Suporte] *${currentUser?.username || 'técnico'}* → *${statusLabel}* — ${new Date().toLocaleString('pt-BR')}`
-    });
-  } catch(e) {
-    showNotif('⚠️ Erro ao atualizar Trello: ' + e.message, 'warn');
-  }
+  // SOMENTE LEITURA — painel não move cards nem comenta no Trello
+  // O Trello é atualizado manualmente pela equipe
+  return;
 }
 
 async function syncFromTrello(silent = false) {
@@ -2902,12 +2889,12 @@ function renderKanban(containerId, data) {
     label: m, i,
     tickets: byPrio(data.filter(t =>
       t.assignedTo === m &&
-      !['pendencia','nao-atendido','resolvido'].includes(t.status)
+      !['agendado','pendencia','nao-atendido','resolvido'].includes(t.status)
     ))
   }));
 
   // Status fixos
-  const agendados   = byPrio(data.filter(t => t.status === 'agendado'));
+  const agendados   = byPrio(data.filter(t => t.status === 'agendado')); // todos, com ou sem técnico
   const pendencias  = byPrio(data.filter(t => t.status === 'pendencia'));
   const naoAtendido = byPrio(data.filter(t => t.status === 'nao-atendido'));
   // Resolvido: apenas do mês atual (reinicia todo mês; histórico fica nos relatórios)
@@ -2958,7 +2945,7 @@ function renderTicketCard(t) {
           ${t.fromWhatsApp ? '<span style="font-size:9px;background:rgba(0,229,160,0.12);color:var(--accent);padding:1px 5px;border-radius:3px;font-family:var(--mono)">WA</span>' : ''}
         </div>
         ${(() => {
-          if (t.status === 'resolvido' || t.prioridade !== 'contrato') return '';
+          if (t.status === 'resolvido' || t.prioridade !== 'contrato' || t.assignedTo) return '';
           const _h = Math.floor((Date.now() - (t.time||0)) / 3600000);
           if (_h >= 8) return '<span style="font-size:9px;background:rgba(255,71,87,0.2);color:#ff4757;padding:2px 7px;border-radius:4px;font-weight:700;font-family:var(--mono);animation:sla-pulse 1.2s infinite">🔴 SLA ' + _h + 'h</span>';
           if (_h >= 4) return '<span style="font-size:9px;background:rgba(255,204,0,0.15);color:var(--warn);padding:2px 7px;border-radius:4px;font-weight:700;font-family:var(--mono)">⚠️ ' + _h + 'h</span>';
@@ -5193,22 +5180,7 @@ const mesLongo  = new Date().toLocaleDateString('pt-BR', { month: 'long' });    
   if (listaFinalId) { t.trelloListId = listaFinalId; t.trelloList = listaFinalNome; }
   updateTicketInDB(t);
 
-  // Move card no Trello + comentário de finalização
-  if (t.trelloCardId) {
-    try {
-      if (listaFinalId) {
-        await trelloPUT(`/cards/${t.trelloCardId}`, { idList: listaFinalId });
-        showNotif(`🟦 Card movido para "${listaFinalNome}"`);
-      }
-      await trelloPOST(`/cards/${t.trelloCardId}/actions/comments`, {
-        text: `✅ *Finalizado* por *${currentUser?.username || 'técnico'}* em ${t.finalizadoEm}${replyText ? '\n\n' + replyText : ''}`
-      });
-    } catch(e) {
-      showNotif('⚠️ Trello: ' + e.message, 'warn');
-    }
-  }
-
-  renderAll();
+    renderAll();
   closeModal();
   showNotif(`✅ Chamado ${t.id} finalizado${listaFinalId ? ` → "${listaFinalNome}"` : ''}!`);
 
