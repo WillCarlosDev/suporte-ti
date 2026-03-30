@@ -2797,8 +2797,9 @@ function renderStats() {
 function updateNavCounts() {
   const open = tickets.filter(t => t.status !== 'resolvido').length;
   const slaViolados = tickets.filter(t =>
-    t.status !== 'resolvido' &&
+    !t.assignedTo &&
     t.prioridade === 'contrato' &&
+    !['agendado','pendencia','nao-atendido','resolvido'].includes(t.status) &&
     (Date.now() - (t.time||0)) / 3600000 >= 8
   ).length;
 
