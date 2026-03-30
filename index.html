@@ -897,7 +897,7 @@
         <div onclick="showView('chamados')" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='#ff4757'" onmouseout="this.style.borderColor='var(--border)'">
           <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:10px">SEM TÉCNICO</div>
           <div id="stat-sem-tecnico" style="font-size:32px;font-weight:800;color:#ff4757;line-height:1">0</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:4px">contratos</div>
+          <div id="stat-sem-tecnico-sub" style="font-size:11px;color:var(--text3);margin-top:4px">sem responsável</div>
         </div>
 
         <div onclick="showView('chamados')" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='#a855f7'" onmouseout="this.style.borderColor='var(--border)'">
@@ -915,7 +915,7 @@
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;">
           <div style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:1px;margin-bottom:10px" id="stat-month-label">NO MÊS</div>
           <div id="stat-month" style="font-size:32px;font-weight:800;color:var(--accent2);line-height:1">0</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:4px">abertos</div>
+          <div id="stat-month-sub" style="font-size:11px;color:var(--text3);margin-top:4px">este mês</div>
         </div>
 
       </div>
@@ -2169,7 +2169,7 @@ async function deleteCustomKBFromDB(dbId) {
 }
 
 function getAllKBItems() {
-  return [...kbItems, ...(window._customKB || [])];
+  return [...kbItems.filter(k => !k._deleted), ...(window._customKB || [])];
 }
 
 // ─── Trello — SOMENTE LEITURA ────────────────────────────────────────────────
@@ -2448,7 +2448,7 @@ let currentChat   = -1; // -1 = nenhuma selecionada
 
 
 // ─── Knowledge Base ──────────────────────────────────────────────────────────
-const kbItems = [
+let kbItems = [
   {
     icon: '📡', title: 'Relógio Offline / Fora da Rede', sub: 'Dispositivo não comunica com o servidor — N1',
     badge: 'N1',
@@ -2645,10 +2645,11 @@ function renderStats() {
   const mesLabel = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   const el       = id => document.getElementById(id);
 
-  // Chamados em aberto (qualquer status != resolvido)
+  // ── Cálculos corrigidos ───────────────────────────────────────────
+  // Em aberto: qualquer status != resolvido
   const emAberto = tickets.filter(t => t.status !== 'resolvido');
 
-  // Sem técnico atribuído E não resolvido
+  // Sem técnico: abertos sem responsável (todos, não só contratos)
   const semTecnico = emAberto.filter(t => !t.assignedTo);
 
   // Agendados para hoje
@@ -2658,32 +2659,51 @@ function renderStats() {
     return d.toLocaleDateString('pt-BR') === diaStr;
   });
 
-  // Concluídos hoje (usando finalizadoEm se disponível)
+  // Concluídos hoje — usa finalizadoEm se disponível, senão updated_at/created_at
+  // Inclui também tickets que chegaram como resolvidos do Trello hoje
   const concluidosHoje = tickets.filter(t => {
     if (t.status !== 'resolvido') return false;
+    // Prioridade 1: finalizadoEm (finalizados pelo painel)
     if (t.finalizadoEm) {
       const d = new Date(t.finalizadoEm);
-      return !isNaN(d) && d.toLocaleDateString('pt-BR') === diaStr;
+      if (!isNaN(d) && d.toLocaleDateString('pt-BR') === diaStr) return true;
+    }
+    // Prioridade 2: time da criação do ticket (para tickets do Trello já resolvidos)
+    if (t.time) {
+      const d = new Date(t.time);
+      return d.toLocaleDateString('pt-BR') === diaStr;
     }
     return false;
   });
 
-  // Abertos no mês
-  const abertosNoMes = tickets.filter(t => {
+  // Criados no mês (todos, independente do status atual)
+  const criadosNoMes = tickets.filter(t => {
     const d = new Date(t.time || 0);
-    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual && t.status !== 'resolvido';
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
   });
 
-  // Stats numéricos
-  if (el('stat-open'))             el('stat-open').textContent             = emAberto.length;
-  if (el('stat-sem-tecnico'))      el('stat-sem-tecnico').textContent      = semTecnico.length;
-  if (el('stat-agendados-hoje'))   el('stat-agendados-hoje').textContent   = agendadosHoje.length;
-  if (el('stat-resolved'))         el('stat-resolved').textContent         = concluidosHoje.length;
-  if (el('stat-month'))            el('stat-month').textContent            = abertosNoMes.length;
-  if (el('dash-sub'))              el('dash-sub').textContent              = `Hoje é ${diaStr}`;
-  if (el('stat-month-label'))      el('stat-month-label').textContent      = `📆 Abertos em ${mesLabel.split(' ')[0]}`;
+  // Resolvidos no mês (para o subtexto)
+  const resolvidosNoMes = criadosNoMes.filter(t => t.status === 'resolvido');
 
-  // ── Online bar (técnicos online) ────────────────────────────────
+  // ── Atualizar DOM ─────────────────────────────────────────────────
+  if (el('stat-open'))           el('stat-open').textContent           = emAberto.length;
+  if (el('stat-sem-tecnico'))    el('stat-sem-tecnico').textContent    = semTecnico.length;
+  if (el('stat-agendados-hoje')) el('stat-agendados-hoje').textContent = agendadosHoje.length;
+  if (el('stat-resolved'))       el('stat-resolved').textContent       = concluidosHoje.length;
+  if (el('stat-month'))          el('stat-month').textContent          = criadosNoMes.length;
+  if (el('dash-sub'))            el('dash-sub').textContent            = `Hoje é ${diaStr}`;
+
+  // Label dinâmico do mês
+  const nomeMes = hoje.toLocaleDateString('pt-BR', { month: 'long' });
+  if (el('stat-month-label'))
+    el('stat-month-label').textContent = `📆 Criados em ${nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)}`;
+
+  // Subtextos dinâmicos
+  const setSub = (id, txt) => { const e = el(id); if (e) e.textContent = txt; };
+  setSub('stat-sem-tecnico-sub',    semTecnico.length === 1 ? 'sem responsável' : 'sem responsável');
+  setSub('stat-month-sub',          `${resolvidosNoMes.length} resolvidos`);
+
+  // ── Online bar ────────────────────────────────────────────────────
   const onlineBar = el('dash-online-bar');
   if (onlineBar) {
     const online = getUsuariosOnline();
@@ -2702,12 +2722,12 @@ function renderStats() {
     }
   }
 
-  // ── Contratos sem técnico (urgentes) ───────────────────────────
+  // ── Contratos sem técnico ─────────────────────────────────────────
   const urgentesEl = el('dash-urgentes');
   if (urgentesEl) {
     const urgentes = emAberto
       .filter(t => t.prioridade === 'contrato' && !t.assignedTo)
-      .sort((a,b) => (a.time||0) - (b.time||0)) // mais antigos primeiro
+      .sort((a,b) => (a.time||0) - (b.time||0))
       .slice(0, 6);
     if (urgentes.length === 0) {
       urgentesEl.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;padding:28px 16px;color:var(--text3)"><div style="font-size:28px;margin-bottom:8px">✅</div><div style="font-size:12px;font-weight:600;color:var(--accent)">Tudo atribuído!</div><div style="font-size:11px;margin-top:3px">Nenhum contrato sem técnico</div></div>';
@@ -2726,7 +2746,7 @@ function renderStats() {
     }
   }
 
-  // ── Agendados para hoje ─────────────────────────────────────────
+  // ── Agendados para hoje ───────────────────────────────────────────
   const agendadosEl = el('dash-agendados');
   const agCount     = el('dash-agendados-count');
   if (agCount) agCount.textContent = agendadosHoje.length > 0 ? agendadosHoje.length + ' agendado(s)' : '';
@@ -2734,11 +2754,7 @@ function renderStats() {
     if (agendadosHoje.length === 0) {
       agendadosEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">📅 Sem agendamentos para hoje</div>';
     } else {
-      const sorted = [...agendadosHoje].sort((a,b) => {
-        const ha = a.horaAgendada || '00:00';
-        const hb = b.horaAgendada || '00:00';
-        return ha.localeCompare(hb);
-      });
+      const sorted = [...agendadosHoje].sort((a,b) => (a.horaAgendada||'00:00').localeCompare(b.horaAgendada||'00:00'));
       agendadosEl.innerHTML = sorted.map(t => `
         <div onclick="showTicketDetail('${t.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;border:1px solid rgba(168,85,247,0.15);background:rgba(168,85,247,0.04);cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(168,85,247,0.09)'" onmouseout="this.style.background='rgba(168,85,247,0.04)'">
           <div style="flex-shrink:0;width:44px;height:44px;border-radius:10px;background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.25);display:flex;align-items:center;justify-content:center;flex-direction:column">
@@ -2753,21 +2769,20 @@ function renderStats() {
     }
   }
 
-  // ── Equipe agora ─────────────────────────────────────────────────
+  // ── Equipe agora ──────────────────────────────────────────────────
   const equipeEl = el('dash-equipe');
   if (equipeEl) {
-    const membros  = getMembros();
-    const online   = getUsuariosOnline().map(u => u.username.toLowerCase());
+    const membros = getMembros();
+    const online  = getUsuariosOnline().map(u => u.username.toLowerCase());
     const rows = membros.map((m, idx) => {
       const cor        = MEMBER_COLORS[idx % MEMBER_COLORS.length];
       const atribuidos = emAberto.filter(t => t.assignedTo === m);
       const isOnline   = online.includes(m.toLowerCase());
       return { m, cor, atribuidos, isOnline };
     });
-    if (rows.length === 0) {
-      equipeEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Nenhum membro configurado</div>';
-    } else {
-      equipeEl.innerHTML = rows.map(r => `
+    equipeEl.innerHTML = rows.length === 0
+      ? '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Nenhum membro configurado</div>'
+      : rows.map(r => `
         <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;background:var(--surface2)">
           <div style="position:relative;flex-shrink:0">
             <div style="width:38px;height:38px;border-radius:50%;background:${r.cor}22;border:2px solid ${r.cor};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:${r.cor}">${r.m.charAt(0).toUpperCase()}</div>
@@ -2782,7 +2797,6 @@ function renderStats() {
             <div style="font-size:10px;color:var(--text3)">em mãos</div>
           </div>
         </div>`).join('');
-    }
   }
 
   // ── Recém abertos ─────────────────────────────────────────────────
@@ -2793,10 +2807,9 @@ function renderStats() {
       .filter(t => t.status !== 'resolvido')
       .sort((a,b) => (b.time||0) - (a.time||0))
       .slice(0, 6);
-    if (recentes.length === 0) {
-      recentesEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Nenhum chamado em aberto</div>';
-    } else {
-      recentesEl.innerHTML = recentes.map(t => `
+    recentesEl.innerHTML = recentes.length === 0
+      ? '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Nenhum chamado em aberto</div>'
+      : recentes.map(t => `
         <div onclick="showTicketDetail('${t.id}')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:var(--surface2);border:1px solid transparent;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--border)';this.style.background='var(--surface3)'" onmouseout="this.style.borderColor='transparent';this.style.background='var(--surface2)'">
           <div style="width:4px;height:36px;border-radius:2px;background:${prioColors[t.prioridade]||'var(--text3)'};flex-shrink:0"></div>
           <div style="flex:1;min-width:0">
@@ -2805,10 +2818,9 @@ function renderStats() {
           </div>
           <div style="font-size:10px;color:var(--text3);font-family:var(--mono);flex-shrink:0;text-align:right">
             <div>${timeAgo(t.time)}</div>
-            <div style="margin-top:2px;font-size:9px;padding:1px 5px;border-radius:3px;background:${prioColors[t.prioridade]+'22'||'rgba(0,0,0,0)'};color:${prioColors[t.prioridade]||'var(--text3)'}">${t.prioridade||''}</div>
+            <div style="margin-top:2px;font-size:9px;padding:1px 5px;border-radius:3px;background:${(prioColors[t.prioridade]||'rgba(0,0,0,0)')+'22'};color:${prioColors[t.prioridade]||'var(--text3)'}">${t.prioridade||''}</div>
           </div>
         </div>`).join('');
-    }
   }
 }
 
@@ -3144,32 +3156,110 @@ function discardGeneratedKB() {
 
 
 
-async function editarKBItem(dbId) {
+async function editarKBItem(dbId, realIdx) {
   if (bloquearLeitor('editar procedimentos')) return;
-  if (!dbId) { showNotif('❌ ID não encontrado.', 'warn'); return; }
 
-  const item = (window._customKB || []).find(k => k.dbId === dbId);
+  // Determinar o item a editar
+  const all = getAllKBItems();
+  const item = dbId ? all.find(k => k.dbId === dbId) : (realIdx >= 0 ? all[realIdx] : null);
   if (!item) { showNotif('❌ Procedimento não encontrado.', 'warn'); return; }
 
-  // Modal de edição simples
   const novoTitulo = prompt('Título do procedimento:', item.title);
   if (novoTitulo === null) return;
   if (!novoTitulo.trim()) { showNotif('⚠️ Título não pode ser vazio.', 'warn'); return; }
 
-  const novoSub = prompt('Descrição resumida:', item.sub);
+  const novoSub = prompt('Descrição resumida:', item.sub || '');
   if (novoSub === null) return;
 
-  try {
-    await sbFetch(`kb_custom?id=eq.${dbId}`, 'PATCH', {
-      title: novoTitulo.trim(),
-      sub:   (novoSub || '').trim(),
-    });
-    window._customKB = await loadCustomKBItems();
-    renderKB();
-    showNotif('✅ Procedimento atualizado!');
-  } catch(e) {
-    showNotif('❌ Erro ao editar: ' + e.message, 'warn');
+  if (item.isCustom && dbId) {
+    // Item custom — salvar no Supabase
+    try {
+      await sbFetch(`kb_custom?id=eq.${dbId}`, 'PATCH', {
+        title: novoTitulo.trim(),
+        sub:   (novoSub || '').trim(),
+      });
+      window._customKB = await loadCustomKBItems();
+    } catch(e) {
+      showNotif('❌ Erro ao editar: ' + e.message, 'warn'); return;
+    }
+  } else {
+    // Item base — salvar override permanente no Supabase
+    const idx = kbItems.indexOf(item);
+    if (idx >= 0) {
+      kbItems[idx].title = novoTitulo.trim();
+      kbItems[idx].sub   = (novoSub||'').trim();
+      await saveKBBaseOverride(idx, { title: novoTitulo.trim(), sub: (novoSub||'').trim() });
+    }
   }
+  renderKB();
+  showNotif('✅ Procedimento atualizado!');
+}
+
+
+
+
+// ─── KB Base — Overrides persistentes ──────────────────────────────────────
+const KB_OVERRIDE_KEY = 'kb_base_overrides';
+
+async function loadKBBaseOverrides() {
+  try {
+    const saved = await getConfig(KB_OVERRIDE_KEY, []);
+    if (!Array.isArray(saved) || saved.length === 0) return;
+    // Aplicar overrides sobre kbItems
+    saved.forEach(ov => {
+      if (ov.deleted) {
+        // Marcar como deletado — filtrar no getAllKBItems
+        if (kbItems[ov.idx]) kbItems[ov.idx]._deleted = true;
+      } else {
+        if (kbItems[ov.idx]) {
+          if (ov.title !== undefined) kbItems[ov.idx].title = ov.title;
+          if (ov.sub   !== undefined) kbItems[ov.idx].sub   = ov.sub;
+          if (ov.steps !== undefined) kbItems[ov.idx].steps = ov.steps;
+        }
+      }
+    });
+  } catch(e) { console.warn('loadKBBaseOverrides:', e.message); }
+}
+
+async function saveKBBaseOverride(idx, fields) {
+  try {
+    const current = await getConfig(KB_OVERRIDE_KEY, []);
+    const overrides = Array.isArray(current) ? [...current] : [];
+    const existing = overrides.findIndex(o => o.idx === idx);
+    if (existing >= 0) {
+      overrides[existing] = { ...overrides[existing], ...fields, idx };
+    } else {
+      overrides.push({ idx, ...fields });
+    }
+    await setConfig(KB_OVERRIDE_KEY, overrides);
+  } catch(e) { console.warn('saveKBBaseOverride:', e.message); }
+}
+
+async function deleteKBItem(dbId, realIdx) {
+  if (bloquearLeitor('remover procedimentos')) return;
+  const all = getAllKBItems();
+  const item = dbId ? all.find(k => k.dbId === dbId) : (realIdx >= 0 ? all[realIdx] : null);
+  if (!item) { showNotif('❌ Item não encontrado.', 'warn'); return; }
+  if (!confirm(`Remover "${item.title}"?`)) return;
+
+  if (item.isCustom && dbId) {
+    // Custom — remover do Supabase
+    try {
+      await deleteCustomKBFromDB(dbId);
+      window._customKB = await loadCustomKBItems();
+    } catch(e) {
+      showNotif('❌ Erro ao remover: ' + e.message, 'warn'); return;
+    }
+  } else {
+    // Base — salvar deleção permanente no Supabase
+    const idx = kbItems.indexOf(item);
+    if (idx >= 0) {
+      kbItems[idx]._deleted = true;
+      await saveKBBaseOverride(idx, { deleted: true });
+    }
+  }
+  renderKB();
+  showNotif('🗑️ Procedimento removido!');
 }
 
 async function deleteCustomKBById(dbId) {
@@ -3223,7 +3313,7 @@ function renderKB() {
           ${isCustom ? `<div style="font-size:10px;color:var(--accent);font-family:var(--mono);margin-top:2px">✨ IA · ${item.createdAt}</div>` : ''}
         </div>
         <span class="kb-badge">${item.badge}</span>
-        ${isCustom && currentUser?.role === 'adm' ? `<button onclick="event.stopPropagation();editarKBItem('${item.dbId}')" style="margin-left:4px;padding:2px 8px;border-radius:4px;border:1px solid var(--border);color:var(--text2);background:none;cursor:pointer;font-size:11px" title="Editar">✏️</button>` + `<button onclick="event.stopPropagation();deleteCustomKBById('${item.dbId}')" class="btn-danger" style="margin-left:4px;padding:2px 8px" title="Excluir">✕</button>` : ''}
+        ${currentUser?.role === 'adm' ? `<button onclick="event.stopPropagation();editarKBItem('${item.dbId||''}',${realIdx})" style="margin-left:4px;padding:2px 8px;border-radius:4px;border:1px solid var(--border);color:var(--text2);background:none;cursor:pointer;font-size:11px" title="Editar">✏️</button><button onclick="event.stopPropagation();deleteKBItem('${item.dbId||''}',${realIdx})" class="btn-danger" style="margin-left:4px;padding:2px 8px" title="Excluir">✕</button>` : ''}
       </div>
       <div class="kb-card-sub">${item.sub}</div>
       <div class="kb-steps" id="kb-${realIdx}">
@@ -6140,6 +6230,7 @@ async function initApp(user) {
   ]);
   // Carrega KB customizada do Supabase
   window._customKB = await loadCustomKBItems();
+  await loadKBBaseOverrides(); // Aplica edições permanentes aos itens base
   // Carrega chamados do Supabase
   await loadTicketsFromDB();
   renderAll();
