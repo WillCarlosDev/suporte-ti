@@ -1818,25 +1818,18 @@ function saveGlobalApiKey() {
 function loadGlobalApiKey() { /* chave gerenciada no servidor */ }
 
 
-// ─── Supabase ─────────────────────────────────────────────────────────────────
-const SB_URL = 'https://civxugoribdwlnghbzbx.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpdnh1Z29yaWJkd2xuZ2hiemJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2OTk5MjIsImV4cCI6MjA4ODI3NTkyMn0.61i5vSMdMTjHTJzpFlEAKBj-S8r6chY-l0B1sOXLgp4';
+// ─── Supabase — via proxy seguro (credenciais no servidor Vercel) ─────────────
+// SB_URL e SB_KEY foram removidas do cliente — nunca expor aqui
 
 async function sbFetch(path, method = 'GET', body = null, extra = {}) {
-  const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
-    method,
-    headers: {
-      'apikey': SB_KEY,
-      'Authorization': `Bearer ${SB_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal',
-      ...extra
-    },
-    body: body ? JSON.stringify(body) : null
+  const res = await fetch('/api/db-proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path, method, body, extra })
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || err.hint || `HTTP ${res.status}`);
+    throw new Error(err.error || err.message || `HTTP ${res.status}`);
   }
   const text = await res.text();
   return text ? JSON.parse(text) : null;
@@ -1879,6 +1872,14 @@ async function doLogin() {
   const errEl    = document.getElementById('login-error');
   const btn      = document.querySelector('.login-btn');
 
+  // Rate limiting cliente (3 tentativas / 30s antes de bloquear no servidor)
+  const _rl = JSON.parse(sessionStorage.getItem('_login_rl') || '{"c":0,"t":0}');
+  if (Date.now() - _rl.t < 30000 && _rl.c >= 5) {
+    const wait = Math.ceil((30000 - (Date.now() - _rl.t)) / 1000);
+    errEl.textContent = `⚠️ Muitas tentativas. Aguarde ${wait}s.`;
+    errEl.classList.add('show');
+    return;
+  }
   btn.textContent = 'Entrando...';
   btn.disabled    = true;
 
@@ -1886,7 +1887,13 @@ async function doLogin() {
     // Usa função segura — nunca expõe a senha na resposta
     const rows = await sbFetch('rpc/fazer_login', 'POST', { p_username: username, p_password: password });
     if (!rows || rows.length === 0) {
-      errEl.textContent = '❌ Usuário ou senha incorretos.';
+      // Incrementar contador de tentativas
+    const _rl2 = JSON.parse(sessionStorage.getItem('_login_rl') || '{"c":0,"t":0}');
+    const _now2 = Date.now();
+    if (_now2 - _rl2.t > 30000) { _rl2.c = 1; _rl2.t = _now2; }
+    else { _rl2.c++; }
+    sessionStorage.setItem('_login_rl', JSON.stringify(_rl2));
+    errEl.textContent = '❌ Usuário ou senha incorretos.';
       errEl.classList.add('show');
       document.getElementById('login-pass').value = '';
       return;
@@ -1906,7 +1913,7 @@ async function doLogin() {
 }
 
 function doLogout() {
-  sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.clear(); // limpa sessão + rate limiting
   currentUser = null;
   tickets = [...defaultTickets];
   stopTrelloPolling();
@@ -2175,18 +2182,25 @@ function getAllKBItems() {
 // ─── Trello — SOMENTE LEITURA ────────────────────────────────────────────────
 // Apenas importa cards existentes. Nunca cria, move ou altera nada no Trello.
 const TRELLO = {
-  key:   'fb00939ccbd08b261764c8164c3e2651',
-  token: 'ATTAcd196c33e92205f73925466eeccc90ba059350303d2ca028bee4eeaaf74133797BEF38CD',
+  key:   '', // gerenciado pelo servidor — não expor aqui
+  token: '', // gerenciado pelo servidor — não expor aqui
   board: 'iDgPC3KH',
   lists: {}
 };
 
 async function trelloGET(path) {
-  const url = `https://api.trello.com/1${path}${path.includes('?')?'&':'?'}key=${TRELLO.key}&token=${TRELLO.token}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Trello ${res.status}`);
+  const res = await fetch('/api/trello-proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Trello ${res.status}`);
+  }
   return res.json();
 }
+
 
 // Tenta categorizar o card pelo nome/descrição usando palavras-chave
 function categorizarCard(name, desc) {
@@ -2651,6 +2665,11 @@ function renderStats() {
 
   // Sem técnico: abertos sem responsável (todos, não só contratos)
   const semTecnico = emAberto.filter(t => !t.assignedTo);
+  // Sem técnico criados este mês (para subtexto)
+  const semTecnicoMes = semTecnico.filter(t => {
+    const d = new Date(t.time || 0);
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+  });
 
   // Agendados para hoje
   const agendadosHoje = tickets.filter(t => {
@@ -2659,21 +2678,13 @@ function renderStats() {
     return d.toLocaleDateString('pt-BR') === diaStr;
   });
 
-  // Concluídos hoje — usa finalizadoEm se disponível, senão updated_at/created_at
-  // Inclui também tickets que chegaram como resolvidos do Trello hoje
+  // Concluídos hoje — APENAS finalizadoEm (campo salvo ao finalizar pelo painel)
+  // Não usar t.time como fallback: tickets do Trello sincronizados hoje mas
+  // resolvidos há semanas causariam falsos positivos
   const concluidosHoje = tickets.filter(t => {
-    if (t.status !== 'resolvido') return false;
-    // Prioridade 1: finalizadoEm (finalizados pelo painel)
-    if (t.finalizadoEm) {
-      const d = new Date(t.finalizadoEm);
-      if (!isNaN(d) && d.toLocaleDateString('pt-BR') === diaStr) return true;
-    }
-    // Prioridade 2: time da criação do ticket (para tickets do Trello já resolvidos)
-    if (t.time) {
-      const d = new Date(t.time);
-      return d.toLocaleDateString('pt-BR') === diaStr;
-    }
-    return false;
+    if (t.status !== 'resolvido' || !t.finalizadoEm) return false;
+    const d = new Date(t.finalizadoEm);
+    return !isNaN(d) && d.toLocaleDateString('pt-BR') === diaStr;
   });
 
   // Criados no mês (todos, independente do status atual)
@@ -2683,7 +2694,12 @@ function renderStats() {
   });
 
   // Resolvidos no mês (para o subtexto)
-  const resolvidosNoMes = criadosNoMes.filter(t => t.status === 'resolvido');
+  // Resolvidos no mês = finalizados com finalizadoEm neste mês (independente de quando foram criados)
+  const resolvidosNoMes = tickets.filter(t => {
+    if (t.status !== 'resolvido' || !t.finalizadoEm) return false;
+    const d = new Date(t.finalizadoEm);
+    return !isNaN(d) && d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+  });
 
   // ── Atualizar DOM ─────────────────────────────────────────────────
   if (el('stat-open'))           el('stat-open').textContent           = emAberto.length;
@@ -2700,7 +2716,7 @@ function renderStats() {
 
   // Subtextos dinâmicos
   const setSub = (id, txt) => { const e = el(id); if (e) e.textContent = txt; };
-  setSub('stat-sem-tecnico-sub',    semTecnico.length === 1 ? 'sem responsável' : 'sem responsável');
+  setSub('stat-sem-tecnico-sub', semTecnicoMes.length > 0 ? `${semTecnicoMes.length} este mês · total: ${semTecnico.length}` : `${semTecnico.length} total`);
   setSub('stat-month-sub',          `${resolvidosNoMes.length} resolvidos`);
 
   // ── Online bar ────────────────────────────────────────────────────
@@ -3007,7 +3023,7 @@ function renderTicketCard(t) {
         })()}
       </div>
       <div class="tc-title">${getCategoryLabel(t.categoria)}</div>
-      <div class="tc-company">${t.empresa}</div>
+      <div class="tc-company">${escapeHtml(t.empresa)}</div>
       <div class="tc-tags">
         <span class="tag ${t.prioridade}">${getPrioLabel(t.prioridade)}</span>
         <span class="tag ${t.nivel}">${t.nivel.toUpperCase()}</span>
@@ -4707,6 +4723,19 @@ function chatKeyDown(e) {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+// ─── Sanitização XSS ─────────────────────────────────────────────────────────
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,  '&amp;')
+    .replace(/</g,  '&lt;')
+    .replace(/>/g,  '&gt;')
+    .replace(/"/g,  '&quot;')
+    .replace(/'/g,  '&#039;')
+    .replace(/\//g, '&#x2F;');
+}
+
 function getPrioLabel(p) {
   return { contrato: 'Contrato', garantia: 'Garantia', avulso: 'Sem garantia' }[p] || p;
 }
@@ -5259,7 +5288,7 @@ function renderModalReplies(t) {
   container.innerHTML = t.replies.map(r => `
     <div class="reply-item" style="border-left:2px solid ${r.isAI ? 'var(--accent)' : 'var(--accent2)'}; padding-left:10px; margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-        <span class="reply-author" style="font-size:11px;font-weight:700">${r.author}</span>
+        <span class="reply-author" style="font-size:11px;font-weight:700">${escapeHtml(r.author)}</span>
         ${r.isAI ? '<span style="font-size:9px;color:var(--accent);background:rgba(0,229,160,0.12);padding:1px 6px;border-radius:4px;font-family:var(--mono)">✨ IA</span>' : ''}
         <span class="reply-time" style="font-size:10px;color:var(--text3);margin-left:auto">${r.time}</span>
       </div>
