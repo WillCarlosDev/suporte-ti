@@ -5657,7 +5657,11 @@ async function processWAMessage(fromNumber, messageText) {
   if (!config) { waLog('error', 'Agente WhatsApp não configurado.'); return; }
 
   atualizarWABadge(1);
-  waLog('incoming', `📲 <strong>${fromNumber}</strong>: ${messageText}`);
+  // Badge de pico no log
+  const _diaPico = new Date().getDate();
+  const _dimPico = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
+  const _isPico  = _diaPico <= 5 || (_dimPico - _diaPico) <= 4;
+  waLog('incoming', `📲 <strong>${fromNumber}</strong>: ${messageText}${_isPico ? ' <span style="color:var(--warn);font-size:10px">⚠️ PICO</span>' : ''}`);
   waStats.today++;
   updateWAStats();
 
@@ -5692,6 +5696,29 @@ async function processWAMessage(fromNumber, messageText) {
     : '';
 
   // Histórico deste cliente no sistema
+  // ── Detectar período de pico (fechamento de ponto) ──────────────────────────
+  function detectarPicoPonto() {
+    const hoje = new Date();
+    const dia  = hoje.getDate();
+    const diasNoMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+    const diasRestantes = diasNoMes - dia;
+
+    // Pico: dias 1-5 (início de mês) e últimos 5 dias do mês (fechamento)
+    const inicioDeMes  = dia >= 1  && dia <= 5;
+    const fechamento   = diasRestantes <= 4; // últimos 5 dias
+    const diasCriticos = [1, 2, 3, 28, 29, 30, 31]; // dias sempre críticos
+
+    if (fechamento)  return { ativo: true, tipo: 'fechamento',  diasRestantes };
+    if (inicioDeMes) return { ativo: true, tipo: 'inicio_mes',  dia };
+    return { ativo: false };
+  }
+  const pico = detectarPicoPonto();
+  const picoCtx = pico.ativo
+    ? (pico.tipo === 'fechamento'
+        ? `\n⚠️ CONTEXTO IMPORTANTE — PERÍODO DE PICO: Hoje são os últimos dias do mês (dia ${new Date().getDate()}), período de fechamento de ponto. Nossa equipe está com volume muito alto de chamados. Quando o cliente perguntar sobre prazo de atendimento humano, seja transparente: "Estamos no período de fechamento de ponto e nosso suporte está bem movimentado agora 😅 Vou registrar e nossa equipe retorna assim que possível!" Tente resolver pelo bot antes de escalonar.`
+        : `\n⚠️ CONTEXTO IMPORTANTE — PERÍODO DE PICO: Início de mês (dia ${new Date().getDate()}), pico de dúvidas pós-fechamento. Alta demanda de suporte. Informe naturalmente se necessário: "Começo de mês é sempre corrido por aqui 😄 Mas vamos tentar resolver isso agora!"`)
+    : '';
+
   let clienteHistorico = '';
   if (clienteCNPJ) {
     const cnpjNums = clienteCNPJ.replace(/\D/g, '');
@@ -5707,9 +5734,9 @@ async function processWAMessage(fromNumber, messageText) {
   }
 
   const modeInstructions = {
-    'n1': 'Resolva problemas N1 diretamente. Para N2, diga que um técnico entrará em contato.',
-    'n1n2': 'Tente resolver N1 e N2. Escalone apenas casos muito complexos.',
-    'triage': 'Faça triagem: colete nome, empresa, CNPJ, sistema e problema. Registre e informe que um técnico responderá em breve.',
+    'n1':    'Resolva problemas N1 diretamente usando a base de conhecimento. Para N2, informe que um técnico entrará em contato.',
+    'n1n2':  'Tente resolver N1 e N2 com a base de conhecimento. Escalone apenas casos muito complexos.',
+    'triage':'Faça apenas triagem: colete razão social, CNPJ, sistema e descrição do problema. Registre o chamado e informe que a equipe retornará.',
   }[config.mode] || '';
 
   // Monta mensagens com histórico
@@ -5721,40 +5748,60 @@ async function processWAMessage(fromNumber, messageText) {
   try {
     const data = await anthropicFetch({
       max_tokens: 600,
-      system: `Você é ${config.agentName}, assistente de suporte técnico via WhatsApp da Acesso e Ponto — REVENDEDORA AUTORIZADA de sistemas de ponto eletrônico (RHID, iPonto, Atecsoft). NÃO somos os fabricantes.
+      system: `Você é ${config.agentName}, do suporte da Acesso e Ponto.
 
-═══════════ IDENTIDADE — CRÍTICO ═══════════
-Você representa a Acesso e Ponto (revendedora). NUNCA diga "nosso sistema", "nosso software".
-Diga sempre: "o sistema RHID", "o iPonto", "o Atecsoft" — são produtos de terceiros que revendemos.
-Se perguntarem sobre funcionalidades, atualizações ou políticas do fabricante: "Essa informação é com o fabricante. Nossa equipe pode verificar para você."
+═══════════ QUEM SOMOS ═══════════
+A Acesso e Ponto é REVENDEDORA dos sistemas RHID, iPonto e Atecsoft — não somos os fabricantes.
+NUNCA diga "nosso sistema". Diga "o RHID", "o iPonto", "o Atecsoft".
+Dúvidas sobre o fabricante: "Isso é com o fabricante, mas posso verificar com nossa equipe."
+
+═══════════ TOM DE VOZ — OBRIGATÓRIO ═══════════
+- Fale de forma direta, clara e humana. Sem formalidade, sem termos técnicos difíceis.
+- Frases curtas. Máximo 3 linhas por mensagem.
+- Quando o cliente estiver frustrado, reconheça antes de resolver: "Entendo, vamos resolver isso."
+- PROIBIDO: emojis de qualquer tipo — nenhum, zero, jamais use emojis
+- PROIBIDO: "prezado", "segue abaixo", "conforme solicitado", "atenciosamente", "certo?", "ok?"
+- PROIBIDO: parágrafos longos ou listas com mais de 3 itens de uma vez
+
+═══════════ PRIMEIRA MENSAGEM — REGRA CRÍTICA ═══════════
+${!clienteCNPJ || !clienteEmpresa ? `Se esta é a primeira mensagem (sem histórico ou sem dados do cliente), você DEVE obrigatoriamente responder com exatamente isso — sem nada mais:
+
+"Olá, tudo bem? Aqui é o suporte da Acesso e Ponto.
+Para te ajudar, preciso de algumas informações:
+- Razão social da empresa
+- CNPJ
+- Sistema utilizado (RHID, iPonto ou Atecsoft)
+- O que está acontecendo?
+
+Pode me passar esses dados?"
+
+Só prossiga com qualquer outra resposta após ter recebido esses dados.` : `Dados do cliente já coletados. Não peça novamente.`}
 
 ═══════════ MODO DE OPERAÇÃO ═══════════
 ${modeInstructions}
 
-═══════════ REGRAS ABSOLUTAS — NUNCA QUEBRE ESTAS REGRAS ═══════════
-1. SOMENTE responda se a resposta estiver EXPLICITAMENTE na base de conhecimento abaixo.
-2. Se a pergunta NÃO estiver coberta pela KB: "Não tenho certeza sobre isso. Vou registrar e nossa equipe técnica retorna em breve." — e NÃO tente ajudar.
-3. NUNCA invente passos, soluções, configurações ou procedimentos não listados na KB.
-4. NUNCA cite canais além deste WhatsApp.
-5. NUNCA prometa prazos ou resultados.
-6. Mensagens CURTAS: máximo 5 linhas. Se precisar de mais, divida em etapas e pergunte "Pode tentar o passo 1?"
-7. Se o cliente disser que o passo não funcionou: "Entendido. Vou registrar um chamado para nossa equipe técnica ir mais fundo."
-8. Prioridade: Contrato > Garantia > Avulso.
-${clienteCNPJ ? `\n9. CNPJ já identificado: ${clienteCNPJ}` : ''}
-${clienteEmpresa ? `\n10. Empresa já identificada: ${clienteEmpresa}` : ''}
-${clienteHistorico}
+═══════════ REGRAS QUE NÃO PODEM QUEBRAR ═══════════
+1. Só responda com o que estiver na base de conhecimento — NUNCA invente solução
+2. Se não souber: "Não tenho essa informação aqui, mas vou acionar nossa equipe."
+3. NUNCA prometa prazo de retorno
+4. Se o passo não funcionar: "Tudo bem. Vou abrir um chamado para um técnico analisar."
+5. Clientes de contrato têm prioridade
+${clienteCNPJ ? `\n6. CNPJ: ${clienteCNPJ}` : ''}
+${clienteEmpresa ? `\n7. Empresa: ${clienteEmpresa}` : ''}
 
-═══════════ COLETA OBRIGATÓRIA (faça no início se não tiver) ═══════════
-Colete: nome completo · razão social · CNPJ · sistema (RHID, iPonto ou Atecsoft)
+${clienteHistorico}${picoCtx}
 
-═══════════ BASE DE CONHECIMENTO — USE SOMENTE ISTO ═══════════
+═══════════ BASE DE CONHECIMENTO ═══════════
 ${kbContext}
 
-${fewShot ? '═══════════ ATENDIMENTOS ANTERIORES RESOLVIDOS (use como referência de linguagem) ═══════════\n' + fewShot : ''}
+${fewShot ? '═══════════ COMO NOSSA EQUIPE COSTUMA RESPONDER (use como referência) ═══════════\n' + fewShot : ''}
 
 ═══════════ ABERTURA DE CHAMADO ═══════════
-Quando identificar problema técnico CLARO, adicione ao final (invisível ao cliente):
-CHAMADO: <categoria>|<sistema>|<n1 ou n2>|<empresa>|<cnpj>|<nome>`,
+SEMPRE que tiver: empresa + CNPJ + sistema + descrição do problema — adicione ao final da resposta (invisível ao cliente):
+CHAMADO: <categoria>|<sistema>|<n1 ou n2>|<empresa>|<cnpj>|<nome do contato>|<descrição curta do problema>
+
+Categorias possíveis: relogio-offline, ponto-manual, feriado, relatorio, integracao, login, desbloqueio, outro
+Faça isso na PRIMEIRA mensagem que tiver todos os dados. Não espere resolver o problema para abrir o chamado.`,
       messages
     });
 
@@ -5777,32 +5824,48 @@ CHAMADO: <categoria>|<sistema>|<n1 ou n2>|<empresa>|<cnpj>|<nome>`,
     // Extrai empresa da linha de chamado se disponível
     if (chamadoLine) {
       const parts = chamadoLine.replace('CHAMADO:', '').trim().split('|');
-      const [cat, sis, niv, emp, cnpj, nomeCliente] = parts;
-      if (emp?.trim()) clienteEmpresa = emp.trim();
-      if (cnpj?.trim()) clienteCNPJ = cnpj.trim().replace(/\D/g,'');
+      const [cat, sis, niv, emp, cnpj, nomeCliente, descProblema] = parts;
+      if (emp?.trim())  clienteEmpresa = emp.trim();
+      if (cnpj?.trim()) clienteCNPJ    = cnpj.trim().replace(/\D/g,'');
 
-      const newTicket = {
-        id: '#W' + String(tickets.length + 1).padStart(3, '0'),
-        nome: nomeCliente?.trim() || fromNumber,
-        empresa: clienteEmpresa || 'Via WhatsApp',
-        cnpj: clienteCNPJ ? clienteCNPJ.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : '—',
-        sistema: sis?.trim().toLowerCase() || 'rhid',
-        prioridade: 'avulso',
-        categoria: cat?.trim() || 'outro',
-        nivel: niv?.trim() || 'n1',
-        status: 'aberto',
-        desc: messageText,
-        time: Date.now(),
-        fromWhatsApp: true,
-        whatsappPhone: fromNumber,
-        replies: [{ author: 'IA', time: new Date().toLocaleString('pt-BR'), text: replyText, isAI: true }]
-      };
-      tickets.unshift(newTicket);
-      saveTicketToDB(newTicket);
-      renderAll();
-      waStats.resolved++;
-      updateWAStats();
-      waLog('system', `📋 Chamado ${newTicket.id} criado — ${clienteEmpresa || fromNumber}`);
+      // Verificar se já existe chamado aberto desse número para evitar duplicatas
+      const jaTemChamado = tickets.find(t =>
+        t.fromWhatsApp && t.whatsappPhone === fromNumber && t.status !== 'resolvido'
+      );
+
+      if (!jaTemChamado) {
+        const descFinal = descProblema?.trim() || messageText;
+        const newTicket = {
+          id: '#W' + String(tickets.length + 1).padStart(3, '0'),
+          nome:      nomeCliente?.trim() || fromNumber,
+          empresa:   clienteEmpresa || 'Via WhatsApp',
+          cnpj:      clienteCNPJ
+            ? clienteCNPJ.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+            : '—',
+          sistema:   sis?.trim().toLowerCase() || 'rhid',
+          prioridade:'avulso',
+          categoria: cat?.trim() || 'outro',
+          nivel:     niv?.trim() || 'n1',
+          status:    'aberto',
+          desc:      descFinal,
+          time:      Date.now(),
+          fromWhatsApp:  true,
+          whatsappPhone: fromNumber,
+          replies: [{ author: 'IA', time: new Date().toLocaleString('pt-BR'), text: replyText, isAI: true }]
+        };
+        tickets.unshift(newTicket);
+        saveTicketToDB(newTicket);
+        renderAll();
+        waStats.resolved++;
+        updateWAStats();
+        waLog('system', `Chamado ${newTicket.id} aberto — ${clienteEmpresa || fromNumber} · ${descFinal.slice(0,60)}`);
+      } else {
+        // Chamado já existe — adicionar reply com a última troca
+        jaTemChamado.replies = jaTemChamado.replies || [];
+        jaTemChamado.replies.push({ author: 'IA', time: new Date().toLocaleString('pt-BR'), text: replyText, isAI: true });
+        updateTicketInDB(jaTemChamado);
+        waLog('system', `Chamado ${jaTemChamado.id} atualizado — nova resposta do bot`);
+      }
     }
 
     // Salva histórico atualizado no Supabase
