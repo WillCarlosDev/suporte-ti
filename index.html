@@ -5714,6 +5714,71 @@ async function processWAMessage(fromNumber, messageText) {
     return { ativo: false };
   }
   const pico = detectarPicoPonto();
+  // ── Detectar horário comercial (08:00–18:00, seg–sex, horário de Brasília) ──
+  function verificarHorarioComercial() {
+    // Força horário de Brasília (UTC-3)
+    const agora    = new Date();
+    const utc      = agora.getTime() + agora.getTimezoneOffset() * 60000;
+    const brasilia = new Date(utc - 3 * 3600000); // UTC-3
+    const hora     = brasilia.getHours();
+    const minuto   = brasilia.getMinutes();
+    const diaSem   = brasilia.getDay(); // 0=Dom, 1=Seg... 6=Sab
+    const minTotal = hora * 60 + minuto;
+
+    const fimDeSemana  = diaSem === 0 || diaSem === 6;
+    const antesDoExpediente = !fimDeSemana && minTotal < 8 * 60;        // antes 08:00
+    const aposExpediente    = !fimDeSemana && minTotal >= 18 * 60;      // 18:00 ou depois
+    const foraDoDia         = fimDeSemana || antesDoExpediente || aposExpediente;
+
+    // Calcular próximo horário de atendimento
+    let proximoAtendimento = '';
+    if (fimDeSemana) {
+      const diasAteSegunda = diaSem === 0 ? 1 : 2;
+      proximoAtendimento = `segunda-feira às 08:00`;
+    } else if (antesDoExpediente) {
+      proximoAtendimento = `hoje às 08:00`;
+    } else if (aposExpediente) {
+      const amanha = diaSem === 5 ? 'segunda-feira' : 'amanhã'; // sexta → segunda
+      proximoAtendimento = `${amanha} às 08:00`;
+    }
+
+    return { foraDoDia, fimDeSemana, antesDoExpediente, aposExpediente, hora, diaSem, proximoAtendimento };
+  }
+  const horario = verificarHorarioComercial();
+
+  // Mensagem automática fora do horário — enviada antes de qualquer resposta IA
+  // Saudação dinâmica por horário
+  const _saudacao = horario.hora < 12 ? 'Bom dia' : horario.hora < 18 ? 'Boa tarde' : 'Boa noite';
+
+  // Verificar se já temos os dados do cliente nesta conversa
+  const _temDados = clienteCNPJ && clienteEmpresa;
+
+  // Parte de coleta — só pede se ainda não tem os dados
+  const _coletaPedido = _temDados
+    ? 'Pode descrever o que está acontecendo para deixarmos registrado?'
+    : 'Para registrar o chamado, preciso de:\n- Razão social da empresa\n- CNPJ\n- Sistema utilizado (RHID, iPonto ou Atecsoft)\n- O que está acontecendo?';
+
+  let respostForaHorario = '';
+  if (horario.foraDoDia) {
+    if (horario.fimDeSemana) {
+      respostForaHorario = `${_saudacao}! Recebemos sua mensagem, mas nosso atendimento funciona de segunda a sexta, das 08:00 às 18:00.\n\nA equipe retorna ${horario.proximoAtendimento}.\n\n${_coletaPedido}`;
+    } else if (horario.antesDoExpediente) {
+      respostForaHorario = `${_saudacao}! Recebemos sua mensagem. Nosso atendimento começa às 08:00.\n\n${_coletaPedido}`;
+    } else {
+      respostForaHorario = `${_saudacao}! Nosso atendimento encerrou às 18:00.\n\nA equipe retorna ${horario.proximoAtendimento}.\n\n${_coletaPedido}`;
+    }
+  }
+
+  const horarioCtx = horario.foraDoDia
+    ? `\n\n⚠️ CONTEXTO — FORA DO HORÁRIO COMERCIAL: São ${horario.hora}h (horário de Brasília). Nosso atendimento é seg–sex das 08:00 às 18:00.
+VOCÊ DEVE:
+1. Informar gentilmente que está fora do horário, que a equipe retorna ${horario.proximoAtendimento}
+2. ${!clienteCNPJ || !clienteEmpresa ? 'Solicitar OBRIGATORIAMENTE: razão social, CNPJ, sistema (RHID/iPonto/Atecsoft) e descrição do problema' : 'Dados do cliente já coletados — solicitar apenas a descrição do problema se não tiver'}
+3. Abrir o chamado normalmente (gerar linha CHAMADO:) assim que tiver todos os dados
+4. NÃO tentar resolver o problema agora — apenas coletar e registrar
+5. Tranquilizar o cliente: os dados ficam registrados e a equipe verá ao chegar`
+    : '';
+
   const picoCtx = pico.ativo
     ? (pico.tipo === 'fechamento'
         ? `\n⚠️ CONTEXTO IMPORTANTE — PERÍODO DE PICO: Hoje são os últimos dias do mês (dia ${new Date().getDate()}), período de fechamento de ponto. Nossa equipe está com volume muito alto de chamados. Quando o cliente perguntar sobre prazo de atendimento humano, seja transparente: "Estamos no período de fechamento de ponto e nosso suporte está bem movimentado agora 😅 Vou registrar e nossa equipe retorna assim que possível!" Tente resolver pelo bot antes de escalonar.`
@@ -5790,7 +5855,7 @@ ${modeInstructions}
 ${clienteCNPJ ? `\n6. CNPJ: ${clienteCNPJ}` : ''}
 ${clienteEmpresa ? `\n7. Empresa: ${clienteEmpresa}` : ''}
 
-${clienteHistorico}${picoCtx}
+${clienteHistorico}${picoCtx}${horarioCtx}
 
 ═══════════ BASE DE CONHECIMENTO ═══════════
 ${kbContext}
@@ -5813,7 +5878,8 @@ Faça isso na PRIMEIRA mensagem que tiver todos os dados. Não espere resolver o
     const chamadoLine = lines.find(l => l.startsWith('CHAMADO:'));
     const replyText = lines.filter(l => !l.startsWith('CHAMADO:')).join('\n').trim();
 
-    waLog('outgoing', `🤖 <strong>Agente</strong>: ${replyText.substring(0, 200)}${replyText.length > 200 ? '...' : ''}`);
+    const _prefixLog = horario.foraDoDia ? '🌙 <span style="color:var(--text3)">[Fora do horário]</span> ' : '🤖 ';
+  waLog('outgoing', `${_prefixLog}<strong>Agente</strong>: ${replyText.substring(0, 200)}${replyText.length > 200 ? '...' : ''}`);
 
     // Atualiza histórico com a nova troca
     const updatedHistory = [
