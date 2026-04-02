@@ -1818,18 +1818,25 @@ function saveGlobalApiKey() {
 function loadGlobalApiKey() { /* chave gerenciada no servidor */ }
 
 
-// ─── Supabase — via proxy seguro (credenciais no servidor Vercel) ─────────────
-// SB_URL e SB_KEY foram removidas do cliente — nunca expor aqui
+// ─── Supabase — conexão direta (mover para env vars Vercel quando proxy deployado)
+const SB_URL = 'https://civxugoribdwlnghbzbx.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpdnh1Z29yaWJkd2xuZ2hiemJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2OTk5MjIsImV4cCI6MjA4ODI3NTkyMn0.61i5vSMdMTjHTJzpFlEAKBj-S8r6chY-l0B1sOXLgp4';
 
 async function sbFetch(path, method = 'GET', body = null, extra = {}) {
-  const res = await fetch('/api/db-proxy', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ path, method, body, extra })
+  const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': `Bearer ${SB_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal',
+      ...extra
+    },
+    body: body ? JSON.stringify(body) : null
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || err.message || `HTTP ${res.status}`);
+    throw new Error(err.message || err.hint || `HTTP ${res.status}`);
   }
   const text = await res.text();
   return text ? JSON.parse(text) : null;
@@ -2182,22 +2189,16 @@ function getAllKBItems() {
 // ─── Trello — SOMENTE LEITURA ────────────────────────────────────────────────
 // Apenas importa cards existentes. Nunca cria, move ou altera nada no Trello.
 const TRELLO = {
-  key:   '', // gerenciado pelo servidor — não expor aqui
-  token: '', // gerenciado pelo servidor — não expor aqui
+  key:   'fb00939ccbd08b261764c8164c3e2651',
+  token: 'ATTAcd196c33e92205f73925466eeccc90ba059350303d2ca028bee4eeaaf74133797BEF38CD',
   board: 'iDgPC3KH',
   lists: {}
 };
 
 async function trelloGET(path) {
-  const res = await fetch('/api/trello-proxy', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ path })
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Trello ${res.status}`);
-  }
+  const url = `https://api.trello.com/1${path}${path.includes('?')?'&':'?'}key=${TRELLO.key}&token=${TRELLO.token}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Trello ${res.status}`);
   return res.json();
 }
 
