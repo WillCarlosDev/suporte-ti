@@ -1,67 +1,72 @@
-exports.handler = async function (event) {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+
+// Modelo padrão — llama-3.3-70b-versatile é o mais capaz gratuitamente
+const GROQ_MODEL   = 'llama-3.3-70b-versatile';
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const GROQ_KEY = process.env.GROQ_API_KEY;
+  if (!GROQ_KEY) {
+    return res.status(500).json({ error: 'GROQ_API_KEY não configurada no servidor' });
   }
 
   try {
-    const body = JSON.parse(event.body);
+    const { system, messages, max_tokens } = req.body;
 
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: { message: 'GROQ_API_KEY não configurada nas variáveis de ambiente do Netlify.' } }),
-      };
+    // Groq usa formato OpenAI — montar messages array
+    const groqMessages = [];
+
+    // System prompt vira uma mensagem com role "system"
+    if (system) {
+      groqMessages.push({ role: 'system', content: system });
     }
 
-    // Converte o modelo para um compatível com Groq
+    // Adicionar mensagens da conversa
+    if (Array.isArray(messages)) {
+      groqMessages.push(...messages);
+    }
+
     const groqBody = {
-      ...body,
-      model: 'llama-3.3-70b-versatile',
+      model:       GROQ_MODEL,
+      messages:    groqMessages,
+      max_tokens:  max_tokens || 1000,
+      temperature: 0.4, // mais consistente para suporte técnico
     };
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
+    const upstream = await fetch(GROQ_API_URL, {
+      method:  'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${GROQ_KEY}`,
+        'Content-Type':  'application/json',
       },
-      body: JSON.stringify({
-        model: groqBody.model,
-        max_tokens: groqBody.max_tokens || 1024,
-        messages: [
-          ...(groqBody.system ? [{ role: 'system', content: groqBody.system }] : []),
-          ...groqBody.messages,
-        ],
-      }),
+      body: JSON.stringify(groqBody),
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      return {
-        statusCode: response.status,
-        body: JSON.stringify({ error: { message: data.error?.message || `HTTP ${response.status}` } }),
-      };
+    if (!upstream.ok) {
+      const err = await upstream.json().catch(() => ({}));
+      console.error('[groq-proxy] erro:', err);
+      return res.status(upstream.status).json({
+        error: err.error?.message || `Groq HTTP ${upstream.status}`
+      });
     }
 
-    // Converte resposta do Groq para o formato Anthropic que o frontend espera
-    const anthropicFormat = {
-      content: [{ type: 'text', text: data.choices?.[0]?.message?.content || '' }],
-    };
+    const groqData = await upstream.json();
 
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify(anthropicFormat),
-    };
-  } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: { message: err.message } }),
-    };
+    // Converter resposta do Groq (formato OpenAI) para formato Anthropic
+    // O painel espera: { content: [{ type: 'text', text: '...' }] }
+    const texto = groqData.choices?.[0]?.message?.content || '';
+
+    return res.status(200).json({
+      content: [{ type: 'text', text: texto }],
+      // Manter info de uso para debug
+      usage: groqData.usage,
+    });
+
+  } catch (e) {
+    console.error('[groq-proxy] erro interno:', e.message);
+    return res.status(500).json({ error: 'Erro interno no proxy' });
   }
-};
+}
