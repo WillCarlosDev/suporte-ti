@@ -711,91 +711,251 @@
     <!-- ONBOARDING / MANUAL -->
     <div class="view" id="view-onboarding">
       <div class="page-header">
-        <div class="page-title">📖 Manual da Plataforma</div>
-        <div class="page-sub">Guia passo a passo para novos usuários</div>
+        <div class="page-title">Manual da Plataforma</div>
+        <div class="page-sub">Guia completo — Central de Suporte TI · Acesso e Ponto</div>
       </div>
-      <div style="max-width:720px;display:flex;flex-direction:column;gap:16px">
+      <div style="max-width:760px;display:flex;flex-direction:column;gap:12px">
 
+        <!-- Boas-vindas -->
         <div style="background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.2);border-radius:12px;padding:20px">
-          <div style="font-size:16px;font-weight:700;margin-bottom:6px">👋 Bem-vindo ao painel de Suporte TI</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.8">Este é o sistema central de gestão de chamados do time de suporte da Acesso e Ponto. Aqui você registra, acompanha e resolve os atendimentos dos clientes.</div>
+          <div style="font-size:15px;font-weight:800;margin-bottom:6px;color:var(--accent)">Central de Suporte TI — Acesso e Ponto</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.8">
+            Sistema completo de gestão de chamados, integrado ao Trello e com agente de atendimento via WhatsApp. Gerencie atendimentos, base de conhecimento, clientes e equipe em um único lugar.
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+            <span style="font-size:11px;background:rgba(0,229,160,0.12);color:var(--accent);padding:3px 10px;border-radius:20px;font-family:var(--mono)">ADM — acesso total</span>
+            <span style="font-size:11px;background:rgba(0,144,255,0.12);color:var(--accent2);padding:3px 10px;border-radius:20px;font-family:var(--mono)">TECNICO — atendimento</span>
+            <span style="font-size:11px;background:rgba(138,144,160,0.12);color:var(--text2);padding:3px 10px;border-radius:20px;font-family:var(--mono)">LEITOR — somente visualização</span>
+          </div>
         </div>
 
+        <!-- Dashboard -->
         <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden" open>
           <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
-            <span>📋</span> Como abrir um novo chamado
+            <span style="font-size:16px">📊</span> Dashboard — visão geral
           </summary>
           <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
             <br>
-            <strong>1.</strong> Clique em <strong>"Novo Chamado"</strong> no menu lateral.<br>
-            <strong>2.</strong> Preencha o nome e o contato do cliente (telefone ou e-mail).<br>
-            <strong>3.</strong> Digite a Razão Social ou o CNPJ — o sistema vai tentar preencher automaticamente os dados de clientes anteriores.<br>
+            O Dashboard mostra o estado atual do suporte em tempo real. As métricas do topo são:<br><br>
+            <strong>Em Aberto:</strong> todos os chamados com status diferente de Resolvido.<br>
+            <strong>Sem Técnico:</strong> chamados sem responsável atribuído. O subtexto mostra quantos são deste mês vs. o total geral.<br>
+            <strong>Hoje:</strong> chamados com agendamento marcado para o dia atual.<br>
+            <strong>Concluídos Hoje:</strong> chamados finalizados pelo painel hoje (usa o campo <em>finalizado em</em>).<br>
+            <strong>Criados em [mês]:</strong> total de chamados abertos no mês. O subtexto mostra quantos foram resolvidos.<br><br>
+            <strong>Contratos sem técnico:</strong> lista os contratos em aberto sem responsável, do mais antigo ao mais recente. Clique em <strong>Puxar</strong> para se atribuir.<br>
+            <strong>Equipe agora:</strong> mostra cada técnico, se está online e quantos chamados tem em mãos.<br>
+            <strong>Recém abertos:</strong> os 6 chamados mais recentes ainda em aberto.
+          </div>
+        </details>
+
+        <!-- Chamados / Kanban -->
+        <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">📋</span> Kanban de Chamados
+          </summary>
+          <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
+            <br>
+            O Kanban organiza os chamados em colunas por status e técnico:<br><br>
+            <strong>Chamados:</strong> sem técnico atribuído, aguardando ser puxado.<br>
+            <strong>[Nome do técnico]:</strong> chamados atribuídos a cada membro da equipe.<br>
+            <strong>Agendados:</strong> qualquer chamado com status "agendado", ordenados por data/hora.<br>
+            <strong>Pendências:</strong> chamados aguardando alguma ação do cliente.<br>
+            <strong>Não Atendido:</strong> tentativas sem retorno.<br>
+            <strong>Resolvido:</strong> apenas do mês atual (histórico completo fica em Relatórios).<br><br>
+            <strong>Badge SLA:</strong> aparece em vermelho (🔴 Xh) quando um chamado de contrato está aberto há mais de 8 horas sem técnico. Em amarelo (⚠️) após 4 horas.<br><br>
+            <strong>Filtros rápidos:</strong> filtre por prioridade (Contrato / Garantia / Sem garantia), por técnico ou só os com SLA crítico.<br><br>
+            <strong>Ações rápidas no card:</strong> Puxar para mim · ⏳ Pendência · 📵 Não Atendido · ✕ Excluir.
+          </div>
+        </details>
+
+        <!-- Abrir chamado -->
+        <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">➕</span> Como abrir um novo chamado
+          </summary>
+          <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
+            <br>
+            <strong>1.</strong> Clique em <strong>Novo Chamado</strong> no menu lateral.<br>
+            <strong>2.</strong> Digite a Razão Social ou CNPJ — o sistema preenche automaticamente dados de clientes anteriores.<br>
+            <strong>3.</strong> Preencha nome e contato do solicitante.<br>
             <strong>4.</strong> Selecione o tipo de suporte: <strong>Equipamentos</strong> (relógios, catracas) ou <strong>Sistemas</strong> (software).<br>
-            <strong>5.</strong> Escolha o tipo de contrato: Contrato, Garantia ou Sem Garantia.<br>
-            <strong>6.</strong> A categoria do problema é opcional — preencha se souber, caso contrário deixe em branco.<br>
-            <strong>7.</strong> Clique em <strong>"Abrir Chamado"</strong>.
+            <strong>5.</strong> Escolha a prioridade: <strong>Contrato</strong>, <strong>Garantia</strong> ou <strong>Sem Garantia</strong>.<br>
+            <strong>6.</strong> Categoria e nível são opcionais — preencha se souber.<br>
+            <strong>7.</strong> Clique em <strong>Abrir Chamado</strong>. Ele aparece imediatamente no Kanban.
           </div>
         </details>
 
+        <!-- Modal do chamado -->
         <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
           <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
-            <span>🔓</span> Como usar o Desbloqueio de REP
+            <span style="font-size:16px">🗂</span> Dentro do chamado — o que cada bloco faz
           </summary>
           <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
             <br>
-            <strong>1.</strong> Clique em <strong>"Desbloqueio REP"</strong> no menu lateral.<br>
+            Ao clicar em qualquer card, o modal abre com 6 blocos:<br><br>
+            <strong>1. Dados do chamado:</strong> nome, empresa, CNPJ, sistema, prioridade, nível e descrição.<br>
+            <strong>2. Etiquetas:</strong> adicione etiquetas coloridas. Colocar o nome de um técnico (ex: "Willian") atribui o chamado automaticamente. Etiquetas de sistema (RHID, iPonto) e prioridade (Contrato, Garantia) também podem ser usadas.<br>
+            <strong>3. Status + Atribuição:</strong> mude o status do chamado e veja quem está responsável. O agendamento aparece aqui quando o status é "Agendado".<br>
+            <strong>4. Histórico da empresa:</strong> últimos 4 chamados dessa mesma empresa (por CNPJ). Clique para abrir qualquer um.<br>
+            <strong>5. Histórico de atendimento:</strong> todas as respostas registradas no chamado.<br>
+            <strong>6. Nova resposta:</strong> use os modelos rápidos, digite sua observação ou clique em <strong>✨ Sugerir IA</strong> para gerar uma resposta baseada na Base de Conhecimento. Os botões de ação ficam aqui: Pendência · Não Atendido · Reativar · Excluir · Finalizar.
+          </div>
+        </details>
+
+        <!-- Etiquetas -->
+        <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">🏷️</span> Etiquetas
+          </summary>
+          <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
+            <br>
+            O picker de etiquetas é organizado em grupos:<br><br>
+            <strong>Frequentes:</strong> as 8 etiquetas mais usadas (excluindo técnicos), para acesso rápido.<br>
+            <strong>Técnicos:</strong> Willian, Lucas, Alex, Julio — adicionar atribui o chamado automaticamente.<br>
+            <strong>Sistemas:</strong> RHID, iPonto, Atecsoft, IDSecure.<br>
+            <strong>Prioridade:</strong> Contrato, Garantia, Sem garantia.<br>
+            <strong>Status:</strong> Urgente, Aguardando, N1, N2.<br>
+            <strong>Outros:</strong> etiquetas do Trello que não se encaixam nos grupos acima.<br><br>
+            Para criar uma etiqueta nova: escreva o nome, escolha a cor e clique em <strong>＋ Criar</strong>.<br>
+            Clique duplo em uma etiqueta já aplicada para editar o nome. Clique em ✕ para remover.
+          </div>
+        </details>
+
+        <!-- Desbloqueio REP -->
+        <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">🔓</span> Desbloqueio de REP
+          </summary>
+          <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
+            <br>
+            Atalho rápido para chamados de contrasenha e desbloqueio, sem precisar passar pelo formulário completo.<br><br>
+            <strong>1.</strong> Clique em <strong>Desbloqueio REP</strong> no menu.<br>
             <strong>2.</strong> Escolha o tipo: <strong>Contrasenha de Sistema</strong>, <strong>Contrasenha de Relógio</strong> ou <strong>Desbloqueio ADM</strong>.<br>
-            <strong>3.</strong> Preencha os dados do cliente e selecione o equipamento.<br>
-            <strong>4.</strong> Adicione o seu nome como atendente clicando nas sugestões ou digitando no campo.<br>
-            <strong>5.</strong> Clique em <strong>"Abrir Chamado"</strong> — ele será criado automaticamente no kanban.
+            <strong>3.</strong> Preencha os dados do cliente. Se digitar o CNPJ, o sistema busca automaticamente o nome e a empresa.<br>
+            <strong>4.</strong> Adicione o seu nome como atendente nas sugestões.<br>
+            <strong>5.</strong> Clique em <strong>Abrir Chamado</strong> — criado direto no Kanban como tipo "Desbloqueio".
           </div>
         </details>
 
+        <!-- Base de Conhecimento -->
         <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
           <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
-            <span>📊</span> Como usar o Kanban de Chamados
+            <span style="font-size:16px">📚</span> Base de Conhecimento
           </summary>
           <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
             <br>
-            O kanban mostra todos os chamados organizados por coluna (status).<br><br>
-            <strong>Mover um chamado:</strong> Clique no card e use os botões de status dentro do chamado, ou use os botões rápidos <strong>⏳ Pendência</strong> e <strong>🚫 Não Atendido</strong> diretamente no card.<br><br>
-            <strong>Finalizar um chamado:</strong> Abra o chamado e clique em <strong>"✅ Finalizar"</strong>. Você pode registrar uma resposta antes de finalizar.<br><br>
-            <strong>Gerenciar colunas:</strong> Clique no botão <strong>"⚙ Gerenciar Colunas"</strong> no topo da tela de Chamados para adicionar, renomear ou reordenar colunas.
+            Repositório de procedimentos de suporte usado tanto pela equipe quanto pelo Agente WhatsApp para responder clientes.<br><br>
+            <strong>Itens base (6 procedimentos):</strong> Relógio Offline, Ponto Manual, Feriado/Hora Extra, Relatório com Erros, Integração com Folha e Erro de Login. ADM pode editar (✏️) ou excluir (✕) — as alterações ficam salvas permanentemente no banco.<br><br>
+            <strong>Criar procedimento com IA:</strong><br>
+            1. Preencha o título e descreva o problema com detalhes.<br>
+            2. Clique em <strong>✨ Gerar com IA</strong>.<br>
+            3. Revise e clique em <strong>💾 Salvar na Base</strong>.<br><br>
+            <strong>Dica:</strong> ao finalizar um chamado, marque a opção <em>"Salvar solução na KB"</em> para adicionar a solução automaticamente à base.
           </div>
         </details>
 
+        <!-- Agente WhatsApp -->
         <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
           <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
-            <span>🤖</span> Como usar a Base de Conhecimento com IA
+            <span style="font-size:16px">💬</span> Agente WhatsApp
           </summary>
           <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
             <br>
-            A Base de Conhecimento guarda os procedimentos de suporte para consulta rápida.<br><br>
-            <strong>Criar um procedimento com IA:</strong><br>
-            <strong>1.</strong> Vá em <strong>"Base de Conhecimento"</strong>.<br>
-            <strong>2.</strong> Preencha o título do problema e descreva o que o cliente relatou.<br>
-            <strong>3.</strong> Clique em <strong>"✨ Gerar com IA"</strong> — a IA vai criar um passo a passo completo.<br>
-            <strong>4.</strong> Revise o procedimento e clique em <strong>"💾 Salvar na Base"</strong>.<br><br>
-            <strong>Dica:</strong> Quanto mais detalhada for a sua descrição, melhor será o procedimento gerado.
+            Bot de atendimento automático que responde clientes via WhatsApp usando a Base de Conhecimento.<br><br>
+            <strong>Como funciona:</strong><br>
+            1. Na primeira mensagem, o bot pede razão social, CNPJ, sistema e descrição do problema.<br>
+            2. Com os dados coletados, abre um chamado automaticamente no Kanban.<br>
+            3. Tenta resolver o problema usando os procedimentos da Base de Conhecimento.<br>
+            4. Se não souber ou o cliente pedir suporte humano, registra o chamado e informa que a equipe retorna.<br><br>
+            <strong>Horário de atendimento:</strong> o bot funciona 24/7, mas fora do horário comercial (seg–sex, 08:00–18:00) informa o cliente e coleta os dados para a equipe encontrar o chamado registrado ao chegar.<br><br>
+            <strong>Período de pico:</strong> nos últimos 5 dias do mês e nos primeiros 5 (fechamento de ponto), o bot avisa que o volume de atendimento está mais alto e pede paciência.<br><br>
+            <strong>Modos de operação:</strong><br>
+            — <em>Resolver N1:</em> tenta resolver problemas básicos e escala N2 para a equipe.<br>
+            — <em>Resolver N1 e N2:</em> tenta resolver todos os casos antes de escalar.<br>
+            — <em>Só triagem:</em> coleta dados e registra — toda resolução fica com a equipe.<br><br>
+            <strong>Simulador Bot:</strong> use a aba <strong>Simulador Bot</strong> para testar o comportamento do agente antes de ativar com clientes reais.
           </div>
         </details>
 
+        <!-- Trello -->
         <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
           <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
-            <span>🔑</span> Alterar sua senha
+            <span style="font-size:16px">🟦</span> Integração com Trello
           </summary>
           <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
             <br>
-            <strong>1.</strong> Vá em <strong>"Configurações"</strong> no menu lateral (apenas ADM e Técnico).<br>
-            <strong>2.</strong> Localize a seção <strong>"🔑 Alterar Senha"</strong>.<br>
+            A integração com o Trello é <strong>somente leitura</strong>. O painel importa os cards mas nunca move, edita ou cria nada no Trello.<br><br>
+            <strong>Sincronização automática:</strong> a cada 10 segundos o sistema verifica novos cards e atualizações.<br>
+            <strong>Status por coluna:</strong> o nome da lista no Trello determina o status no painel (ex: listas com "Agend" → Agendado, com nome de técnico → atribuído a esse técnico).<br>
+            <strong>Pausar sync:</strong> ADM pode pausar a sincronização automática clicando no botão ⏸ na barra superior. Útil durante manutenção.<br>
+            <strong>Badge TRL:</strong> cards vindos do Trello aparecem com a marcação azul <em>TRL</em> no Kanban.
+          </div>
+        </details>
+
+        <!-- Relatórios -->
+        <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">📈</span> Relatórios
+          </summary>
+          <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
+            <br>
+            Análise de desempenho com filtros por período (semana / mês / todos) e por tipo de contrato e nível.<br><br>
+            <strong>Métricas disponíveis:</strong><br>
+            — Total de chamados no período, resolvidos, em aberto e taxa de resolução.<br>
+            — Desempenho por técnico: total atribuído, resolvidos, em aberto e taxa (%).<br>
+            — Distribuição por tipo de contrato: Contrato, Garantia, Sem Garantia.<br>
+            — Problemas mais frequentes (por categoria).<br>
+            — Distribuição por sistema (RHID, iPonto, Atecsoft, etc.).<br>
+            — Distribuição N1 vs N2.<br><br>
+            Clique em <strong>Exportar CSV</strong> para baixar todos os dados em planilha.
+          </div>
+        </details>
+
+        <!-- Clientes -->
+        <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">🏢</span> Cadastro de Clientes
+          </summary>
+          <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
+            <br>
+            Cadastro completo de empresas clientes com CNPJ, contato, telefone, e-mail, sistema, tipo de contrato e data de vencimento.<br><br>
+            <strong>Busca unificada:</strong> no formulário de novo chamado, basta digitar a razão social ou CNPJ para buscar e preencher automaticamente os dados do cliente.<br><br>
+            Filtre por status (Ativo, Suspenso, Cancelado) e por tipo de contrato diretamente na listagem.
+          </div>
+        </details>
+
+        <!-- Administração -->
+        <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">⚙️</span> Administração (apenas ADM)
+          </summary>
+          <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
+            <br>
+            <strong>Usuários:</strong> crie, remova e redefina senhas de usuários. Perfis disponíveis: ADM (acesso total), Técnico (atendimento) e Leitor (só visualização).<br><br>
+            <strong>Permissões (ACL):</strong> configure o que cada perfil pode fazer — abrir chamados, finalizar, excluir, usar IA, acessar WhatsApp, exportar, etc.<br><br>
+            <strong>Configurações:</strong> altere sua senha, configure o Trello (key, token, board) e gerencie os membros da equipe. Membros cadastrados aqui aparecem como colunas no Kanban e como sugestão de atribuição.<br><br>
+            <strong>Corrigir atribuições:</strong> o botão <em>Corrigir atribuições</em> no Kanban percorre chamados resolvidos sem técnico e os atribui automaticamente pelo nome da etiqueta.
+          </div>
+        </details>
+
+        <!-- Senha -->
+        <details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+          <summary style="padding:14px 16px;cursor:pointer;font-weight:700;font-size:13px;list-style:none;display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">🔑</span> Alterar sua senha
+          </summary>
+          <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
+            <br>
+            <strong>1.</strong> Vá em <strong>Configurações</strong> no menu lateral.<br>
+            <strong>2.</strong> Localize a seção <strong>Alterar Senha</strong>.<br>
             <strong>3.</strong> Digite sua senha atual, a nova senha e confirme.<br>
-            <strong>4.</strong> Clique em <strong>"Alterar Senha"</strong>.<br><br>
-            Se você esqueceu sua senha, peça ao Administrador para redefini-la na tela de <strong>Usuários</strong>.
+            <strong>4.</strong> Clique em <strong>Alterar Senha</strong>.<br><br>
+            Se esqueceu a senha, peça ao ADM para redefini-la na tela de <strong>Usuários</strong> (botão 🔑 Senha ao lado do seu usuário).
           </div>
         </details>
 
       </div>
     </div>
+
 
     <!-- DESBLOQUEIO REP -->
     <div class="view" id="view-desbloqueio">
