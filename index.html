@@ -2703,8 +2703,7 @@ let kbItems = [
 ];
 
 // ─── Anthropic API helper ─────────────────────────────────────────────────────
-async function anthropicFetch(body) {
-  // Chama o proxy Netlify (evita CORS e mantém a chave segura no servidor)
+async function groqFetch(body) {
   const response = await fetch('/api/anthropic-proxy', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -2712,10 +2711,11 @@ async function anthropicFetch(body) {
   });
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.error?.message || `HTTP ${response.status}`);
+    throw new Error(err.error?.message || err.error || `HTTP ${response.status}`);
   }
   return response.json();
 }
+
 
 // ─── Bot AI Responses ─────────────────────────────────────────────────────────
 async function getBotResponse(userMessage) {
@@ -2736,7 +2736,7 @@ async function getBotResponse(userMessage) {
     }).join('\n');
 
   try {
-    const data = await anthropicFetch({
+    const data = await groqFetch({
       max_tokens: 450,
       system: 'Você é um assistente de suporte da Acesso e Ponto — REVENDEDORA de sistemas de ponto eletrônico (RHID, iPonto, Atecsoft). NÃO somos os fabricantes.\n' +
         'REGRAS:\n' +
@@ -3263,8 +3263,7 @@ async function generateKBItem() {
   status.textContent = 'A IA está analisando o problema...';
 
   try {
-    const data = await anthropicFetch({
-      model: 'claude-sonnet-4-20250514',
+    const data = await groqFetch({
       max_tokens: 1024,
       system: `Você é um especialista em suporte técnico de ponto eletrônico da Acesso e Ponto (RHID, iPonto, Atecsoft).
 Crie procedimentos de atendimento usando linguagem simples e do dia a dia.
@@ -5537,8 +5536,7 @@ async function generateAIReply() {
 
     const clienteHistorico = '';
 
-    const data = await anthropicFetch({
-      model: 'claude-sonnet-4-20250514',
+    const data = await groqFetch({
       max_tokens: 512,
       system: `Você é um técnico de suporte da Acesso e Ponto (RHID, iPonto, Atecsoft).
 Use linguagem simples e cotidiana — escreva como se estivesse conversando com um colega.
@@ -5972,7 +5970,7 @@ VOCÊ DEVE:
   ];
 
   try {
-    const data = await anthropicFetch({
+    const data = await groqFetch({
       max_tokens: 600,
       system: `Você é ${config.agentName}, do suporte da Acesso e Ponto.
 
