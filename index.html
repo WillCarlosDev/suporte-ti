@@ -5965,9 +5965,25 @@ VOCÊ DEVE:
   }
 
   const modeInstructions = {
-    'n1':    'Resolva problemas N1 diretamente usando a base de conhecimento. Para N2, informe que um técnico entrará em contato.',
-    'n1n2':  'Tente resolver N1 e N2 com a base de conhecimento. Escalone apenas casos muito complexos.',
-    'triage':'Faça apenas triagem: colete razão social, CNPJ, sistema e descrição do problema. Registre o chamado e informe que a equipe retornará.',
+    'n1':    `Você está em MODO N1. Resolva problemas N1 diretamente usando SOMENTE a base de conhecimento.
+Para problemas N2 ou que não estão na base: "Vou acionar nossa equipe técnica para analisar isso."
+Nunca invente soluções. Nunca dê passos que não estão na base de conhecimento.`,
+    'n1n2':  `Você está em MODO N1+N2. Tente resolver usando SOMENTE a base de conhecimento.
+Escalone para a equipe apenas se não encontrar solução na base de conhecimento.
+Nunca invente soluções.`,
+    'triage': `Você está em MODO TRIAGEM. Suas únicas tarefas são:
+1. Coletar: razão social, CNPJ, sistema utilizado e descrição do problema
+2. Abrir o chamado (linha CHAMADO:) assim que tiver todos os dados
+3. Informar ao cliente que a equipe retornará em breve
+
+PROIBIDO no modo triagem:
+- Tentar resolver qualquer problema
+- Dar instruções técnicas
+- Sugerir passos ou soluções
+- Consultar a base de conhecimento para ajudar
+
+Após coletar os dados, responda apenas: "Certo, registrei o seu chamado. Nossa equipe entra em contato assim que possível."
+Não acrescente mais nada além disso.`,
   }[config.mode] || '';
 
   // Monta mensagens com histórico
@@ -5995,10 +6011,10 @@ Dúvidas sobre o fabricante: "Isso é com o fabricante, mas posso verificar com 
 - PROIBIDO: parágrafos longos ou listas com mais de 3 itens de uma vez
 
 ═══════════ PRIMEIRA MENSAGEM — REGRA CRÍTICA ═══════════
-${!clienteCNPJ || !clienteEmpresa ? `Se esta é a primeira mensagem (sem histórico ou sem dados do cliente), você DEVE obrigatoriamente responder com exatamente isso — sem nada mais:
+${!clienteCNPJ || !clienteEmpresa ? `Se ainda não tem os dados completos do cliente, você DEVE pedir obrigatoriamente antes de qualquer outra coisa:
 
 "Olá, tudo bem? Aqui é o suporte da Acesso e Ponto.
-Para te ajudar, preciso de algumas informações:
+Para registrar seu atendimento, preciso de algumas informações:
 - Razão social da empresa
 - CNPJ
 - Sistema utilizado (RHID, iPonto ou Atecsoft)
@@ -6006,7 +6022,7 @@ Para te ajudar, preciso de algumas informações:
 
 Pode me passar esses dados?"
 
-Só prossiga com qualquer outra resposta após ter recebido esses dados.` : `Dados do cliente já coletados. Não peça novamente.`}
+Só prossiga após receber esses dados.` : `Dados do cliente já coletados. Não peça novamente.`}
 
 ═══════════ MODO DE OPERAÇÃO ═══════════
 ${modeInstructions}
