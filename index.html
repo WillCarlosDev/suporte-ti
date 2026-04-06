@@ -5916,8 +5916,10 @@ async function processWAMessage(fromNumber, messageText) {
     ? 'Pode descrever o que está acontecendo para deixarmos registrado?'
     : 'Para registrar o chamado, preciso de:\n- Razão social da empresa\n- CNPJ\n- Sistema utilizado (RHID, iPonto ou Atecsoft)\n- O que está acontecendo?';
 
+  // Resposta fixa fora do horário (sempre enviada, independente da IA)
   let respostForaHorario = '';
-  if (horario.foraDoDia) {
+  if (horario.foraDoDia && conversationHistory.length === 0) {
+    // Primeira mensagem fora do horário — resposta direta sem chamar IA
     if (horario.fimDeSemana) {
       respostForaHorario = `${_saudacao}! Recebemos sua mensagem, mas nosso atendimento funciona de segunda a sexta, das 08:00 às 18:00.\n\nA equipe retorna ${horario.proximoAtendimento}.\n\n${_coletaPedido}`;
     } else if (horario.antesDoExpediente) {
@@ -5925,6 +5927,11 @@ async function processWAMessage(fromNumber, messageText) {
     } else {
       respostForaHorario = `${_saudacao}! Nosso atendimento encerrou às 18:00.\n\nA equipe retorna ${horario.proximoAtendimento}.\n\n${_coletaPedido}`;
     }
+    // Salvar no histórico e retornar sem chamar IA
+    const updHist = [{ role: 'user', content: messageText }, { role: 'assistant', content: respostForaHorario }];
+    await saveWAConversation(fromNumber, clienteCNPJ, clienteEmpresa, updHist);
+    waLog('outgoing', `🌙 <span style="color:var(--text3)">[Fora do horário]</span> <strong>Agente</strong>: ${respostForaHorario.substring(0,150)}...`);
+    return respostForaHorario;
   }
 
   const horarioCtx = horario.foraDoDia
@@ -5939,8 +5946,8 @@ VOCÊ DEVE:
 
   const picoCtx = pico.ativo
     ? (pico.tipo === 'fechamento'
-        ? `\n⚠️ CONTEXTO IMPORTANTE — PERÍODO DE PICO: Hoje são os últimos dias do mês (dia ${new Date().getDate()}), período de fechamento de ponto. Nossa equipe está com volume muito alto de chamados. Quando o cliente perguntar sobre prazo de atendimento humano, seja transparente: "Estamos no período de fechamento de ponto e nosso suporte está bem movimentado agora 😅 Vou registrar e nossa equipe retorna assim que possível!" Tente resolver pelo bot antes de escalonar.`
-        : `\n⚠️ CONTEXTO IMPORTANTE — PERÍODO DE PICO: Início de mês (dia ${new Date().getDate()}), pico de dúvidas pós-fechamento. Alta demanda de suporte. Informe naturalmente se necessário: "Começo de mês é sempre corrido por aqui 😄 Mas vamos tentar resolver isso agora!"`)
+        ? `\n⚠️ CONTEXTO IMPORTANTE — PERÍODO DE PICO: Hoje são os últimos dias do mês (dia ${new Date().getDate()}), período de fechamento de ponto. Nossa equipe está com volume muito alto de chamados. Quando o cliente perguntar sobre prazo de atendimento humano, seja transparente: "Estamos no período de fechamento de ponto e nosso suporte está bem movimentado agora. Vou registrar e nossa equipe retorna assim que possível!" Tente resolver pelo bot antes de escalonar.`
+        : `\n⚠️ CONTEXTO IMPORTANTE — PERÍODO DE PICO: Início de mês (dia ${new Date().getDate()}), pico de dúvidas pós-fechamento. Alta demanda de suporte. Informe naturalmente se necessário: "Começo de mês é sempre corrido por aqui. Mas vamos tentar resolver isso agora!"`)
     : '';
 
   let clienteHistorico = '';
@@ -6036,8 +6043,7 @@ Faça isso na PRIMEIRA mensagem que tiver todos os dados. Não espere resolver o
     const chamadoLine = lines.find(l => l.startsWith('CHAMADO:'));
     const replyText = lines.filter(l => !l.startsWith('CHAMADO:')).join('\n').trim();
 
-    const _prefixLog = horario.foraDoDia ? '🌙 <span style="color:var(--text3)">[Fora do horário]</span> ' : '🤖 ';
-  waLog('outgoing', `${_prefixLog}<strong>Agente</strong>: ${replyText.substring(0, 200)}${replyText.length > 200 ? '...' : ''}`);
+    waLog('outgoing', `🤖 <strong>Agente</strong>: ${replyText.substring(0, 200)}${replyText.length > 200 ? '...' : ''}`);
 
     // Atualiza histórico com a nova troca
     const updatedHistory = [
@@ -6067,8 +6073,13 @@ Faça isso na PRIMEIRA mensagem que tiver todos os dados. Não espere resolver o
           cnpj:      clienteCNPJ
             ? clienteCNPJ.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
             : '—',
-          sistema:   sis?.trim().toLowerCase() || 'rhid',
-          prioridade:'avulso',
+          sistema:   sis?.trim().toLowerCase() || 'outro',
+          prioridade: (() => {
+            // Verificar se cliente tem contrato no cadastro
+            const cnpjNum = clienteCNPJ?.replace(/\D/g,'') || '';
+            const clienteDB = getClientes().find(cl => cl.cnpj?.replace(/\D/g,'') === cnpjNum);
+            return clienteDB?.prioridade || 'avulso';
+          })(),
           categoria: cat?.trim() || 'outro',
           nivel:     niv?.trim() || 'n1',
           status:    'aberto',
