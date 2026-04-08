@@ -2520,6 +2520,7 @@ function trelloCardCreatedAt(cardId) {
       if (existing) {
         const novoStatus = detectarStatusPorLista(listName);
         const novoAssigned = getMembros().find(m => listName.toLowerCase().includes(m.toLowerCase())) || existing.assignedTo;
+        const assignedAntes = existing.assignedTo;
         const mudou = existing.trelloListId !== card.idList || existing.sistema !== sistema || existing.prioridade !== prioridade;
         existing.trelloList   = listName;
         existing.trelloListId = card.idList;
@@ -2531,7 +2532,11 @@ function trelloCardCreatedAt(cardId) {
         existing.dueDate      = card.due || existing.dueDate || null;
         const horaM = (card.name + ' ' + (card.desc||'')).match(/\b([0-1]?\d|2[0-3]):[0-5]\d\b/);
         if (horaM) existing.horaAgendada = horaM[0];
-        if (novoAssigned) existing.assignedTo = novoAssigned;
+        // Só sobrescreve assignedTo se a coluna do Trello tem nome de técnico
+        // Se não tem, preserva o assignedTo atual (definido manualmente ou via label)
+        const membrosNaLista = getMembros().find(m => listName.toLowerCase().includes(m.toLowerCase()));
+        if (membrosNaLista) existing.assignedTo = membrosNaLista;
+        // Se não tem técnico na coluna, NÃO mexe no assignedTo existente
         if (empresa !== '—') existing.empresa = empresa;
         existing.labels = card.labels.map(l => ({ id:l.id, name:l.name||l.color, color:l.color, trelloId:l.id }));
         if (mudou) { atualizados++; updateTicketInDB(existing); }
