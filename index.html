@@ -2237,7 +2237,11 @@ async function loadTicketsFromDB() {
         fromTrello:    r.from_trello,
         fromWhatsApp:  r.from_whatsapp,
         whatsappPhone: r.whatsapp_phone || null,
-        assignedTo:    r.assigned_to    || null,
+        // Preserva assignedTo da memória se banco está vazio mas memória tem valor
+        assignedTo:    r.assigned_to || (() => {
+          const emMem = tickets.find(t => t.id === r.id);
+          return emMem?.assignedTo || null;
+        })(),
         labels:        r.labels         || [],
         tipoChamado:   r.tipo_chamado   || 'normal',
         dueDate:       r.due_date       || null,
@@ -2250,6 +2254,7 @@ async function loadTicketsFromDB() {
       // Mantém tickets do Trello que não estão no DB
       const trelloOnly = tickets.filter(t => t.fromTrello && !dbTickets.find(d => d.id === t.id));
       tickets = [...dbTickets, ...trelloOnly];
+
     }
   } catch(e) {
     console.warn('Erro ao carregar chamados do DB:', e.message);
@@ -2541,12 +2546,29 @@ function trelloCardCreatedAt(cardId) {
         if (empresa !== '—') existing.empresa = empresa;
         // Mesclar labels: manter labels manuais (sem trelloId) + atualizar labels do Trello
         const labelsDoTrello = card.labels.map(l => ({ id:l.id, name:l.name||l.color, color:l.color, trelloId:l.id }));
-        const labelsManuais  = (existing.labels || []).filter(l => !l.trelloId); // labels adicionadas manualmente no painel
+        const labelsManuais  = (existing.labels || []).filter(l => !l.trelloId);
         existing.labels = [...labelsDoTrello, ...labelsManuais];
 
-        // Salvar se mudou alguma coisa relevante
+        // Detectar mudança de assignedTo — inclui quando técnico detectado pela coluna
         const assignedMudou = existing.assignedTo !== assignedAntes;
-        if (mudou || assignedMudou) { atualizados++; updateTicketInDB(existing); }
+
+        // Aplicar assignedTo também via labels se ainda não tem técnico
+        if (!existing.assignedTo) {
+          for (const label of existing.labels) {
+            const ln = (label.name || label.color || '').toLowerCase();
+            const mb = getMembros().find(m => {
+              const mn = m.toLowerCase();
+              return ln === mn || ln.includes(mn) || mn.includes(ln);
+            });
+            if (mb) { existing.assignedTo = mb; break; }
+          }
+        }
+
+        // Sempre salvar se assignedTo mudou — garante persistência no banco
+        if (mudou || assignedMudou || (existing.assignedTo && !assignedAntes)) {
+          atualizados++;
+          updateTicketInDB(existing);
+        }
       } else {
         const statusTrello = detectarStatusPorLista(listName);
         const assignedTrello = getMembros().find(m => listName.toLowerCase().includes(m.toLowerCase())) || null;
@@ -2603,12 +2625,13 @@ function startTrelloPolling() {
   if (trelloPollingInterval) clearInterval(trelloPollingInterval);
   trelloPollingInterval = setInterval(() => syncFromTrello(true), 10000);
 
-  // Recarrega dados do Supabase a cada 30s — captura mudanças feitas por outros usuários
+  // DB poll: só recarrega quando não está sincronizando com Trello
+  // Intervalo maior (60s) para não oscilar — Trello sync já mantém estado atualizado
   if (_dbPollingInterval) clearInterval(_dbPollingInterval);
   _dbPollingInterval = setInterval(async () => {
+    if (isSyncing) return;
     await loadTicketsFromDB();
-    renderAll();
-  }, 10000);
+  }, 60000);
 }
 
 async function initTrello() {
