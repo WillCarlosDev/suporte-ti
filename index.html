@@ -2150,6 +2150,7 @@ function atualizarBotaoPause() {
 
 function stopTrelloPolling() {
   if (trelloPollingInterval) { clearInterval(trelloPollingInterval); trelloPollingInterval = null; }
+  if (_dbPollingInterval)    { clearInterval(_dbPollingInterval);    _dbPollingInterval    = null; }
 }
 
 async function addUser() {
@@ -2596,9 +2597,18 @@ function updateSyncIndicator() {
   if (el && lastTrelloSync) el.textContent = `🟢 Última sync: ${lastTrelloSync.toLocaleTimeString('pt-BR')}`;
 }
 
+let _dbPollingInterval = null;
+
 function startTrelloPolling() {
   if (trelloPollingInterval) clearInterval(trelloPollingInterval);
   trelloPollingInterval = setInterval(() => syncFromTrello(true), 10000);
+
+  // Recarrega dados do Supabase a cada 30s — captura mudanças feitas por outros usuários
+  if (_dbPollingInterval) clearInterval(_dbPollingInterval);
+  _dbPollingInterval = setInterval(async () => {
+    await loadTicketsFromDB();
+    renderAll();
+  }, 10000);
 }
 
 async function initTrello() {
