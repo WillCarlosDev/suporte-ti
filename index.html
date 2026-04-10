@@ -4938,14 +4938,14 @@ function timeAgo(ts) {
 
 // ─── Labels / Etiquetas ───────────────────────────────────────────────────────
 const LABEL_COLORS = {
-  green:  { bg:'rgba(0,229,160,0.18)',  text:'#00e5a0', dot:'🟢' },
-  blue:   { bg:'rgba(0,144,255,0.18)',  text:'#0090ff', dot:'🔵' },
-  orange: { bg:'rgba(255,107,53,0.18)', text:'#ff6b35', dot:'🟠' },
-  red:    { bg:'rgba(255,71,87,0.18)',  text:'#ff4757', dot:'🔴' },
-  yellow: { bg:'rgba(255,200,0,0.18)',  text:'#ffc800', dot:'🟡' },
-  purple: { bg:'rgba(160,100,255,0.18)',text:'#a064ff', dot:'🟣' },
-  pink:   { bg:'rgba(244,114,182,0.18)',text:'#f472b6', dot:'🩵' },
-  teal:   { bg:'rgba(45,212,191,0.18)', text:'#2dd4bf', dot:'🩵' },
+  green:  { bg:'rgba(0,229,160,0.18)',  text:'#00e5a0', dot:'●' },
+  blue:   { bg:'rgba(0,144,255,0.18)',  text:'#0090ff', dot:'●' },
+  orange: { bg:'rgba(255,107,53,0.18)', text:'#ff6b35', dot:'●' },
+  red:    { bg:'rgba(255,71,87,0.18)',  text:'#ff4757', dot:'●' },
+  yellow: { bg:'rgba(255,200,0,0.18)',  text:'#ffc800', dot:'●' },
+  purple: { bg:'rgba(160,100,255,0.18)',text:'#a064ff', dot:'●' },
+  pink:   { bg:'rgba(244,114,182,0.18)',text:'#f472b6', dot:'●' },
+  teal:   { bg:'rgba(45,212,191,0.18)', text:'#2dd4bf', dot:'●' },
 };
 
 // Dados de equipamentos e sistemas
@@ -5105,7 +5105,7 @@ function renderModalLabels(t) {
   chips.innerHTML = (t.labels||[]).map((l,i) => {
     const clr = LABEL_COLORS[l.color] || LABEL_COLORS.blue;
     return `<span style="background:${clr.bg};color:${clr.text};border-radius:5px;padding:2px 8px;font-size:11px;font-family:var(--mono);display:inline-flex;align-items:center;gap:4px">
-      ${clr.dot} <span ondblclick="editarLabel(${i})" title="Clique duplo para editar" style="cursor:text">${l.name||l.color}</span>
+      <span style="color:${clr.text};font-size:10px;margin-right:2px">●</span> <span ondblclick="editarLabel(${i})" title="Clique duplo para editar" style="cursor:text">${l.name||l.color}</span>
       <span onclick="removeLabel(${i})" style="cursor:pointer;opacity:0.6;margin-left:2px" title="Remover etiqueta">✕</span>
     </span>`;
   }).join('');
