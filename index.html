@@ -2538,8 +2538,14 @@ function trelloCardCreatedAt(cardId) {
         if (membrosNaLista) existing.assignedTo = membrosNaLista;
         // Se não tem técnico na coluna, NÃO mexe no assignedTo existente
         if (empresa !== '—') existing.empresa = empresa;
-        existing.labels = card.labels.map(l => ({ id:l.id, name:l.name||l.color, color:l.color, trelloId:l.id }));
-        if (mudou) { atualizados++; updateTicketInDB(existing); }
+        // Mesclar labels: manter labels manuais (sem trelloId) + atualizar labels do Trello
+        const labelsDoTrello = card.labels.map(l => ({ id:l.id, name:l.name||l.color, color:l.color, trelloId:l.id }));
+        const labelsManuais  = (existing.labels || []).filter(l => !l.trelloId); // labels adicionadas manualmente no painel
+        existing.labels = [...labelsDoTrello, ...labelsManuais];
+
+        // Salvar se mudou alguma coisa relevante
+        const assignedMudou = existing.assignedTo !== assignedAntes;
+        if (mudou || assignedMudou) { atualizados++; updateTicketInDB(existing); }
       } else {
         const statusTrello = detectarStatusPorLista(listName);
         const assignedTrello = getMembros().find(m => listName.toLowerCase().includes(m.toLowerCase())) || null;
