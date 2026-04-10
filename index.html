@@ -429,6 +429,7 @@
     .kb-grid { grid-template-columns: 1fr; }
   }
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <!-- LOGIN SCREEN -->
@@ -1985,6 +1986,14 @@ function loadGlobalApiKey() { /* chave gerenciada no servidor */ }
 // ─── Supabase — conexão direta (mover para env vars Vercel quando proxy deployado)
 const SB_URL = 'https://civxugoribdwlnghbzbx.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpdnh1Z29yaWJkd2xuZ2hiemJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2OTk5MjIsImV4cCI6MjA4ODI3NTkyMn0.61i5vSMdMTjHTJzpFlEAKBj-S8r6chY-l0B1sOXLgp4';
+// ── Supabase JS Client (Realtime) ─────────────────────────────────────
+let _sbClient = null;
+function getSBClient() {
+  if (!_sbClient && window.supabase) {
+    _sbClient = window.supabase.createClient(SB_URL, SB_KEY);
+  }
+  return _sbClient;
+}
 
 async function sbFetch(path, method = 'GET', body = null, extra = {}) {
   const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
@@ -2148,9 +2157,102 @@ function atualizarBotaoPause() {
   btn.style.display = (currentUser?.role === 'adm' && trelloAtivo) ? 'inline-flex' : 'none';
 }
 
+// ── Supabase Realtime ────────────────────────────────────────────────
+let _realtimeChannel = null;
+
+function startRealtimeSync() {
+  const sb = getSBClient();
+  if (!sb) {
+    console.warn('supabase-js não disponível — usando polling');
+    return;
+  }
+
+  // Remover canal anterior se existir
+  if (_realtimeChannel) sb.removeChannel(_realtimeChannel);
+
+  _realtimeChannel = sb.channel('chamados-realtime')
+    .on('postgres_changes', {
+      event:  '*', // INSERT, UPDATE, DELETE
+      schema: 'public',
+      table:  'chamados',
+    }, async (payload) => {
+      // Evento recebido do banco — atualizar estado local sem polling
+      const { eventType, new: novo, old: antigo } = payload;
+
+      if (eventType === 'INSERT' && novo?.id) {
+        const jaExiste = tickets.find(t => t.id === novo.id);
+        if (!jaExiste) {
+          tickets.unshift(mapRowToTicket(novo));
+          renderAll();
+        }
+      } else if (eventType === 'UPDATE' && novo?.id) {
+        const idx = tickets.findIndex(t => t.id === novo.id);
+        if (idx >= 0) {
+          // Preserva campos de memória que não estão no banco
+          const memTicket = tickets[idx];
+          tickets[idx] = {
+            ...memTicket,
+            ...mapRowToTicket(novo),
+            // Preservar assignedTo da memória se banco está null
+            assignedTo: novo.assigned_to || memTicket.assignedTo || null,
+          };
+          renderAll();
+        }
+      } else if (eventType === 'DELETE' && antigo?.id) {
+        tickets = tickets.filter(t => t.id !== antigo.id);
+        renderAll();
+      }
+    })
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('✅ Supabase Realtime conectado — atualizações instantâneas ativas');
+      } else if (status === 'CHANNEL_ERROR') {
+        console.warn('⚠️ Realtime com erro — mantendo polling como fallback');
+      }
+    });
+}
+
+// Mapear row do banco para objeto ticket
+function mapRowToTicket(r) {
+  return {
+    id:            r.id,
+    nome:          r.nome,
+    empresa:       r.empresa,
+    cnpj:          r.cnpj,
+    sistema:       r.sistema,
+    prioridade:    r.prioridade,
+    categoria:     r.categoria,
+    nivel:         r.nivel,
+    status:        r.status,
+    desc:          r.descricao,
+    contato:       r.contato        || null,
+    trelloCardId:  r.trello_card_id,
+    trelloList:    r.trello_list,
+    trelloListId:  r.trello_list_id,
+    fromTrello:    r.from_trello,
+    fromWhatsApp:  r.from_whatsapp,
+    whatsappPhone: r.whatsapp_phone || null,
+    assignedTo:    r.assigned_to    || null,
+    labels:        r.labels         || [],
+    tipoChamado:   r.tipo_chamado   || 'normal',
+    dueDate:       r.due_date       || null,
+    horaAgendada:  r.hora_agendada  || null,
+    finalizadoEm:  r.finalizado_em  || null,
+    finalizadoPor: r.finalizado_por || null,
+    replies:       r.replies        || [],
+    time:          new Date(r.created_at || Date.now()).getTime(),
+  };
+}
+
 function stopTrelloPolling() {
   if (trelloPollingInterval) { clearInterval(trelloPollingInterval); trelloPollingInterval = null; }
   if (_dbPollingInterval)    { clearInterval(_dbPollingInterval);    _dbPollingInterval    = null; }
+  // Desconectar Realtime
+  if (_realtimeChannel) {
+    const sb = getSBClient();
+    if (sb) sb.removeChannel(_realtimeChannel);
+    _realtimeChannel = null;
+  }
 }
 
 async function addUser() {
@@ -2219,38 +2321,13 @@ async function loadTicketsFromDB() {
   try {
     const rows = await sbFetch('chamados?select=*&order=created_at.desc');
     if (rows && rows.length > 0) {
-      const dbTickets = rows.map(r => ({
-        id:            r.id,
-        nome:          r.nome,
-        empresa:       r.empresa,
-        cnpj:          r.cnpj,
-        sistema:       r.sistema,
-        prioridade:    r.prioridade,
-        categoria:     r.categoria,
-        nivel:         r.nivel,
-        status:        r.status,
-        desc:          r.descricao,
-        contato:       r.contato        || null,
-        trelloCardId:  r.trello_card_id,
-        trelloList:    r.trello_list,
-        trelloListId:  r.trello_list_id,
-        fromTrello:    r.from_trello,
-        fromWhatsApp:  r.from_whatsapp,
-        whatsappPhone: r.whatsapp_phone || null,
-        // Preserva assignedTo da memória se banco está vazio mas memória tem valor
-        assignedTo:    r.assigned_to || (() => {
-          const emMem = tickets.find(t => t.id === r.id);
-          return emMem?.assignedTo || null;
-        })(),
-        labels:        r.labels         || [],
-        tipoChamado:   r.tipo_chamado   || 'normal',
-        dueDate:       r.due_date       || null,
-        horaAgendada:  r.hora_agendada  || null,
-        finalizadoEm:  r.finalizado_em  || null,
-        finalizadoPor: r.finalizado_por || null,
-        replies:       r.replies        || [],
-        time:          new Date(r.created_at).getTime(),
-      }));
+      const dbTickets = rows.map(r => {
+        const t = mapRowToTicket(r);
+        // Preservar assignedTo da memória se banco está vazio
+        const emMem = tickets.find(m => m.id === r.id);
+        if (!t.assignedTo && emMem?.assignedTo) t.assignedTo = emMem.assignedTo;
+        return t;
+      });
       // Mantém tickets do Trello que não estão no DB
       const trelloOnly = tickets.filter(t => t.fromTrello && !dbTickets.find(d => d.id === t.id));
       tickets = [...dbTickets, ...trelloOnly];
@@ -2295,7 +2372,23 @@ async function saveTicketToDB(t) {
   }
 }
 
-async function updateTicketInDB(t) {
+// ── Fila de writes com debounce (evita escritas duplicadas) ──────────
+const _writeQueue = new Map(); // id → {ticket, timer}
+function updateTicketInDB(t) {
+  if (!t?.id) return;
+  // Cancelar write anterior pendente para este ticket
+  if (_writeQueue.has(t.id)) {
+    clearTimeout(_writeQueue.get(t.id).timer);
+  }
+  // Agendar write com debounce de 800ms
+  const timer = setTimeout(async () => {
+    _writeQueue.delete(t.id);
+    await _flushTicketToDB(t);
+  }, 800);
+  _writeQueue.set(t.id, { ticket: t, timer });
+}
+
+async function _flushTicketToDB(t) {
   try {
     await sbFetch(`chamados?id=eq.${encodeURIComponent(t.id)}`, 'PATCH', {
       status:        t.status,
@@ -2624,6 +2717,9 @@ let _dbPollingInterval = null;
 function startTrelloPolling() {
   if (trelloPollingInterval) clearInterval(trelloPollingInterval);
   trelloPollingInterval = setInterval(() => syncFromTrello(true), 10000);
+
+  // ── Supabase Realtime — recebe mudanças instantâneas da tabela chamados
+  startRealtimeSync();
 
   // DB poll: só recarrega quando não está sincronizando com Trello
   // Intervalo maior (60s) para não oscilar — Trello sync já mantém estado atualizado
