@@ -6479,8 +6479,8 @@ async function atribuirTecnicosPorLabels() {
   const membros = getMembros();
   let count = 0;
 
+  // Processar TODOS os chamados sem técnico (não só resolvidos)
   const paraAtualizar = tickets.filter(t =>
-    t.status === 'resolvido' &&
     !t.assignedTo &&
     Array.isArray(t.labels) &&
     t.labels.length > 0
@@ -6489,32 +6489,45 @@ async function atribuirTecnicosPorLabels() {
   const btn = document.getElementById('btn-fix-labels');
   if (btn) { btn.textContent = '⏳ Processando...'; btn.disabled = true; }
   try {
-  for (const t of paraAtualizar) {
-    // Procurar label cujo nome bate com um membro da equipe
-    const labelTecnico = t.labels.find(l =>
-      membros.some(m => (l.name || '').toLowerCase() === m.toLowerCase())
-    );
-    if (labelTecnico) {
-      const membro = membros.find(m =>
-        m.toLowerCase() === (labelTecnico.name || '').toLowerCase()
-      );
-      if (membro) {
-        t.assignedTo    = membro;
-        t.finalizadoPor = t.finalizadoPor || membro;
+    for (const t of paraAtualizar) {
+      // Busca flexível: label que CONTÉM o nome do técnico (não exato)
+      // Ex: label "Willian ADM", "W - Willian", "willian" batem com membro "Willian"
+      let membroEncontrado = null;
+
+      for (const label of t.labels) {
+        const labelNome = (label.name || label.color || '').toLowerCase().trim();
+        if (!labelNome) continue;
+
+        // Verificar se algum membro está contido no nome da label ou vice-versa
+        const membro = membros.find(m => {
+          const mn = m.toLowerCase();
+          return labelNome === mn              // exato
+              || labelNome.includes(mn)        // label contém o nome (ex: "Willian ADM")
+              || mn.includes(labelNome);       // nome contém a label (ex: label "will" bate "Willian")
+        });
+
+        if (membro) { membroEncontrado = membro; break; }
+      }
+
+      if (membroEncontrado) {
+        t.assignedTo    = membroEncontrado;
+        // Só preenche finalizadoPor se chamado resolvido e ainda não tem
+        if (t.status === 'resolvido' && !t.finalizadoPor) {
+          t.finalizadoPor = membroEncontrado;
+        }
         await updateTicketInDB(t);
         count++;
       }
     }
-  }
-
   } finally {
     if (btn) { btn.textContent = '🔖 Corrigir atribuições'; btn.disabled = false; }
   }
+
   if (count > 0) {
     renderAll();
-    showNotif(`✅ ${count} chamado(s) atribuído(s)!`);
+    showNotif(`✅ ${count} chamado(s) atribuído(s) pelo técnico da etiqueta!`);
   } else {
-    showNotif('Nenhum chamado sem técnico encontrado.', 'warn');
+    showNotif('Nenhum chamado sem técnico encontrado com etiqueta de membro.', 'warn');
   }
 }
 
