@@ -1296,6 +1296,30 @@
         </div>
 
         <div class="form-group full">
+          <label class="form-label">Tipo de Abertura</label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text2)">
+              <input type="radio" name="f-tipo-abertura" value="aberto" checked
+                onchange="document.getElementById('f-agendamento-group').style.display='none'"
+                style="accent-color:var(--accent)"> Abrir agora
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text2)">
+              <input type="radio" name="f-tipo-abertura" value="agendado"
+                onchange="document.getElementById('f-agendamento-group').style.display='grid'"
+                style="accent-color:var(--accent)"> Agendar
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group full" id="f-agendamento-group" style="display:none">
+          <label class="form-label">Data e Hora do Agendamento</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <input type="date" class="form-input" id="f-data-agend" />
+            <input type="time" class="form-input" id="f-hora-agend" placeholder="09:00" />
+          </div>
+        </div>
+
+        <div class="form-group full">
           <label class="form-label">Descrição do Problema</label>
           <textarea class="form-textarea" id="f-descricao" placeholder="Descreva o problema em detalhes..."></textarea>
         </div>
@@ -2183,6 +2207,8 @@ function startRealtimeSync() {
         const jaExiste = tickets.find(t => t.id === novo.id);
         if (!jaExiste) {
           tickets.unshift(mapRowToTicket(novo));
+          // Deduplicar por segurança (evita duplicatas entre Realtime e polling)
+          tickets = tickets.filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
           renderAll();
         }
       } else if (eventType === 'UPDATE' && novo?.id) {
@@ -2197,6 +2223,10 @@ function startRealtimeSync() {
             assignedTo: novo.assigned_to || memTicket.assignedTo || null,
           };
           renderAll();
+          // Re-renderizar modal se o ticket atualizado está aberto
+          if (_currentTicketId === novo.id) {
+            showTicketDetail(novo.id);
+          }
         }
       } else if (eventType === 'DELETE' && antigo?.id) {
         tickets = tickets.filter(t => t.id !== antigo.id);
@@ -2330,7 +2360,9 @@ async function loadTicketsFromDB() {
       });
       // Mantém tickets do Trello que não estão no DB
       const trelloOnly = tickets.filter(t => t.fromTrello && !dbTickets.find(d => d.id === t.id));
-      tickets = [...dbTickets, ...trelloOnly];
+      // Mesclar e deduplicar — evita duplicatas entre DB e Realtime
+      const merged = [...dbTickets, ...trelloOnly];
+      tickets = merged.filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
 
     }
   } catch(e) {
@@ -4797,6 +4829,10 @@ function createTicket() {
   const nivel      = document.getElementById('f-nivel').value;
   const desc     = document.getElementById('f-descricao').value.trim();
 
+  const tipoAbertura = document.querySelector('input[name="f-tipo-abertura"]:checked')?.value || 'aberto';
+  const dataAgend    = document.getElementById('f-data-agend')?.value || '';
+  const horaAgend    = document.getElementById('f-hora-agend')?.value || '';
+
   if (!nome || !contato || !empresa || !cnpj || !sistema || !selectedPriority) {
     showNotif('⚠️ Preencha: Nome, Contato, Razão Social, CNPJ, Suporte e Prioridade.', 'warn');
     return;
@@ -4808,9 +4844,11 @@ function createTicket() {
     prioridade: selectedPriority,
     categoria: categoria || 'outro',
     nivel,
-    status: 'aberto',
-    desc: desc || 'Sem descrição adicional.',
-    time: Date.now()
+    status:       tipoAbertura === 'agendado' ? 'agendado' : 'aberto',
+    dueDate:      tipoAbertura === 'agendado' && dataAgend ? dataAgend : null,
+    horaAgendada: tipoAbertura === 'agendado' && horaAgend ? horaAgend : null,
+    desc:         desc || 'Sem descrição adicional.',
+    time:         Date.now()
   };
 
   tickets.unshift(newTicket);
@@ -4829,6 +4867,15 @@ function clearForm() {
   document.getElementById('f-nivel').value = 'n1';
   selectedPriority = '';
   ['contrato','garantia','avulso'].forEach(x => document.getElementById('pb-'+x).className = 'priority-btn');
+  // Resetar campos de agendamento
+  const radioAberto = document.querySelector('input[name="f-tipo-abertura"][value="aberto"]');
+  if (radioAberto) radioAberto.checked = true;
+  const agGroup = document.getElementById('f-agendamento-group');
+  if (agGroup) agGroup.style.display = 'none';
+  const fData = document.getElementById('f-data-agend');
+  const fHora = document.getElementById('f-hora-agend');
+  if (fData) fData.value = '';
+  if (fHora) fHora.value = '';
 }
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────
@@ -5405,6 +5452,7 @@ function showNotif(text, type='') {
 }
 
 function showTicketDetail(id) {
+  _currentTicketId = id; // guardar para re-renderizar se Realtime atualizar
   const t = tickets.find(x => x.id === id);
   if (!t) return;
   if (!t.replies) t.replies = [];
@@ -5888,6 +5936,7 @@ async function reativarTicket() {
 }
 
 function closeModal() {
+  _currentTicketId = null; // limpar referência ao ticket aberto
   const _tmClose = document.getElementById('ticket-modal');
   _tmClose.classList.add('hidden');
   _tmClose.style.display = 'none';
