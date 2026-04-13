@@ -2359,7 +2359,11 @@ async function loadTicketsFromDB() {
         return t;
       });
       // Mantém tickets do Trello que não estão no DB
-      const trelloOnly = tickets.filter(t => t.fromTrello && !dbTickets.find(d => d.id === t.id));
+      // Excluir tickets do Trello que já existem no banco (por ID ou por trelloCardId)
+      const trelloOnly = tickets.filter(t =>
+        t.fromTrello &&
+        !dbTickets.find(d => d.id === t.id || (d.trelloCardId && d.trelloCardId === t.trelloCardId))
+      );
       // Mesclar e deduplicar — evita duplicatas entre DB e Realtime
       const merged = [...dbTickets, ...trelloOnly];
       tickets = merged.filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
@@ -2713,7 +2717,9 @@ function trelloCardCreatedAt(cardId) {
           assignedTo: assignedTrello,
           labels: card.labels.map(l => ({ id:l.id, name:l.name||l.color, color:l.color, trelloId:l.id })),
         };
-        tickets.push(newT);
+        // Só adiciona se não existe no banco com esse trelloCardId
+        const jaNosBanco = tickets.find(t => !t.fromTrello && t.trelloCardId === card.id);
+        if (!jaNosBanco) tickets.push(newT);
         saveTicketToDB(newT);
         novos++;
       }
@@ -2962,6 +2968,8 @@ function showView(name) {
 }
 
 function renderAll() {
+  // Deduplicar tickets[] antes de renderizar — prevenção contra race conditions
+  tickets = tickets.filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
   renderStats();
   // dashboard usa apenas totalizadores — sem kanban
   popularFiltroTecnico();
