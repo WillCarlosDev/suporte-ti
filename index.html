@@ -3126,7 +3126,11 @@ function renderStats() {
     const online  = getUsuariosOnline().map(u => u.username.toLowerCase());
     const rows = membros.map((m, idx) => {
       const cor        = MEMBER_COLORS[idx % MEMBER_COLORS.length];
-      const atribuidos = emAberto.filter(t => t.assignedTo === m);
+      // Mesmo filtro do kanban: só chamados ativos (sem agendados/pendências/não atendidos)
+      const atribuidos = tickets.filter(t =>
+        t.assignedTo === m &&
+        !['agendado','pendencia','nao-atendido','resolvido'].includes(t.status)
+      );
       const isOnline   = online.includes(m.toLowerCase());
       return { m, cor, atribuidos, isOnline };
     });
