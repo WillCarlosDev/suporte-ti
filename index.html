@@ -99,8 +99,6 @@
     cursor: pointer; transition: all 0.15s; font-family: var(--sans);
   }
   .status-btn:hover { border-color: var(--text); color: var(--text); }
-  .status-btn.sel-aberto { border-color: #ff4757; color: #ff4757; background: rgba(255,71,87,0.08); }
-  .status-btn.sel-resolvido { border-color: var(--accent); color: var(--accent); background: rgba(0,229,160,0.08); }
 
   /* ── WhatsApp Agent View ── */
   .wa-layout { display: grid; grid-template-columns: 300px 1fr; gap: 0; height: calc(100vh - 160px); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
@@ -222,20 +220,6 @@
   .kanban-cards { padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 80px; max-height: 520px; overflow-y: auto; }
 
   /* ── Utilitários de layout frequentes ── */
-  .flex-center { display: flex; align-items: center; }
-  .flex-between { display: flex; align-items: center; justify-content: space-between; }
-  .flex-col { display: flex; flex-direction: column; }
-  .text-mono { font-family: var(--mono); }
-  .text-sm { font-size: 11px; }
-  .text-xs { font-size: 10px; }
-  .text-muted { color: var(--text3); }
-  .text-secondary { color: var(--text2); }
-  .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .section-label { font-size: 10px; color: var(--text3); font-family: var(--mono); letter-spacing: 1.2px; margin-bottom: 8px; }
-  .card-surface { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-  .badge-pill { font-size: 9px; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-family: var(--mono); }
-  .btn-icon { background: none; border: none; cursor: pointer; color: var(--text3); padding: 4px 6px; border-radius: 4px; font-size: 13px; line-height: 1; transition: color .15s; }
-  .btn-icon:hover { color: var(--text); background: var(--surface3); }
 
   /* ── Responsividade básica ── */
   @media (max-width: 1100px) {
@@ -245,14 +229,11 @@
   @media (max-width: 900px) {
     .sidebar { display: none; }
     .main { margin-left: 0 !important; }
-    .topbar-right .topbar-search { display: none; }
     .kanban { grid-template-columns: repeat(2, minmax(200px, 1fr)) !important; }
-    .report-grid-2col { grid-template-columns: 1fr !important; }
     .modal-box { max-width: 98vw !important; margin: 4px; }
   }
   @media (max-width: 600px) {
     .kanban { grid-template-columns: 1fr !important; }
-    .stats-bar { grid-template-columns: repeat(2, 1fr) !important; }
     .page-header { flex-direction: column; align-items: flex-start !important; }
   }
   .ticket-card {
@@ -296,9 +277,6 @@
     cursor: pointer; transition: all 0.15s; text-align: center;
   }
   .priority-btn:hover { border-color: var(--text2); color: var(--text); }
-  .priority-btn.selected-contrato { border-color: var(--accent); color: var(--accent); background: rgba(0,229,160,0.08); }
-  .priority-btn.selected-garantia { border-color: var(--accent2); color: var(--accent2); background: rgba(0,144,255,0.08); }
-  .priority-btn.selected-avulso { border-color: var(--accent3); color: var(--accent3); background: rgba(255,107,53,0.08); }
   .btn-primary {
     background: var(--accent); color: #000; border: none; border-radius: 8px;
     padding: 11px 24px; font-weight: 700; font-size: 14px; cursor: pointer;
@@ -555,8 +533,6 @@
 
   <!-- MAIN -->
   <main class="main">
-
-
 
     <!-- CLIENTES -->
     <div class="view" id="view-clientes">
@@ -956,7 +932,6 @@
 
       </div>
     </div>
-
 
     <!-- DESBLOQUEIO REP -->
     <div class="view" id="view-desbloqueio">
@@ -1998,14 +1973,8 @@ Para iniciar, informe:
 <div class="notif-stack" id="notif-stack"></div>
 
 <script>
-function saveGlobalApiKey() {
-  // Chave gerenciada pelo servidor (proxy Vercel) — não necessária no cliente
-  showNotif('ℹ️ Chave de IA gerenciada pelo servidor — nenhuma configuração necessária.', '');
-}
-
 
 function loadGlobalApiKey() { /* chave gerenciada no servidor */ }
-
 
 // ─── Supabase — conexão direta (mover para env vars Vercel quando proxy deployado)
 const SB_URL = 'https://civxugoribdwlnghbzbx.supabase.co';
@@ -2127,7 +2096,6 @@ function doLogout() {
   document.getElementById('login-pass').value = '';
   document.getElementById('login-error').classList.remove('show');
 }
-
 
 // ─── Controle de Pausa do Trello Sync ─────────────────────────────────────────
 function toggleTrelloPause() {
@@ -2501,7 +2469,6 @@ async function trelloGET(path) {
   return res.json();
 }
 
-
 // Tenta categorizar o card pelo nome/descrição usando palavras-chave
 function categorizarCard(name, desc) {
   const txt = (name + ' ' + desc).toLowerCase();
@@ -2563,8 +2530,6 @@ function detectarPrioridade(labels) {
   return 'avulso';
 }
 
-
-
 // ─── Trello Sync Bidirecional ─────────────────────────────────────────────────
 let trelloPollingInterval = null;
 let lastTrelloSync        = null;
@@ -2615,7 +2580,6 @@ async function syncFromTrello(silent = false) {
     const lists = await trelloGET(`/boards/${TRELLO.board}/lists`);
     TRELLO.lists = {}; TRELLO.listOrder = [];
     lists.forEach(l => { TRELLO.lists[l.id] = l.name; TRELLO.listOrder.push({ id: l.id, name: l.name }); });
-
 
 function detectarStatusPorLista(listName) {
   const n = (listName || '').toLowerCase();
@@ -2759,13 +2723,10 @@ function startTrelloPolling() {
   // ── Supabase Realtime — recebe mudanças instantâneas da tabela chamados
   startRealtimeSync();
 
-  // DB poll: só recarrega quando não está sincronizando com Trello
-  // Intervalo maior (60s) para não oscilar — Trello sync já mantém estado atualizado
+  // DB poll desativado — Supabase Realtime cobre atualizações instantâneas
+  // loadTicketsFromDB ainda é chamado no login (initApp) para carga inicial
   if (_dbPollingInterval) clearInterval(_dbPollingInterval);
-  _dbPollingInterval = setInterval(async () => {
-    if (isSyncing) return;
-    await loadTicketsFromDB();
-  }, 60000);
+  _dbPollingInterval = null; // sem polling periódico
 }
 
 async function initTrello() {
@@ -2796,13 +2757,10 @@ let tickets = [...defaultTickets];
 
 let selectedPriority = '';
 
-
 // chatProfiles e chatHistories agora são dinâmicos
 let chatProfiles  = [];
 let chatHistories = [];
 let currentChat   = -1; // -1 = nenhuma selecionada
-
-
 
 // ─── Knowledge Base ──────────────────────────────────────────────────────────
 let kbItems = [
@@ -2894,7 +2852,6 @@ async function groqFetch(body) {
   return response.json();
 }
 
-
 // ─── Bot AI Responses ─────────────────────────────────────────────────────────
 async function getBotResponse(userMessage) {
   // Usa KB + IA (mesmo motor do agente WhatsApp)
@@ -2940,10 +2897,6 @@ async function getBotResponse(userMessage) {
   }
 }
 
-function getGenericResponse() {
-  return `🤔 Entendido! Para eu te ajudar melhor, pode detalhar:\n\n• Qual sistema está usando?\n• Quando o problema começou?\n• Tem alguma mensagem de erro?\n\nOu escolha um dos atalhos abaixo para problemas comuns.`;
-}
-
 // ─── UI Functions ─────────────────────────────────────────────────────────────
 function showView(name) {
   // Bloquear views restritas para não-ADM
@@ -2967,7 +2920,14 @@ function showView(name) {
   if (name === 'chat')     renderChatList();
 }
 
+// Debounce de renderAll — agrupa múltiplas chamadas em uma única renderização
+let _renderTimer = null;
 function renderAll() {
+  if (_renderTimer) clearTimeout(_renderTimer);
+  _renderTimer = setTimeout(_doRenderAll, 80);
+}
+function _doRenderAll() {
+  _renderTimer = null;
   // Deduplicar tickets[] antes de renderizar — prevenção contra race conditions
   tickets = tickets.filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
   renderStats();
@@ -3215,7 +3175,6 @@ function updateNavCounts() {
     document.title = 'SPT.TI';
   }
 }
-
 
 function makeColResolvido(resolvido) {
   const limit   = window._verMaisResolvido ? resolvido.length : 20;
@@ -3515,8 +3474,6 @@ function discardGeneratedKB() {
   document.getElementById('kb-ai-status').textContent = '';
 }
 
-
-
 async function editarKBItem(dbId, realIdx) {
   if (bloquearLeitor('editar procedimentos')) return;
 
@@ -3555,9 +3512,6 @@ async function editarKBItem(dbId, realIdx) {
   renderKB();
   showNotif('✅ Procedimento atualizado!');
 }
-
-
-
 
 // ─── KB Base — Overrides persistentes ──────────────────────────────────────
 const KB_OVERRIDE_KEY = 'kb_base_overrides';
@@ -3722,8 +3676,6 @@ function setReportNivel(n) {
   renderReports();
 }
 
-
-
 function setReportPeriod(p) {
   reportPeriod = p;
   document.querySelectorAll('.rep-period').forEach(b => b.classList.remove('active'));
@@ -3764,19 +3716,7 @@ function filtrarTicketsPeriodo() {
   });
 }
 
-function barHtml(label, val, total, color, extra) {
-  const pct = total > 0 ? Math.round((val / total) * 100) : 0;
-  return `<div class="bar-row">
-    <span class="bar-label">${label}</span>
-    <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
-    <span class="bar-val" style="font-family:var(--mono)">${val} <span style="color:var(--text3);font-size:10px">(${pct}%)</span></span>
-    ${extra||''}
-  </div>`;
-}
-
 const MEMBER_COLORS = ['#00e5a0','#0090ff','#a855f7','#ff6b35','#f472b6','#ffcc00','#2dd4bf','#ff4757'];
-
-
 
 // ─── Reset de Senha (ADM) ─────────────────────────────────────────────────────
 function abrirResetSenha(username) {
@@ -4275,7 +4215,6 @@ function moverColuna(idx, dir) {
   renderAll();
 }
 
-
 // ─── Ticket Form ──────────────────────────────────────────────────────────────
 function selectPriority(p) {
   selectedPriority = p;
@@ -4283,8 +4222,6 @@ function selectPriority(p) {
     document.getElementById('pb-'+x).className = 'priority-btn' + (x===p?' selected-'+x:'');
   });
 }
-
-
 
 // ─── Busca unificada por razão social ou CNPJ ────────────────────────────────
 
@@ -4412,8 +4349,6 @@ document.addEventListener('click', function(e) {
     fecharSugestoes();
   }
 });
-
-
 
 // ─── Categorias dinâmicas ────────────────────────────────────────────────────
 
@@ -4573,7 +4508,6 @@ const DESB_CONFIGS = {
 };
 
 let currentDesbloqueioTipo = null;
-
 
 function initDeskAtendentes() {
   deskAtendentes = [];
@@ -5559,7 +5493,6 @@ function showTicketDetail(id) {
   }
 }
 
-
 // ─── Atribuição de Chamados ───────────────────────────────────────────────────
 
 function renderModalAtribuicao(t) {
@@ -5587,7 +5520,6 @@ function renderModalAtribuicao(t) {
     chips.innerHTML = '<span style="font-size:11px;color:var(--text3)">Nenhum</span>';
   }
 }
-
 
 async function puxarChamado(ticketId) {
   if (bloquearLeitor('atribuir chamados')) return;
@@ -5835,12 +5767,9 @@ const mesLongo  = new Date().toLocaleDateString('pt-BR', { month: 'long' });    
   if (listaFinalId) { t.trelloListId = listaFinalId; t.trelloList = listaFinalNome; }
   updateTicketInDB(t);
 
-
-
     renderAll();
   closeModal();
   showNotif(`✅ Chamado ${t.id} finalizado${listaFinalId ? ` → "${listaFinalNome}"` : ''}!`);
-
 
   // Salvar solução como reply se preenchida
   if (solucao) {
@@ -5867,8 +5796,6 @@ const mesLongo  = new Date().toLocaleDateString('pt-BR', { month: 'long' });    
     }
   }
 }
-
-
 
 async function quickMove(ticketId, status) {
   if (bloquearLeitor('mover chamados')) return;
@@ -6393,7 +6320,6 @@ async function loadTrelloConfig() {
   } catch(e) { console.warn('loadTrelloConfig:', e.message); }
 }
 
-
 // ─── Agendamento no Modal ─────────────────────────────────────────────────────
 function toggleAgendaExpand() {
   const exp  = document.getElementById('agenda-expanded');
@@ -6502,7 +6428,6 @@ function atalhoAgenda(dias) {
   salvarAgendamento();
 }
 
-
 // ─── Badge WA no topbar ───────────────────────────────────────────────────────
 let _waBadgeCount = 0;
 
@@ -6518,7 +6443,6 @@ function zerarWABadge() {
   _waBadgeCount = 0;
   atualizarWABadge(0);
 }
-
 
 // ─── Busca Global ─────────────────────────────────────────────────────────────
 function onGlobalSearch(q) {
@@ -6573,7 +6497,6 @@ function fecharBusca() {
   if (inp) inp.value = '';
 }
 
-
 // ─── Modelos de Resposta Rápida ────────────────────────────────────────────────
 function aplicarModeloResposta(texto) {
   if (!texto) return;
@@ -6587,7 +6510,6 @@ function aplicarModeloResposta(texto) {
   const sel = document.getElementById('reply-template-sel');
   if (sel) sel.value = '';
 }
-
 
 // ─── Filtros do Kanban ────────────────────────────────────────────────────────
 let _filtroPrio    = 'todos';
@@ -6659,7 +6581,6 @@ function popularFiltroTecnico() {
     + membros.map(m => `<option value="${m}"${_filtroTecnico === m ? ' selected' : ''}>${m}</option>`).join('');
 }
 
-
 async function atribuirTecnicosPorLabels() {
   if (currentUser?.role !== 'adm') {
     showNotif('🔒 Apenas ADM pode executar esta ação.', 'warn');
@@ -6720,7 +6641,6 @@ async function atribuirTecnicosPorLabels() {
     showNotif('Nenhum chamado sem técnico encontrado com etiqueta de membro.', 'warn');
   }
 }
-
 
 async function editarLabel(idx) {
   if (bloquearLeitor('editar etiquetas')) return;
@@ -6814,7 +6734,6 @@ async function initApp(user) {
     }, 600);
   }
 }
-
 
 // ═══════════════════════════════════════════════════════════════════════
 // NOTIFICAÇÕES INTERNAS
@@ -7143,14 +7062,6 @@ async function saveACL(acl) {
   await setConfig('acl_permissoes', acl);
 }
 
-function temPermissao(modulo) {
-  if (!currentUser) return false;
-  if (currentUser.role === 'adm') return true;
-  const acl = getACL();
-  const perms = acl[currentUser.role] || [];
-  return perms.includes(modulo);
-}
-
 function renderACL() {
   const acl = getACL();
   ['tecnico','leitor'].forEach(role => {
@@ -7177,7 +7088,6 @@ async function salvarACL() {
   await saveACL(acl);
   showNotif('✅ Permissões salvas com sucesso!');
 }
-
 
 // ─── Export / Import Usuários ─────────────────────────────────────────────────
 async function exportUsers() {
