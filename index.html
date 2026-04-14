@@ -2620,14 +2620,21 @@ function trelloCardCreatedAt(cardId) {
         const novoStatus = detectarStatusPorLista(listName);
         const novoAssigned = getMembros().find(m => listName.toLowerCase().includes(m.toLowerCase())) || existing.assignedTo;
         const assignedAntes = existing.assignedTo;
-        const mudou = existing.trelloListId !== card.idList || existing.sistema !== sistema || existing.prioridade !== prioridade;
+        const mudou = !existing.finalizadoEm && (existing.trelloListId !== card.idList || existing.sistema !== sistema || existing.prioridade !== prioridade);
         existing.trelloList   = listName;
         existing.trelloListId = card.idList;
-        existing.sistema      = sistema;
-        existing.prioridade   = prioridade;
-        existing.nivel        = nivel;
-        existing.status       = novoStatus;
-        existing.currentStatus = novoStatus;
+        // Preservar dados históricos de tickets resolvidos
+        if (!existing.finalizadoEm) {
+          existing.sistema    = sistema;
+          existing.prioridade = prioridade;
+          existing.nivel      = nivel;
+        }
+        // Só atualiza status pelo Trello se o ticket NÃO foi finalizado pelo painel
+        // (tickets finalizados têm finalizadoEm — o banco é a fonte de verdade)
+        if (!existing.finalizadoEm) {
+          existing.status        = novoStatus;
+          existing.currentStatus = novoStatus;
+        }
         existing.dueDate      = card.due || existing.dueDate || null;
         const horaM = (card.name + ' ' + (card.desc||'')).match(/\b([0-1]?\d|2[0-3]):[0-5]\d\b/);
         if (horaM) existing.horaAgendada = horaM[0];
@@ -2691,7 +2698,13 @@ function trelloCardCreatedAt(cardId) {
 
     // Remove cards deletados no Trello
     const antes = tickets.length;
-    tickets = tickets.filter(t => !t.fromTrello || cardIds.includes(t.trelloCardId));
+    // Só remover tickets do Trello que não estão mais no board E não foram finalizados
+    // Tickets finalizados ficam como histórico mesmo se removidos do Trello
+    tickets = tickets.filter(t =>
+      !t.fromTrello ||
+      cardIds.includes(t.trelloCardId) ||
+      t.finalizadoEm  // manter histórico de finalizados
+    );
     const removidos = antes - tickets.length;
 
     lastTrelloSync = new Date();
