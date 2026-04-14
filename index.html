@@ -2571,73 +2571,137 @@ async function updateTrelloCard(t, newStatus) {
 }
 
 async function syncFromTrello(silent = false) {
+  // Respeita pause — o polling automático chama com silent=true
   if (trelloPaused && silent) return;
   if (isSyncing) return;
   isSyncing = true;
-
+  if (!silent) showNotif('🔄 Sincronizando com Trello...');
   try {
     const lists = await trelloGET(`/boards/${TRELLO.board}/lists`);
     TRELLO.lists = {}; TRELLO.listOrder = [];
-    lists.forEach(l => {
-      TRELLO.lists[l.id] = l.name;
-      TRELLO.listOrder.push({ id: l.id, name: l.name });
-    });
+    lists.forEach(l => { TRELLO.lists[l.id] = l.name; TRELLO.listOrder.push({ id: l.id, name: l.name }); });
+
+function detectarStatusPorLista(listName) {
+  const n = (listName || '').toLowerCase();
+  if (n.includes('finaliz') || n.includes('resolv') || n.includes('conclu') || n.includes('done') || n.includes('fechado')) return 'resolvido';
+  if (n.includes('pendên') || n.includes('pendenc') || n.includes('pend'))                   return 'pendencia';
+  if (n.includes('não atend') || n.includes('nao atend') || n.includes('n/a'))                return 'nao-atendido';
+  if (n.includes('andament') || n.includes('progress') || n.includes('em atend'))             return 'em-andamento';
+  if (n.includes('agend'))                                                                      return 'agendado';
+  if (n.includes('aguard') || n.includes('espera') || n.includes('hold'))                     return 'aguardando';
+  // Colunas de técnicos = aberto (assignedTo já é setado no sync)
+  const membros = getMembros();
+  if (membros.some(m => n.includes(m.toLowerCase()))) return 'aberto';
+  return 'aberto';
+}
+
+function trelloCardCreatedAt(cardId) {
+  // O ID do Trello é um ObjectId — os 4 primeiros bytes são o timestamp Unix
+  try { return parseInt(cardId.substring(0, 8), 16) * 1000; } catch { return Date.now(); }
+}
 
     const cards = await trelloGET(`/boards/${TRELLO.board}/cards?fields=id,name,desc,idList,labels,dateLastActivity,due`);
+    const cardIds = cards.map(c => c.id);
+    let novos = 0, atualizados = 0;
 
-    let novos = 0;
-
-    for (const card of cards) {
-      // Se já existe qualquer ticket com esse trelloCardId — ignorar completamente
-      const jaExiste = tickets.find(t => t.trelloCardId === card.id);
-      if (jaExiste) continue;
-
-      // Card novo — importar apenas
-      const listName  = TRELLO.lists[card.idList] || 'Sem lista';
-      const categoria = categorizarCard(card.name, card.desc);
-      const sistema   = detectarSistema(card.name, card.desc, card.labels);
-      const nivel     = detectarNivel(card.name, card.desc, card.labels);
+    cards.forEach(card => {
+      const listName   = TRELLO.lists[card.idList] || 'Sem lista';
+      const categoria  = categorizarCard(card.name, card.desc);
+      const sistema    = detectarSistema(card.name, card.desc, card.labels);
+      const nivel      = detectarNivel(card.name, card.desc, card.labels);
       const prioridade = detectarPrioridade(card.labels);
-      const descLines = (card.desc || '').split('\n');
-      const empresa   = descLines.find(l => l.toLowerCase().includes('empresa'))?.replace(/.*?:\s*/, '').trim() || card.name;
-      const nome      = descLines.find(l => l.toLowerCase().includes('solicitante') || l.toLowerCase().includes('nome'))?.replace(/.*?:\s*/, '').trim() || '—';
-      const cnpj      = descLines.find(l => l.toLowerCase().includes('cnpj'))?.replace(/.*?:\s*/, '').trim() || '—';
-      const statusTrello   = detectarStatusPorLista(listName);
-      const assignedTrello = getMembros().find(m => listName.toLowerCase().includes(m.toLowerCase())) || null;
-      const horaAgendada   = (() => { const m = (card.name + ' ' + (card.desc||'')).match(/\b([0-1]?\d|2[0-3]):[0-5]\d\b/); return m ? m[0] : null; })();
+      const descLines  = (card.desc || '').split('\n');
+      const empresa    = descLines.find(l => l.toLowerCase().includes('empresa'))?.replace(/.*?:\s*/, '').trim() || card.name;
+      const nome       = descLines.find(l => l.toLowerCase().includes('solicitante') || l.toLowerCase().includes('nome'))?.replace(/.*?:\s*/, '').trim() || '—';
+      const cnpj       = descLines.find(l => l.toLowerCase().includes('cnpj'))?.replace(/.*?:\s*/, '').trim() || '—';
 
-      const newT = {
-        id:           `#T${String(tickets.length + 1).padStart(3,'0')}`,
-        nome, empresa, cnpj, sistema, prioridade, categoria, nivel,
-        status:       statusTrello,
-        desc:         card.desc || card.name,
-        time:         trelloCardCreatedAt(card.id),
-        dueDate:      card.due || null,
-        horaAgendada,
-        trelloCardId: card.id,
-        trelloList:   listName,
-        trelloListId: card.idList,
-        fromTrello:   true,
-        replies:      [],
-        assignedTo:   assignedTrello,
-        labels:       card.labels.map(l => ({ id: l.id, name: l.name||l.color, color: l.color, trelloId: l.id })),
-      };
+      const existing = tickets.find(t => t.trelloCardId === card.id);
+      if (existing) {
+        const novoStatus = detectarStatusPorLista(listName);
+        const novoAssigned = getMembros().find(m => listName.toLowerCase().includes(m.toLowerCase())) || existing.assignedTo;
+        const assignedAntes = existing.assignedTo;
+        const mudou = existing.trelloListId !== card.idList || existing.sistema !== sistema || existing.prioridade !== prioridade;
+        existing.trelloList   = listName;
+        existing.trelloListId = card.idList;
+        existing.sistema      = sistema;
+        existing.prioridade   = prioridade;
+        existing.nivel        = nivel;
+        existing.status       = novoStatus;
+        existing.currentStatus = novoStatus;
+        existing.dueDate      = card.due || existing.dueDate || null;
+        const horaM = (card.name + ' ' + (card.desc||'')).match(/\b([0-1]?\d|2[0-3]):[0-5]\d\b/);
+        if (horaM) existing.horaAgendada = horaM[0];
+        // Só sobrescreve assignedTo se a coluna do Trello tem nome de técnico
+        // Se não tem, preserva o assignedTo atual (definido manualmente ou via label)
+        const membrosNaLista = getMembros().find(m => listName.toLowerCase().includes(m.toLowerCase()));
+        if (membrosNaLista) existing.assignedTo = membrosNaLista;
+        // Se não tem técnico na coluna, NÃO mexe no assignedTo existente
+        if (empresa !== '—') existing.empresa = empresa;
+        // Mesclar labels: manter labels manuais (sem trelloId) + atualizar labels do Trello
+        const labelsDoTrello = card.labels.map(l => ({ id:l.id, name:l.name||l.color, color:l.color, trelloId:l.id }));
+        const labelsManuais  = (existing.labels || []).filter(l => !l.trelloId);
+        existing.labels = [...labelsDoTrello, ...labelsManuais];
 
-      tickets.unshift(newT);
-      saveTicketToDB(newT);
-      novos++;
-    }
+        // Detectar mudança de assignedTo — inclui quando técnico detectado pela coluna
+        const assignedMudou = existing.assignedTo !== assignedAntes;
+
+        // Aplicar assignedTo também via labels se ainda não tem técnico
+        if (!existing.assignedTo) {
+          for (const label of existing.labels) {
+            const ln = (label.name || label.color || '').toLowerCase();
+            const mb = getMembros().find(m => {
+              const mn = m.toLowerCase();
+              return ln === mn || ln.includes(mn) || mn.includes(ln);
+            });
+            if (mb) { existing.assignedTo = mb; break; }
+          }
+        }
+
+        // Sempre salvar se assignedTo mudou — garante persistência no banco
+        if (mudou || assignedMudou || (existing.assignedTo && !assignedAntes)) {
+          atualizados++;
+          updateTicketInDB(existing);
+        }
+      } else {
+        const statusTrello = detectarStatusPorLista(listName);
+        const assignedTrello = getMembros().find(m => listName.toLowerCase().includes(m.toLowerCase())) || null;
+        // Extrai hora da descrição/nome (ex: 09:00 ou 14:00)
+        const horaMatch = (card.name + ' ' + (card.desc||'')).match(/\b([0-1]?\d|2[0-3]):[0-5]\d\b/);
+        const horaAgendada = horaMatch ? horaMatch[0] : null;
+        const newT = {
+          id: `#T${String(tickets.length + 1).padStart(3,'0')}`,
+          nome, empresa, cnpj, sistema, prioridade, categoria, nivel,
+          status: statusTrello,
+          desc: card.desc || card.name,
+          time: trelloCardCreatedAt(card.id),
+          dueDate: card.due || null,
+          horaAgendada: horaAgendada,
+          trelloCardId: card.id, trelloList: listName, trelloListId: card.idList,
+          fromTrello: true, replies: [],
+          assignedTo: assignedTrello,
+          labels: card.labels.map(l => ({ id:l.id, name:l.name||l.color, color:l.color, trelloId:l.id })),
+        };
+        // Só adiciona se não existe no banco com esse trelloCardId
+        const jaNosBanco = tickets.find(t => !t.fromTrello && t.trelloCardId === card.id);
+        if (!jaNosBanco) tickets.push(newT);
+        saveTicketToDB(newT);
+        novos++;
+      }
+    });
+
+    // Remove cards deletados no Trello
+    const antes = tickets.length;
+    tickets = tickets.filter(t => !t.fromTrello || cardIds.includes(t.trelloCardId));
+    const removidos = antes - tickets.length;
 
     lastTrelloSync = new Date();
     updateSyncIndicator();
+    renderAll();
 
-    if (novos > 0) {
-      renderAll();
-      if (!silent) showNotif(`✅ Trello — ${novos} novo(s) importado(s)`);
-    } else {
-      if (!silent) showNotif('✅ Trello — sem novos cards');
+    if (!silent) {
+      const partes = [novos > 0 ? `${novos} novo(s)` : '', atualizados > 0 ? `${atualizados} atualizado(s)` : '', removidos > 0 ? `${removidos} removido(s)` : ''].filter(Boolean).join(' · ');
+      showNotif(`✅ Trello sync${partes ? ' — ' + partes : ' — sem mudanças'}`);
     }
-
   } catch(e) {
     if (!silent) showNotif('❌ Trello: ' + e.message, 'warn');
   } finally {
@@ -2654,7 +2718,7 @@ let _dbPollingInterval = null;
 
 function startTrelloPolling() {
   if (trelloPollingInterval) clearInterval(trelloPollingInterval);
-  trelloPollingInterval = setInterval(() => syncFromTrello(true), 30000);
+  trelloPollingInterval = setInterval(() => syncFromTrello(true), 10000);
 
   // ── Supabase Realtime — recebe mudanças instantâneas da tabela chamados
   startRealtimeSync();
@@ -2864,23 +2928,8 @@ function renderAll() {
 }
 function _doRenderAll() {
   _renderTimer = null;
-  // Deduplicar por id E por trelloCardId
-  // Problema: ticket do banco (id='#001') e do Trello (id='#T001') podem ter
-  // o mesmo trelloCardId mas status diferente — o do banco é a fonte de verdade
-  const seen = new Map();
-  tickets.forEach(t => {
-    const key = t.trelloCardId || t.id;
-    if (!seen.has(key)) {
-      seen.set(key, t);
-    } else {
-      // Manter o que tem finalizadoEm (banco) em vez do Trello
-      const existing = seen.get(key);
-      if (!existing.finalizadoEm && t.finalizadoEm) seen.set(key, t);
-      // Ou manter o do banco (não fromTrello) se o atual é do Trello
-      else if (existing.fromTrello && !t.fromTrello) seen.set(key, t);
-    }
-  });
-  tickets = Array.from(seen.values());
+  // Deduplicar tickets[] antes de renderizar — prevenção contra race conditions
+  tickets = tickets.filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
   renderStats();
   // dashboard usa apenas totalizadores — sem kanban
   popularFiltroTecnico();
