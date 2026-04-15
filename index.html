@@ -407,7 +407,6 @@
     .kb-grid { grid-template-columns: 1fr; }
   }
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <!-- LOGIN SCREEN -->
@@ -3751,15 +3750,24 @@ async function alterarSenha() {
 async function getConfig(chave, fallback) {
   try {
     const rows = await sbFetch('configuracoes?chave=eq.' + encodeURIComponent(chave) + '&select=valor');
-    if (rows && rows.length > 0) return rows[0].valor;
+    if (rows && rows.length > 0) {
+      const val = rows[0].valor;
+      // Suporta valor como JSONB (objeto) ou TEXT (string JSON)
+      if (typeof val === 'string') {
+        try { return JSON.parse(val); } catch { return val; }
+      }
+      return val;
+    }
   } catch(e) { console.warn('getConfig:', e.message); }
   return fallback !== undefined ? fallback : null;
 }
 
 async function setConfig(chave, valor) {
   try {
+    // Serializa para JSON se for objeto (compatível com coluna TEXT ou JSONB)
+    const valorFinal = (typeof valor === 'object' && valor !== null) ? valor : valor;
     await sbFetch('configuracoes', 'POST',
-      { chave, valor, updated_at: new Date().toISOString() },
+      { chave, valor: valorFinal, updated_at: new Date().toISOString() },
       { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
   } catch(e) { console.warn('setConfig:', e.message); }
 }
@@ -7201,5 +7209,16 @@ if (savedSession) {
   initApp(JSON.parse(savedSession));
 }
 </script>
+  <script>
+    // Carrega supabase-js de forma assíncrona — não bloqueia a página
+    (function() {
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+      s.async = true;
+      s.onload = function() { console.log('✅ Supabase JS carregado'); };
+      s.onerror = function() { console.warn('⚠️ Supabase JS falhou — Realtime indisponível'); };
+      document.head.appendChild(s);
+    })();
+  </script>
 </body>
 </html>
