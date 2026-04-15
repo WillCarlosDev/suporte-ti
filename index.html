@@ -1111,6 +1111,14 @@
           <button onclick="limparFiltrosChamados()" id="btn-limpar-filtros" style="display:none;font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--warn);color:var(--warn);background:rgba(255,204,0,0.07);cursor:pointer">✕ Limpar filtros</button>
         </div>
       </div>
+      <!-- Barra de busca -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="position:relative;flex:1;max-width:420px">
+          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none">🔍</span>
+          <input id="input-busca-chamados" class="form-input" placeholder="Buscar por empresa, nome, CNPJ, #ID, sistema..." style="padding-left:32px;font-size:13px;height:36px"
+            oninput="setFiltroBusca(this.value)" onkeydown="if(event.key==='Escape'){setFiltroBusca('');this.value='';}"/>
+        </div>
+      </div>
 
       <!-- Barra de filtros rápidos -->
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
@@ -1970,23 +1978,30 @@ function getSBClient() {
 }
 
 async function sbFetch(path, method = 'GET', body = null, extra = {}) {
-  const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
-    method,
-    headers: {
-      'apikey': SB_KEY,
-      'Authorization': `Bearer ${SB_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal',
-      ...extra
-    },
-    body: body ? JSON.stringify(body) : null
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || err.hint || `HTTP ${res.status}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000); // 15s timeout
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
+      method,
+      signal: controller.signal,
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': `Bearer ${SB_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal',
+        ...extra
+      },
+      body: body ? JSON.stringify(body) : null
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || err.hint || `HTTP ${res.status}`);
+    }
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
+  } finally {
+    clearTimeout(timer);
   }
-  const text = await res.text();
-  return text ? JSON.parse(text) : null;
 }
 
 function isLeitor() {
@@ -2204,7 +2219,7 @@ function startRealtimeSync() {
           renderAll();
           // Re-renderizar modal se o ticket atualizado está aberto
           if (_currentTicketId === novo.id) {
-            showTicketDetail(novo.id);
+            showTicketDetail(novo.id); // async — ok sem await no handler do Realtime
           }
         }
       } else if (eventType === 'DELETE' && antigo?.id) {
@@ -2702,8 +2717,8 @@ function startTrelloPolling() {
   if (trelloPollingInterval) { clearInterval(trelloPollingInterval); trelloPollingInterval = null; }
   if (_dbPollingInterval)    { clearInterval(_dbPollingInterval);    _dbPollingInterval    = null; }
 
-  // Apenas Realtime ativo
-  startRealtimeSync();
+  // Realtime já iniciado no initApp — não reiniciar se canal ativo
+  if (!_realtimeChannel) startRealtimeSync();
 }
 
 async function initTrello() {
@@ -2817,16 +2832,26 @@ let kbItems = [
 
 // ─── Anthropic API helper ─────────────────────────────────────────────────────
 async function groqFetch(body) {
-  const response = await fetch('/api/anthropic-proxy', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.error?.message || err.error || `HTTP ${response.status}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000); // 30s timeout
+  try {
+    const response = await fetch('/api/anthropic-proxy', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || err.error || `HTTP ${response.status}`);
+    }
+    return response.json();
+  } catch(e) {
+    if (e.name === 'AbortError') throw new Error('IA: timeout após 30s');
+    throw e;
+  } finally {
+    clearTimeout(timer);
   }
-  return response.json();
 }
 
 // ─── Bot AI Responses ─────────────────────────────────────────────────────────
@@ -2943,7 +2968,9 @@ function renderStats() {
 
   // ── Cálculos corrigidos ───────────────────────────────────────────
   // Em aberto: qualquer status != resolvido
-  const emAberto = tickets.filter(t => t.status !== 'resolvido');
+  // emAberto = chamados ativos (excluindo resolvidos e agendados que não são emergência)
+  const statusAtivos = ['aberto','em-andamento','aguardando','pendencia','nao-atendido'];
+  const emAberto = tickets.filter(t => statusAtivos.includes(t.status));
 
   // Sem técnico: abertos sem responsável (todos, não só contratos)
   const semTecnico = emAberto.filter(t => !t.assignedTo);
@@ -3103,7 +3130,7 @@ function renderStats() {
   if (recentesEl) {
     const prioColors = { contrato:'var(--accent)', garantia:'var(--accent2)', avulso:'var(--text3)' };
     const recentes = [...tickets]
-      .filter(t => t.status !== 'resolvido')
+      .filter(t => ['aberto','em-andamento','aguardando'].includes(t.status))
       .sort((a,b) => (b.time||0) - (a.time||0))
       .slice(0, 6);
     recentesEl.innerHTML = recentes.length === 0
@@ -4771,7 +4798,7 @@ function createTicket() {
   }
 
   const newTicket = {
-    id: '#' + String(tickets.length + 1).padStart(3, '0'),
+    id: '#' + String(tickets.length + 1).padStart(3, '0') + '-' + Date.now().toString(36).slice(-3),
     nome, contato, empresa, cnpj, sistema,
     prioridade: selectedPriority,
     categoria: categoria || 'outro',
@@ -4808,6 +4835,11 @@ function clearForm() {
   const fHora = document.getElementById('f-hora-agend');
   if (fData) fData.value = '';
   if (fHora) fHora.value = '';
+  // Reset tipo de suporte e grupo de sistema
+  const fTipoSup = document.getElementById('f-tipo-suporte');
+  if (fTipoSup) fTipoSup.value = '';
+  const fSistGrp = document.getElementById('f-sistema-group');
+  if (fSistGrp) fSistGrp.style.display = 'none';
 }
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────
@@ -6558,6 +6590,7 @@ function atualizarBotaoLimparFiltros() {
 }
 
 function getTicketsFiltrados() {
+  const busca = (_filtroBusca||'').toLowerCase().trim();
   return tickets.filter(t => {
     if (_filtroPrio !== 'todos' && t.prioridade !== _filtroPrio) return false;
     if (_filtroTecnico && t.assignedTo !== _filtroTecnico) return false;
@@ -6565,8 +6598,18 @@ function getTicketsFiltrados() {
       if (t.status === 'resolvido' || t.prioridade !== 'contrato') return false;
       if ((Date.now() - (t.time||0)) / 3600000 < 8) return false;
     }
+    if (busca) {
+      const campos = [t.id, t.empresa, t.nome, t.cnpj, t.desc, t.sistema, t.contato].join(' ').toLowerCase();
+      if (!campos.includes(busca)) return false;
+    }
     return true;
   });
+}
+
+function setFiltroBusca(val) {
+  _filtroBusca = val || '';
+  atualizarBotaoLimparFiltros();
+  renderAll();
 }
 
 function popularFiltroTecnico() {
@@ -6722,6 +6765,9 @@ async function initApp(user) {
   ]);
   renderAll();
   // Deferir tudo que não é crítico para após o primeiro render
+  // Realtime inicia imediatamente — independente do Trello
+  startRealtimeSync();
+  // Carregamentos secundários adiados
   setTimeout(() => {
     loadTrelloConfig();
     atualizarBotaoPause();
@@ -6729,7 +6775,7 @@ async function initApp(user) {
     popularSelectCategorias('f-categoria');
     initTrello();
     loadGlobalApiKey();
-  }, 100);
+  }, 200);
   const waConf = loadWAConfig();
   if (waConf) {
     setTimeout(() => {
