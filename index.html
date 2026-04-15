@@ -2343,9 +2343,27 @@ async function renderUsersTable() {
 }
 
 // ─── Tickets — Supabase ───────────────────────────────────────────────────────
+async function carregarTodosChamados() {
+  // Busca paginada — 1000 por página até trazer tudo
+  const CAMPOS = 'id,nome,empresa,cnpj,contato,sistema,prioridade,categoria,nivel,status,descricao,assigned_to,tipo_chamado,due_date,hora_agendada,finalizado_em,finalizado_por,from_trello,from_whatsapp,whatsapp_phone,trello_card_id,trello_list,trello_list_id,labels,created_at,updated_at';
+  let todos = [], offset = 0, PAGE = 1000;
+  while (true) {
+    const rows = await sbFetch(
+      `chamados?select=${CAMPOS}&order=created_at.desc&limit=${PAGE}&offset=${offset}`,
+      'GET', null,
+      { 'Range-Unit': 'items', 'Range': `${offset}-${offset + PAGE - 1}` }
+    );
+    if (!rows || rows.length === 0) break;
+    todos = todos.concat(rows);
+    if (rows.length < PAGE) break; // última página
+    offset += PAGE;
+  }
+  return todos;
+}
+
 async function loadTicketsFromDB() {
   try {
-    const rows = await sbFetch('chamados?select=id,nome,empresa,cnpj,contato,sistema,prioridade,categoria,nivel,status,descricao,assigned_to,tipo_chamado,due_date,hora_agendada,finalizado_em,finalizado_por,from_trello,from_whatsapp,whatsapp_phone,trello_card_id,trello_list,trello_list_id,labels,created_at,updated_at&order=created_at.desc&limit=300');
+    const rows = await carregarTodosChamados();
     if (rows && rows.length > 0) {
       const dbTickets = rows.map(r => {
         const t = mapRowToTicket(r);
@@ -2641,7 +2659,17 @@ async function syncFromTrello(silent = false) {
       TRELLO.listOrder.push({ id: l.id, name: l.name });
     });
 
-    const cards = await trelloGET(`/boards/${TRELLO.board}/cards?fields=id,name,desc,idList,labels,dateLastActivity,due`);
+    // Buscar TODOS os cards incluindo arquivados — paginação via before=
+    let cards = [], lastId = null;
+    while (true) {
+      const url = `/boards/${TRELLO.board}/cards?fields=id,name,desc,idList,labels,dateLastActivity,due&filter=all&limit=1000` +
+                  (lastId ? `&before=${lastId}` : '');
+      const lote = await trelloGET(url);
+      if (!lote || lote.length === 0) break;
+      cards = cards.concat(lote);
+      if (lote.length < 1000) break; // última página
+      lastId = lote[lote.length - 1].id;
+    }
 
     let novos = 0;
 
