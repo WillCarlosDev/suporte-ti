@@ -661,27 +661,8 @@
           </div>
         </div>
 
-        <!-- TÉCNICO -->
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-          <div style="background:var(--surface2);padding:12px 16px;display:flex;align-items:center;gap:10px">
-            <span class="tag n1">TÉCNICO</span>
-            <span style="font-size:13px;font-weight:700">Técnico de Suporte</span>
-          </div>
-          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px" id="acl-tecnico">
-          </div>
-        </div>
-
-        <!-- LEITOR -->
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-          <div style="background:var(--surface2);padding:12px 16px;display:flex;align-items:center;gap:10px">
-            <span class="tag n2">LEITOR</span>
-            <span style="font-size:13px;font-weight:700">Leitor (Somente Visualização)</span>
-          </div>
-          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px" id="acl-leitor">
-          </div>
-        </div>
-
-        <button class="btn-primary" onclick="salvarACL()" style="max-width:200px">💾 Salvar Permissões</button>
+        <!-- Roles dinâmicos — renderizado por renderACL() -->
+        <div id="acl-container" style="display:flex;flex-direction:column;gap:0"></div>
       </div>
     </div>
 
@@ -1659,9 +1640,10 @@
             <div class="form-group">
               <label class="form-label">Perfil</label>
               <select class="form-select" id="new-role">
-                <option value="tecnico">Técnico</option>
-                <option value="leitor">Leitor (somente visualização)</option>
                 <option value="adm">ADM</option>
+                <option value="tecnico">Técnico de Suporte</option>
+                <option value="comercial">Comercial</option>
+                <option value="leitor">Leitor (somente visualização)</option>
               </select>
             </div>
             <div class="form-group" style="justify-content:flex-end">
@@ -2009,12 +1991,30 @@ async function sbFetch(path, method = 'GET', body = null, extra = {}) {
 }
 
 function isLeitor() {
-  return currentUser?.role === 'leitor';
+  if (currentUser?.role === 'adm') return false;
+  const acl   = getACL();
+  const perms = acl[currentUser?.role] || [];
+  return perms.length === 0;
 }
 
 function bloquearLeitor(acao = 'esta ação') {
-  if (isLeitor()) {
-    showNotif(`🔒 Acesso negado — perfil Leitor não pode executar: ${acao}`, 'warn');
+  if (currentUser?.role === 'adm') return false;
+  // Mapear ação para chave de permissão
+  const mapaAcao = {
+    'criar chamados': 'criar_chamado', 'criar_chamados': 'criar_chamado',
+    'editar chamados': 'editar_chamado', 'editar_chamados': 'editar_chamado',
+    'excluir chamados': 'excluir_chamado', 'excluir_chamados': 'excluir_chamado',
+    'finalizar chamados': 'finalizar_chamado',
+    'alterar configurações': 'config', 'configurações': 'config',
+    'gerenciar usuários': 'config',
+  };
+  const chave = mapaAcao[acao.toLowerCase()] || null;
+  const acl   = getACL();
+  const perms = acl[currentUser?.role] || [];
+  // Se há chave mapeada, checar ACL; senão bloquear apenas leitor puro (sem permissão alguma)
+  const bloqueado = chave ? !perms.includes(chave) : perms.length === 0;
+  if (bloqueado) {
+    showNotif('🔒 Sem permissão: ' + acao, 'warn');
     return true;
   }
   return false;
@@ -6976,14 +6976,40 @@ const ACL_MODULOS = [
 ];
 
 const ACL_DEFAULT = {
-  tecnico: ['criar_chamado','editar_chamado','finalizar_chamado','responder','sugerir_ia','criar_kb','desbloqueio','clientes','whatsapp','exportar'],
-  leitor:  []
+  tecnico:   ['criar_chamado','editar_chamado','finalizar_chamado','responder','sugerir_ia','criar_kb','desbloqueio','clientes','whatsapp','exportar'],
+  comercial: ['criar_chamado','editar_chamado','desbloqueio','clientes'],
+  leitor:    []
 };
+
+// Nomes amigáveis dos roles customizáveis (salvo no banco)
+let _roleLabels = { tecnico: 'Técnico de Suporte', comercial: 'Comercial', leitor: 'Leitor' };
+
+async function loadRoleLabels() {
+  const saved = await getConfig('role_labels', null);
+  if (saved) _roleLabels = { ...{ tecnico: 'Técnico de Suporte', comercial: 'Comercial', leitor: 'Leitor' }, ...saved };
+}
+function getRoleLabel(role) {
+  if (role === 'adm') return 'ADM';
+  return _roleLabels[role] || role;
+}
+async function saveRoleLabels() {
+  await setConfig('role_labels', _roleLabels);
+}
+// Retorna todos os roles customizáveis (exceto adm)
+function getRolesCustom() {
+  const acl = getACL();
+  return Object.keys(acl);
+}
 let _aclCache = null;
 
 async function loadACL() {
   const saved = await getConfig('acl_permissoes', ACL_DEFAULT);
   _aclCache = saved || ACL_DEFAULT;
+  // Garantir que roles padrão existem
+  if (!_aclCache.tecnico)   _aclCache.tecnico   = ACL_DEFAULT.tecnico;
+  if (!_aclCache.comercial) _aclCache.comercial  = ACL_DEFAULT.comercial;
+  if (!_aclCache.leitor)    _aclCache.leitor     = ACL_DEFAULT.leitor;
+  await loadRoleLabels();
   return _aclCache;
 }
 
@@ -6996,19 +7022,107 @@ async function saveACL(acl) {
   await setConfig('acl_permissoes', acl);
 }
 
-function renderACL() {
+async function toggleACL(role, modulo, checked) {
   const acl = getACL();
-  ['tecnico','leitor'].forEach(role => {
-    const el = document.getElementById('acl-' + role);
-    if (!el) return;
-    el.innerHTML = ACL_MODULOS.map(m => `
-      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
-        <input type="checkbox" id="acl-${role}-${m.key}" ${acl[role]?.includes(m.key) ? 'checked' : ''}
-          style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent)"/>
-        ${m.label}
-      </label>
-    `).join('');
+  if (!acl[role]) acl[role] = [];
+  if (checked) { if (!acl[role].includes(modulo)) acl[role].push(modulo); }
+  else         { acl[role] = acl[role].filter(m => m !== modulo); }
+  await saveACL(acl);
+  showNotif('✅ Permissão atualizada');
+}
+
+async function criarNovoRole() {
+  const nome = prompt('Nome do novo tipo de usuário (ex: Comercial, Suporte L2):');
+  if (!nome || !nome.trim()) return;
+  const key = nome.trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
+  if (!key) { showNotif('Nome inválido.','warn'); return; }
+  const acl = getACL();
+  if (acl[key]) { showNotif('Já existe um tipo com esse nome.','warn'); return; }
+  acl[key] = [];
+  _roleLabels[key] = nome.trim();
+  await saveACL(acl);
+  await saveRoleLabels();
+  renderACL();
+  atualizarSelectsRole();
+  showNotif('✅ Tipo "' + nome.trim() + '" criado!');
+}
+
+async function renomearRole(role) {
+  const atual = getRoleLabel(role);
+  const novo = prompt('Novo nome para "' + atual + '":', atual);
+  if (!novo || !novo.trim() || novo.trim() === atual) return;
+  _roleLabels[role] = novo.trim();
+  await saveRoleLabels();
+  renderACL();
+  atualizarSelectsRole();
+  showNotif('✅ Renomeado para "' + novo.trim() + '"');
+}
+
+async function excluirRole(role) {
+  if (!confirm('Excluir o tipo "' + getRoleLabel(role) + '"? Usuários com esse tipo ficarão como Leitor.')) return;
+  const acl = getACL();
+  delete acl[role];
+  delete _roleLabels[role];
+  await saveACL(acl);
+  await saveRoleLabels();
+  renderACL();
+  atualizarSelectsRole();
+  showNotif('✅ Tipo excluído');
+}
+
+function atualizarSelectsRole() {
+  // Atualiza todos os <select> de role no sistema
+  const acl    = getACL();
+  const roles  = getRolesCustom();
+  const opts   = roles.map(r => '<option value="' + r + '">' + getRoleLabel(r) + '</option>').join('');
+  const optsFull = '<option value="adm">ADM</option>' + opts;
+  document.querySelectorAll('[data-role-select]').forEach(sel => {
+    const val = sel.value;
+    sel.innerHTML = sel.dataset.roleSelect === 'full' ? optsFull : opts;
+    if ([...sel.options].some(o => o.value === val)) sel.value = val;
   });
+}
+
+function renderACL() {
+  const acl      = getACL();
+  const roles    = getRolesCustom(); // ['tecnico','comercial','leitor', ...]
+  const modulos  = ACL_MODULOS;
+  const container = document.getElementById('acl-container');
+  if (!container) return;
+
+  container.innerHTML = roles.map(role => {
+    const label = getRoleLabel(role);
+    const perms = acl[role] || [];
+    const isFixed = role === 'leitor'; // leitor sempre existe mas pode ter perms alteradas
+    return `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:13px;font-weight:700;color:var(--text)">${label}</span>
+          <code style="font-size:10px;color:var(--text3);background:var(--surface3);padding:1px 6px;border-radius:4px">${role}</code>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button onclick="renomearRole('${role}')" style="font-size:11px;padding:3px 10px;border-radius:5px;border:1px solid var(--border);color:var(--text2);background:none;cursor:pointer">✏️ Renomear</button>
+          ${role !== 'tecnico' && role !== 'leitor' ? `<button onclick="excluirRole('${role}')" style="font-size:11px;padding:3px 10px;border-radius:5px;border:1px solid rgba(255,71,87,.3);color:var(--danger);background:none;cursor:pointer">✕ Excluir</button>` : ''}
+        </div>
+      </div>
+      <div style="padding:14px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px" id="acl-${role}">
+        ${modulos.map(m => `
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:6px 8px;border-radius:6px;background:var(--surface2)">
+            <input type="checkbox" id="acl-${role}-${m.key}" ${perms.includes(m.key) ? 'checked' : ''}
+              onchange="toggleACL('${role}','${m.key}',this.checked)"
+              style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent)"/>
+            ${m.label}
+          </label>
+        `).join('')}
+      </div>
+    </div>`;
+  }).join('') + `
+  <button onclick="criarNovoRole()" style="width:100%;padding:10px;border-radius:8px;border:1px dashed var(--accent);color:var(--accent);background:rgba(0,229,160,0.05);cursor:pointer;font-size:13px;font-weight:600">
+    ＋ Criar novo tipo de usuário
+  </button>`;
 }
 
 async function salvarACL() {
