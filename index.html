@@ -2173,8 +2173,17 @@ function startRealtimeSync() {
       if (eventType === 'INSERT' && novo?.id) {
         const jaExiste = tickets.find(t => t.id === novo.id);
         if (!jaExiste) {
-          tickets.unshift(mapRowToTicket(novo));
-          // Deduplicar por segurança (evita duplicatas entre Realtime e polling)
+          const novoTicket = mapRowToTicket(novo);
+          // Auto-atribuir por label se não tem técnico
+          if (!novoTicket.assignedTo && Array.isArray(novoTicket.labels)) {
+            const membros = getMembros ? getMembros() : ['Willian','Lucas','Alex','Julio'];
+            for (const label of novoTicket.labels) {
+              const ln = (label.name || label.color || '').toLowerCase().trim();
+              const membro = membros.find(m => { const mn=m.toLowerCase(); return ln===mn||ln.includes(mn)||mn.includes(ln); });
+              if (membro) { novoTicket.assignedTo = membro; break; }
+            }
+          }
+          tickets.unshift(novoTicket);
           tickets = tickets.filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
           renderAll();
         }
@@ -2333,10 +2342,35 @@ async function loadTicketsFromDB() {
         t.fromTrello &&
         !dbTickets.find(d => d.id === t.id || (d.trelloCardId && d.trelloCardId === t.trelloCardId))
       );
-      // Mesclar e deduplicar — evita duplicatas entre DB e Realtime
+      // Mesclar e deduplicar
       const merged = [...dbTickets, ...trelloOnly];
       tickets = merged.filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
 
+      // Atribuição automática por label — sem precisar do botão "Corrigir Atribuições"
+      const membros = getMembros ? getMembros() : ['Willian','Lucas','Alex','Julio'];
+      const paraAtribuir = tickets.filter(t => !t.assignedTo && Array.isArray(t.labels) && t.labels.length > 0);
+      const ticketsModificados = [];
+      for (const t of paraAtribuir) {
+        for (const label of t.labels) {
+          const ln = (label.name || label.color || '').toLowerCase().trim();
+          if (!ln) continue;
+          const membro = membros.find(m => {
+            const mn = m.toLowerCase();
+            return ln === mn || ln.includes(mn) || mn.includes(ln);
+          });
+          if (membro) {
+            t.assignedTo = membro;
+            if (t.status === 'resolvido' && !t.finalizadoPor) t.finalizadoPor = membro;
+            ticketsModificados.push(t);
+            break;
+          }
+        }
+      }
+      // Salvar atribuições no banco em paralelo (sem await — fire and forget)
+      if (ticketsModificados.length > 0) {
+        ticketsModificados.forEach(t => updateTicketInDB && updateTicketInDB(t));
+        console.log('Auto-atribuição: ' + ticketsModificados.length + ' chamado(s)');
+      }
     }
   } catch(e) {
     console.warn('Erro ao carregar chamados do DB:', e.message);
@@ -6658,19 +6692,21 @@ async function initApp(user) {
   marcarOnline();
   setInterval(marcarOnline, 60000);
   // Carrega todas as configurações do Supabase em paralelo
+  // Carregar TUDO em paralelo — de 8 requests sequenciais para 1 batch
+  // Carregar tudo em paralelo — máxima performance
   await Promise.all([
     loadKanbanCols(),
     getMembrosAsync(),
     loadCategoriasCustom(),
-    loadACL().then(() => { setTimeout(renderACL, 200); }),
+    loadACL().then(() => setTimeout(renderACL, 200)),
     loadClientes(),
-    getConfig('wa_config').then(v => { if (v) { window._waConfigCache = v; localStorage.setItem(WA_CONFIG_KEY, JSON.stringify(v)); } }),
+    getConfig('wa_config').then(v => {
+      if (v) { window._waConfigCache = v; localStorage.setItem(WA_CONFIG_KEY, JSON.stringify(v)); }
+    }),
+    loadCustomKBItems().then(kb => { if (kb) window._customKB = kb; }),
+    loadKBBaseOverrides(),
+    loadTicketsFromDB(),
   ]);
-  // Carrega KB customizada do Supabase
-  window._customKB = await loadCustomKBItems();
-  await loadKBBaseOverrides(); // Aplica edições permanentes aos itens base
-  // Carrega chamados do Supabase
-  await loadTicketsFromDB();
   renderAll();
   loadTrelloConfig();
   atualizarBotaoPause();
