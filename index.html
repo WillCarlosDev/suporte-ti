@@ -2192,11 +2192,14 @@ function startRealtimeSync() {
         if (idx >= 0) {
           // Preserva campos de memória que não estão no banco
           const memTicket = tickets[idx];
+          const mappedNovo = mapRowToTicket(novo);
           tickets[idx] = {
             ...memTicket,
-            ...mapRowToTicket(novo),
-            // Preservar assignedTo da memória se banco está null
-            assignedTo: novo.assigned_to || memTicket.assignedTo || null,
+            ...mappedNovo,
+            // Preservar campos não retornados pela query leve
+            assignedTo:     novo.assigned_to || memTicket.assignedTo || null,
+            replies:        memTicket.replies || [],        // nunca sobrescrever replies em memória
+            _repliesLoaded: memTicket._repliesLoaded || false,
           };
           renderAll();
           // Re-renderizar modal se o ticket atualizado está aberto
@@ -2327,7 +2330,7 @@ async function renderUsersTable() {
 // ─── Tickets — Supabase ───────────────────────────────────────────────────────
 async function loadTicketsFromDB() {
   try {
-    const rows = await sbFetch('chamados?select=*&order=created_at.desc');
+    const rows = await sbFetch('chamados?select=id,nome,empresa,cnpj,contato,sistema,prioridade,categoria,nivel,status,descricao,assigned_to,tipo_chamado,due_date,hora_agendada,finalizado_em,finalizado_por,from_trello,from_whatsapp,whatsapp_phone,trello_card_id,trello_list,trello_list_id,labels,created_at,updated_at&order=created_at.desc&limit=300');
     if (rows && rows.length > 0) {
       const dbTickets = rows.map(r => {
         const t = mapRowToTicket(r);
@@ -5380,10 +5383,20 @@ function showNotif(text, type='') {
   setTimeout(() => el.remove(), 4000);
 }
 
-function showTicketDetail(id) {
-  _currentTicketId = id; // guardar para re-renderizar se Realtime atualizar
+async function showTicketDetail(id) {
+  _currentTicketId = id;
   const t = tickets.find(x => x.id === id);
   if (!t) return;
+  // Lazy load de replies — só carrega ao abrir o modal
+  if (!t._repliesLoaded) {
+    try {
+      const rows = await sbFetch('chamados?id=eq.' + encodeURIComponent(id) + '&select=replies');
+      if (rows && rows.length > 0) {
+        t.replies = rows[0].replies || [];
+        t._repliesLoaded = true;
+      }
+    } catch(e) { /* usa replies em memória */ }
+  }
   if (!t.replies) t.replies = [];
   if (!t.currentStatus) t.currentStatus = t.status;
 
@@ -5616,7 +5629,7 @@ async function submitReply(isAI = false) {
     text,
     isAI
   };
-  t.replies.push(reply);
+  t.replies.push(reply); t._repliesLoaded = true;
   renderModalReplies(t);
   document.getElementById('modal-reply-text').value = '';
   updateTicketInDB(t);
@@ -6708,12 +6721,15 @@ async function initApp(user) {
     loadTicketsFromDB(),
   ]);
   renderAll();
-  loadTrelloConfig();
-  atualizarBotaoPause();
-  selectChat(0);
-  popularSelectCategorias('f-categoria');
-  initTrello();
-  setTimeout(loadGlobalApiKey, 400);
+  // Deferir tudo que não é crítico para após o primeiro render
+  setTimeout(() => {
+    loadTrelloConfig();
+    atualizarBotaoPause();
+    selectChat(0);
+    popularSelectCategorias('f-categoria');
+    initTrello();
+    loadGlobalApiKey();
+  }, 100);
   const waConf = loadWAConfig();
   if (waConf) {
     setTimeout(() => {
