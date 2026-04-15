@@ -2272,6 +2272,8 @@ async function addUser() {
 }
 
 async function deleteUser(username) {
+  if (currentUser?.role !== 'adm') { showNotif('🔒 Apenas ADM.','warn'); return; }
+  
   if (username === 'adm') { showNotif('⚠️ O usuário ADM não pode ser removido.', 'warn'); return; }
   if (!confirm(`Remover o usuário "${username}"?`)) return;
   try {
@@ -2297,7 +2299,7 @@ async function renderUsersTable() {
               ${currentUser?.role === 'adm' ? `<span class="${getUsuariosOnline().find(o=>o.username===u.username) ? 'user-online-dot' : 'user-offline-dot'}"></span>` : ''}
               ${u.username}
             </td>
-          <td><span class="tag ${u.role === 'adm' ? 'contrato' : u.role === 'leitor' ? 'n2' : 'n1'}">${u.role === 'leitor' ? '👁 LEITOR' : u.role.toUpperCase()}</span></td>
+          <td><span class="tag ${u.role === 'adm' ? 'contrato' : u.role === 'leitor' ? 'n2' : 'n1'}">${u.role === 'leitor' ? '👁 LEITOR' : getRoleLabel(u.role)}</span></td>
           <td style="color:var(--text2);font-size:12px">${new Date(u.created_at).toLocaleDateString('pt-BR')}</td>
           <td style="display:flex;gap:6px;align-items:center">
             <button onclick="abrirResetSenha('${u.username}')" style="background:rgba(255,204,0,0.1);border:1px solid rgba(255,204,0,0.3);color:var(--warn);border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:var(--sans)">🔑 Senha</button>
@@ -2395,16 +2397,21 @@ function updateTicketInDB(t) {
 async function _flushTicketToDB(t) {
   try {
     await sbFetch(`chamados?id=eq.${encodeURIComponent(t.id)}`, 'PATCH', {
-      status:        t.status,
-      replies:       t.replies       || [],
-      labels:        t.labels        || [],
-      assigned_to:   t.assignedTo    || null,
-      tipo_chamado:  t.tipoChamado   || 'normal',
-      due_date:      t.dueDate       || null,
-      hora_agendada: t.horaAgendada  || null,
-      finalizado_em: t.finalizadoEm  || null,
-      finalizado_por: t.finalizadoPor || null,
-      updated_at:    new Date().toISOString(),
+      status:         t.status,
+      descricao:      t.desc          || null,
+      replies:        t.replies        || [],
+      labels:         t.labels         || [],
+      assigned_to:    t.assignedTo     || null,
+      tipo_chamado:   t.tipoChamado    || 'normal',
+      due_date:       t.dueDate        || null,
+      hora_agendada:  t.horaAgendada   || null,
+      finalizado_em:  t.finalizadoEm   || null,
+      finalizado_por: t.finalizadoPor  || null,
+      sistema:        t.sistema        || null,
+      prioridade:     t.prioridade     || null,
+      categoria:      t.categoria      || null,
+      nivel:          t.nivel          || null,
+      updated_at:     new Date().toISOString(),
     });
   } catch(e) {
     console.warn('Erro ao atualizar chamado:', e.message);
@@ -6620,16 +6627,26 @@ async function initApp(user) {
   document.getElementById('main-app').style.display     = 'grid';
   document.getElementById('topbar-user').textContent    = `👤 ${getDisplayName(user.username)} (${user.role.toUpperCase()})`;
   if (user.role !== 'adm') {
-    // Oculta seção inteira de Administração
     ['nav-section-admin','nav-config','nav-acl','nav-users'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
   }
-  if (user.role === 'leitor') {
-    // Leitor vê todos os menus exceto Configurações e Usuários (já ocultos acima)
-    // Ações são bloqueadas via bloquearLeitor() em cada função
-  }
+  // Controle de menu por ACL — ocultar itens sem permissão
+  setTimeout(() => {
+    const acl   = getACL();
+    const perms = user.role === 'adm' ? ['*'] : (acl[user.role] || []);
+    const todos = perms.includes('*');
+    const mapa  = {
+      'nav-whatsapp': 'whatsapp',
+      'nav-relatorios': 'exportar',
+      'nav-kb': 'criar_kb',
+    };
+    Object.entries(mapa).forEach(([navId, permKey]) => {
+      const el = document.getElementById(navId);
+      if (el && !todos && !perms.includes(permKey)) el.style.display = 'none';
+    });
+  }, 300);
   marcarOnline();
   setInterval(marcarOnline, 60000);
   // Carrega todas as configurações do Supabase em paralelo
@@ -6637,7 +6654,7 @@ async function initApp(user) {
     loadKanbanCols(),
     getMembrosAsync(),
     loadCategoriasCustom(),
-    loadACL(),
+    loadACL().then(() => { setTimeout(renderACL, 200); }),
     loadClientes(),
     getConfig('wa_config').then(v => { if (v) { window._waConfigCache = v; localStorage.setItem(WA_CONFIG_KEY, JSON.stringify(v)); } }),
   ]);
@@ -6873,6 +6890,8 @@ function formatarCnpjCliente(input) {
 }
 
 async function salvarCliente() {
+  if (bloquearLeitor('editar clientes')) return;
+  
   const empresa = document.getElementById('fc-empresa').value.trim();
   const cnpj    = document.getElementById('fc-cnpj').value.trim();
   if (!empresa || !cnpj) { showNotif('⚠️ Razão Social e CNPJ são obrigatórios.','warn'); return; }
@@ -6912,6 +6931,8 @@ async function salvarCliente() {
 }
 
 async function excluirCliente(id) {
+  if (bloquearLeitor('excluir clientes')) return;
+  
   const c = getClientes().find(x => x.id === id);
   if (!c || !confirm(`Excluir o cliente "${c.empresa}"?`)) return;
   try {
@@ -7018,6 +7039,8 @@ function getACL() {
 }
 
 async function saveACL(acl) {
+  if (currentUser?.role !== 'adm') return;
+  
   _aclCache = acl;
   await setConfig('acl_permissoes', acl);
 }
@@ -7083,6 +7106,13 @@ function atualizarSelectsRole() {
     sel.innerHTML = sel.dataset.roleSelect === 'full' ? optsFull : opts;
     if ([...sel.options].some(o => o.value === val)) sel.value = val;
   });
+  // Atualizar o select fixo new-role (criação de usuário)
+  const selNewRole = document.getElementById('new-role');
+  if (selNewRole) {
+    const val = selNewRole.value;
+    selNewRole.innerHTML = optsFull;
+    if ([...selNewRole.options].some(o => o.value === val)) selNewRole.value = val;
+  }
 }
 
 function renderACL() {
@@ -7126,6 +7156,8 @@ function renderACL() {
 }
 
 async function salvarACL() {
+  if (currentUser?.role !== 'adm') { showNotif('🔒 Apenas ADM.','warn'); return; }
+  
   const acl = { tecnico: [], leitor: [] };
   ['tecnico','leitor'].forEach(role => {
     ACL_MODULOS.forEach(m => {
