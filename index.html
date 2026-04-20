@@ -186,7 +186,7 @@
   /* ── Views ── */
   .view { display: none; }
   .view.active { display: block; }
-.view.active .kanban { display: grid; }
+
 
   /* ── Page Header ── */
   .page-header { margin-bottom: 24px; }
@@ -205,12 +205,17 @@
 
   /* ── Kanban ── */
   .kanban {
-    display: grid;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
     gap: 14px;
     overflow-x: auto;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(240px, 280px);
-    align-items: start;
+    align-items: flex-start;
+    padding-bottom: 6px;
+  }
+  .kanban-col {
+    flex: 0 0 260px;
+    width: 260px;
   }
   @keyframes sla-pulse {
     0%,100% { opacity:1; }
@@ -237,11 +242,11 @@
   @media (max-width: 900px) {
     .sidebar { display: none; }
     .main { margin-left: 0 !important; }
-    .kanban { grid-auto-columns: minmax(200px, 240px); }
+
     .modal-box { max-width: 98vw !important; margin: 4px; }
   }
   @media (max-width: 600px) {
-    .kanban { grid-auto-columns: minmax(180px, 1fr); }
+
     .page-header { flex-direction: column; align-items: flex-start !important; }
   }
   .ticket-card {
@@ -411,7 +416,7 @@
     .app { grid-template-columns: 1fr; }
     .sidebar { display: none; }
     .stats-row { grid-template-columns: 1fr 1fr; }
-    .kanban { grid-auto-columns: minmax(200px, 1fr); }
+
     .kb-grid { grid-template-columns: 1fr; }
   }
 </style>
@@ -2949,14 +2954,17 @@ function showView(name) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
   event?.currentTarget?.classList.add('active');
-  // Renderizar kanban imediatamente ao ativar a view
-  const kanbanEl = document.getElementById('full-kanban');
-  if (kanbanEl) kanbanEl.style.display = 'grid';
   renderAll();
-  // Forçar render imediato do kanban (não só debounced)
+  // Para chamados: forçar render APÓS o browser pintar a view (evita cache de layout)
   if (name === 'chamados') {
-    const tf = getTicketsFiltrados ? getTicketsFiltrados() : tickets;
-    if (typeof renderKanban === 'function' && kanbanEl) renderKanban('full-kanban', tf);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (typeof renderKanban === 'function') {
+          const tf = getTicketsFiltrados ? getTicketsFiltrados() : tickets;
+          renderKanban('full-kanban', tf);
+        }
+      });
+    });
   }
   if (name === 'users')    renderUsersTable();
   if (name === 'config')   { renderMembrosConfig(); loadTrelloConfig(); }
@@ -3314,8 +3322,7 @@ function renderKanban(containerId, data) {
     .sort((a,b) => new Date(b.finalizadoEm||b.time||0) - new Date(a.finalizadoEm||a.time||0));
   const resolvido = todoResolvido.slice(0, window._verMaisResolvido ? todoResolvido.length : 30);
 
-  // Colunas gerenciadas pelo CSS (grid-auto-flow: column) — sem manipulação JS
-  container.style.display = 'grid';
+  // Flexbox — sem necessidade de manipular display via JS
 
   // Salvar posição de scroll de cada coluna antes de re-renderizar
   const _scrollPositions = [];
