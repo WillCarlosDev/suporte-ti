@@ -229,11 +229,11 @@
   @media (max-width: 900px) {
     .sidebar { display: none; }
     .main { margin-left: 0 !important; }
-    .kanban { grid-template-columns: repeat(2, minmax(200px, 1fr)) !important; }
+    .kanban { grid-template-columns: repeat(2, minmax(200px, 1fr)); }
     .modal-box { max-width: 98vw !important; margin: 4px; }
   }
   @media (max-width: 600px) {
-    .kanban { grid-template-columns: 1fr !important; }
+    .kanban { grid-template-columns: 1fr; }
     .page-header { flex-direction: column; align-items: flex-start !important; }
   }
   .ticket-card {
@@ -2261,7 +2261,9 @@ function mapRowToTicket(r) {
     tipoChamado:   r.tipo_chamado   || 'normal',
     dueDate:       r.due_date       || null,
     horaAgendada:  r.hora_agendada  || null,
-    finalizadoEm:  r.finalizado_em  || null,
+    finalizadoEm:  r.finalizado_em  ||
+                   // fallback: se resolvido sem data, usa created_at para não ficar fantasma
+                   (r.status === 'resolvido' ? (r.created_at || new Date().toISOString()) : null),
     finalizadoPor: r.finalizado_por || null,
     replies:       r.replies        || [],
     time:          new Date(r.created_at || Date.now()).getTime(),
@@ -2997,7 +2999,7 @@ function renderStats() {
   // ── Cálculos corrigidos ───────────────────────────────────────────
   // Em aberto: qualquer status != resolvido
   // emAberto = chamados ativos (excluindo resolvidos e agendados que não são emergência)
-  const statusAtivos = ['aberto','em-andamento','aguardando','pendencia','nao-atendido'];
+  const statusAtivos = ['aberto','em-andamento','aguardando','agendado','pendencia','nao-atendido'];
   const emAberto = tickets.filter(t => statusAtivos.includes(t.status));
 
   // Sem técnico: abertos sem responsável (todos, não só contratos)
@@ -3208,10 +3210,10 @@ function updateNavCounts() {
   }
 }
 
-function makeColResolvido(resolvido) {
-  const limit   = window._verMaisResolvido ? resolvido.length : 20;
-  const visible = resolvido.slice(0, limit);
-  const extra   = resolvido.length - 20;
+function makeColResolvido(resolvido, totalGeral) {
+  const total   = totalGeral ?? resolvido.length;
+  const visible = resolvido; // já fatiado no renderKanban
+  const extra   = total - 30;
   const btnHtml = resolvido.length > 20
     ? '<div onclick="window._verMaisResolvido=!window._verMaisResolvido;renderAll()" style="text-align:center;padding:8px;font-size:11px;color:var(--text3);cursor:pointer;border-top:1px solid var(--border)">'
       + (window._verMaisResolvido ? '↑ Mostrar menos' : '↓ Ver mais ' + extra + ' resolvidos') + '</div>'
@@ -3290,19 +3292,17 @@ function renderKanban(containerId, data) {
   const agendados   = byAgendamento(data.filter(t => t.status === 'agendado')); // ordenado por data/hora
   const pendencias  = byPrio(data.filter(t => t.status === 'pendencia'));
   const naoAtendido = byPrio(data.filter(t => t.status === 'nao-atendido'));
-  // Resolvido: apenas do mês atual (reinicia todo mês; histórico fica nos relatórios)
-  const _agora     = new Date();
-  const _mesCurrent = _agora.getMonth();
-  const _anoCurrent = _agora.getFullYear();
-  const resolvido   = byPrio(data.filter(t => {
-    if (t.status !== 'resolvido') return false;
-    const ref = t.finalizadoEm ? new Date(t.finalizadoEm) : new Date(t.time || 0);
-    return ref.getMonth() === _mesCurrent && ref.getFullYear() === _anoCurrent;
-  }));
+  // Resolvido: todos os resolvidos, ordenados pelo mais recente
+  // Limitado a 30 no kanban (histórico completo nos relatórios)
+  const todoResolvido = data.filter(t => t.status === 'resolvido')
+    .sort((a,b) => new Date(b.finalizadoEm||b.time||0) - new Date(a.finalizadoEm||a.time||0));
+  const resolvido = todoResolvido.slice(0, window._verMaisResolvido ? todoResolvido.length : 30);
 
   // Total de colunas para o grid
-  const nCols = 1 + membros.length + 3 + (resolvido.length > 0 ? 1 : 0);
-  container.style.gridTemplateColumns = `repeat(${nCols}, minmax(210px, 1fr))`;
+  const nCols = 1 + membros.length + 4; // chamados + técnicos + agendados + pendências + nao-atendido + resolvido (sempre presente)
+  // Forçar o número correto de colunas — usando cssText para poder usar !important
+  container.style.cssText = container.style.cssText.replace(/grid-template-columns[^;]+;?/g, '');
+  container.style.setProperty('grid-template-columns', `repeat(${nCols}, minmax(210px, 1fr))`, 'important');
   container.style.overflowX = 'auto';
   container.style.gap = '12px';
 
@@ -3318,7 +3318,7 @@ function renderKanban(containerId, data) {
     makeCol('Agendados',   '#a855f7', agendados) +
     makeCol('Pendências',  '#ff6b35', pendencias) +
     makeCol('Não Atendido','#8a90a0', naoAtendido) +
-    (resolvido.length > 0 ? makeColResolvido(resolvido) : '');
+    makeColResolvido(resolvido, todoResolvido.length) // sempre mostra coluna resolvido;
 
   // Restaurar posição de scroll de cada coluna
   container.querySelectorAll('.kanban-cards').forEach((col, i) => {
