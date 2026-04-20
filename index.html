@@ -186,6 +186,7 @@
   /* ── Views ── */
   .view { display: none; }
   .view.active { display: block; }
+.view.active .kanban { display: grid; }
 
   /* ── Page Header ── */
   .page-header { margin-bottom: 24px; }
@@ -203,7 +204,14 @@
   
 
   /* ── Kanban ── */
-  .kanban { display: grid; gap: 14px; overflow-x: auto; }
+  .kanban {
+    display: grid;
+    gap: 14px;
+    overflow-x: auto;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(240px, 280px);
+    align-items: start;
+  }
   @keyframes sla-pulse {
     0%,100% { opacity:1; }
     50%      { opacity:0.5; }
@@ -229,11 +237,11 @@
   @media (max-width: 900px) {
     .sidebar { display: none; }
     .main { margin-left: 0 !important; }
-    .kanban { grid-template-columns: repeat(2, minmax(200px, 1fr)); }
+    .kanban { grid-auto-columns: minmax(200px, 240px); }
     .modal-box { max-width: 98vw !important; margin: 4px; }
   }
   @media (max-width: 600px) {
-    .kanban { grid-template-columns: 1fr; }
+    .kanban { grid-auto-columns: minmax(180px, 1fr); }
     .page-header { flex-direction: column; align-items: flex-start !important; }
   }
   .ticket-card {
@@ -403,7 +411,7 @@
     .app { grid-template-columns: 1fr; }
     .sidebar { display: none; }
     .stats-row { grid-template-columns: 1fr 1fr; }
-    .kanban { grid-template-columns: 1fr 1fr; }
+    .kanban { grid-auto-columns: minmax(200px, 1fr); }
     .kb-grid { grid-template-columns: 1fr; }
   }
 </style>
@@ -2941,7 +2949,15 @@ function showView(name) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
   event?.currentTarget?.classList.add('active');
+  // Renderizar kanban imediatamente ao ativar a view
+  const kanbanEl = document.getElementById('full-kanban');
+  if (kanbanEl) kanbanEl.style.display = 'grid';
   renderAll();
+  // Forçar render imediato do kanban (não só debounced)
+  if (name === 'chamados') {
+    const tf = getTicketsFiltrados ? getTicketsFiltrados() : tickets;
+    if (typeof renderKanban === 'function' && kanbanEl) renderKanban('full-kanban', tf);
+  }
   if (name === 'users')    renderUsersTable();
   if (name === 'config')   { renderMembrosConfig(); loadTrelloConfig(); }
   if (name === 'acl')      renderACL();
@@ -3298,13 +3314,8 @@ function renderKanban(containerId, data) {
     .sort((a,b) => new Date(b.finalizadoEm||b.time||0) - new Date(a.finalizadoEm||a.time||0));
   const resolvido = todoResolvido.slice(0, window._verMaisResolvido ? todoResolvido.length : 30);
 
-  // Total de colunas para o grid
-  const nCols = 1 + membros.length + 4; // chamados + técnicos + agendados + pendências + nao-atendido + resolvido (sempre presente)
-  // Forçar o número correto de colunas — usando cssText para poder usar !important
-  container.style.cssText = container.style.cssText.replace(/grid-template-columns[^;]+;?/g, '');
-  container.style.setProperty('grid-template-columns', `repeat(${nCols}, minmax(210px, 1fr))`, 'important');
-  container.style.overflowX = 'auto';
-  container.style.gap = '12px';
+  // Colunas gerenciadas pelo CSS (grid-auto-flow: column) — sem manipulação JS
+  container.style.display = 'grid';
 
   // Salvar posição de scroll de cada coluna antes de re-renderizar
   const _scrollPositions = [];
@@ -6797,6 +6808,14 @@ async function initApp(user) {
     loadKBBaseOverrides(),
     loadTicketsFromDB(),
   ]);
+  // Ativar view de chamados como padrão
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const vcham = document.getElementById('view-chamados');
+  if (vcham) vcham.classList.add('active');
+  const navCham = document.getElementById('nav-chamados');
+  if (navCham) navCham.classList.add('active');
+  const kanbanEl = document.getElementById('full-kanban');
+  if (kanbanEl) kanbanEl.style.display = 'grid';
   renderAll();
   // Deferir tudo que não é crítico para após o primeiro render
   // Realtime inicia imediatamente — independente do Trello
