@@ -187,7 +187,6 @@
   .view { display: none; }
   .view.active { display: block; }
 
-
   /* ── Page Header ── */
   .page-header { margin-bottom: 24px; }
   .page-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
@@ -204,20 +203,12 @@
   
 
   /* ── Kanban ── */
-  .kanban {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    gap: 14px;
-    align-items: flex-start;
-    width: max-content;
-    min-width: 100%;
-  }
+  .kanban { display: grid; gap: 14px; overflow-x: auto; }
   @keyframes sla-pulse {
     0%,100% { opacity:1; }
     50%      { opacity:0.5; }
   }
-  .kanban-col { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; flex: 0 0 260px; width: 260px; min-width: 260px; }
+  .kanban-col { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   .kanban-head {
     padding: 12px 16px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
     text-transform: uppercase; font-family: var(--mono);
@@ -238,11 +229,11 @@
   @media (max-width: 900px) {
     .sidebar { display: none; }
     .main { margin-left: 0 !important; }
-
+    .kanban { grid-template-columns: repeat(2, minmax(200px, 1fr)) !important; }
     .modal-box { max-width: 98vw !important; margin: 4px; }
   }
   @media (max-width: 600px) {
-
+    .kanban { grid-template-columns: 1fr !important; }
     .page-header { flex-direction: column; align-items: flex-start !important; }
   }
   .ticket-card {
@@ -412,10 +403,11 @@
     .app { grid-template-columns: 1fr; }
     .sidebar { display: none; }
     .stats-row { grid-template-columns: 1fr 1fr; }
-
+    .kanban { grid-template-columns: 1fr 1fr; }
     .kb-grid { grid-template-columns: 1fr; }
   }
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <!-- LOGIN SCREEN -->
@@ -669,8 +661,27 @@
           </div>
         </div>
 
-        <!-- Roles dinâmicos — renderizado por renderACL() -->
-        <div id="acl-container" style="display:flex;flex-direction:column;gap:0"></div>
+        <!-- TÉCNICO -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+          <div style="background:var(--surface2);padding:12px 16px;display:flex;align-items:center;gap:10px">
+            <span class="tag n1">TÉCNICO</span>
+            <span style="font-size:13px;font-weight:700">Técnico de Suporte</span>
+          </div>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px" id="acl-tecnico">
+          </div>
+        </div>
+
+        <!-- LEITOR -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+          <div style="background:var(--surface2);padding:12px 16px;display:flex;align-items:center;gap:10px">
+            <span class="tag n2">LEITOR</span>
+            <span style="font-size:13px;font-weight:700">Leitor (Somente Visualização)</span>
+          </div>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px" id="acl-leitor">
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="salvarACL()" style="max-width:200px">💾 Salvar Permissões</button>
       </div>
     </div>
 
@@ -1120,14 +1131,6 @@
           <button onclick="limparFiltrosChamados()" id="btn-limpar-filtros" style="display:none;font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--warn);color:var(--warn);background:rgba(255,204,0,0.07);cursor:pointer">✕ Limpar filtros</button>
         </div>
       </div>
-      <!-- Barra de busca -->
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-        <div style="position:relative;flex:1;max-width:420px">
-          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none">🔍</span>
-          <input id="input-busca-chamados" class="form-input" placeholder="Buscar por empresa, nome, CNPJ, #ID, sistema..." style="padding-left:32px;font-size:13px;height:36px"
-            oninput="setFiltroBusca(this.value)" onkeydown="if(event.key==='Escape'){setFiltroBusca('');this.value='';}"/>
-        </div>
-      </div>
 
       <!-- Barra de filtros rápidos -->
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
@@ -1178,7 +1181,7 @@
         </div>
       </div>
 
-      <div style="overflow-x:auto;width:100%;padding-bottom:4px"><div class="kanban" id="full-kanban"></div></div>
+      <div class="kanban" id="full-kanban"></div>
     </div>
 
     <!-- NOVO CHAMADO -->
@@ -1656,10 +1659,9 @@
             <div class="form-group">
               <label class="form-label">Perfil</label>
               <select class="form-select" id="new-role">
-                <option value="adm">ADM</option>
-                <option value="tecnico">Técnico de Suporte</option>
-                <option value="comercial">Comercial</option>
+                <option value="tecnico">Técnico</option>
                 <option value="leitor">Leitor (somente visualização)</option>
+                <option value="adm">ADM</option>
               </select>
             </div>
             <div class="form-group" style="justify-content:flex-end">
@@ -1987,57 +1989,32 @@ function getSBClient() {
 }
 
 async function sbFetch(path, method = 'GET', body = null, extra = {}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000); // 15s timeout
-  try {
-    const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
-      method,
-      signal: controller.signal,
-      headers: {
-        'apikey': SB_KEY,
-        'Authorization': `Bearer ${SB_KEY}`,
-        'Content-Type': 'application/json',
-        'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal',
-        ...extra
-      },
-      body: body ? JSON.stringify(body) : null
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || err.hint || `HTTP ${res.status}`);
-    }
-    const text = await res.text();
-    return text ? JSON.parse(text) : null;
-  } finally {
-    clearTimeout(timer);
+  const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': `Bearer ${SB_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal',
+      ...extra
+    },
+    body: body ? JSON.stringify(body) : null
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.hint || `HTTP ${res.status}`);
   }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
 }
 
 function isLeitor() {
-  if (currentUser?.role === 'adm') return false;
-  const acl   = getACL();
-  const perms = acl[currentUser?.role] || [];
-  return perms.length === 0;
+  return currentUser?.role === 'leitor';
 }
 
 function bloquearLeitor(acao = 'esta ação') {
-  if (currentUser?.role === 'adm') return false;
-  // Mapear ação para chave de permissão
-  const mapaAcao = {
-    'criar chamados': 'criar_chamado', 'criar_chamados': 'criar_chamado',
-    'editar chamados': 'editar_chamado', 'editar_chamados': 'editar_chamado',
-    'excluir chamados': 'excluir_chamado', 'excluir_chamados': 'excluir_chamado',
-    'finalizar chamados': 'finalizar_chamado',
-    'alterar configurações': 'config', 'configurações': 'config',
-    'gerenciar usuários': 'config',
-  };
-  const chave = mapaAcao[acao.toLowerCase()] || null;
-  const acl   = getACL();
-  const perms = acl[currentUser?.role] || [];
-  // Se há chave mapeada, checar ACL; senão bloquear apenas leitor puro (sem permissão alguma)
-  const bloqueado = chave ? !perms.includes(chave) : perms.length === 0;
-  if (bloqueado) {
-    showNotif('🔒 Sem permissão: ' + acao, 'warn');
+  if (isLeitor()) {
+    showNotif(`🔒 Acesso negado — perfil Leitor não pode executar: ${acao}`, 'warn');
     return true;
   }
   return false;
@@ -2197,17 +2174,8 @@ function startRealtimeSync() {
       if (eventType === 'INSERT' && novo?.id) {
         const jaExiste = tickets.find(t => t.id === novo.id);
         if (!jaExiste) {
-          const novoTicket = mapRowToTicket(novo);
-          // Auto-atribuir por label se não tem técnico
-          if (!novoTicket.assignedTo && Array.isArray(novoTicket.labels)) {
-            const membros = getMembros ? getMembros() : ['Willian','Lucas','Alex','Julio'];
-            for (const label of novoTicket.labels) {
-              const ln = (label.name || label.color || '').toLowerCase().trim();
-              const membro = membros.find(m => { const mn=m.toLowerCase(); return ln===mn||ln.includes(mn)||mn.includes(ln); });
-              if (membro) { novoTicket.assignedTo = membro; break; }
-            }
-          }
-          tickets.unshift(novoTicket);
+          tickets.unshift(mapRowToTicket(novo));
+          // Deduplicar por segurança (evita duplicatas entre Realtime e polling)
           tickets = tickets.filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
           renderAll();
         }
@@ -2216,19 +2184,16 @@ function startRealtimeSync() {
         if (idx >= 0) {
           // Preserva campos de memória que não estão no banco
           const memTicket = tickets[idx];
-          const mappedNovo = mapRowToTicket(novo);
           tickets[idx] = {
             ...memTicket,
-            ...mappedNovo,
-            // Preservar campos não retornados pela query leve
-            assignedTo:     novo.assigned_to || memTicket.assignedTo || null,
-            replies:        memTicket.replies || [],        // nunca sobrescrever replies em memória
-            _repliesLoaded: memTicket._repliesLoaded || false,
+            ...mapRowToTicket(novo),
+            // Preservar assignedTo da memória se banco está null
+            assignedTo: novo.assigned_to || memTicket.assignedTo || null,
           };
           renderAll();
           // Re-renderizar modal se o ticket atualizado está aberto
           if (_currentTicketId === novo.id) {
-            showTicketDetail(novo.id); // async — ok sem await no handler do Realtime
+            showTicketDetail(novo.id);
           }
         }
       } else if (eventType === 'DELETE' && antigo?.id) {
@@ -2250,12 +2215,12 @@ function mapRowToTicket(r) {
   return {
     id:            r.id,
     nome:          r.nome,
-    empresa:        r.empresa       || '—',
+    empresa:       r.empresa,
     cnpj:          r.cnpj,
-    sistema:       r.sistema      || '',
-    prioridade:    r.prioridade   || 'avulso',
-    categoria:     r.categoria    || 'outro',
-    nivel:         r.nivel        || 'n1',
+    sistema:       r.sistema,
+    prioridade:    r.prioridade,
+    categoria:     r.categoria,
+    nivel:         r.nivel,
     status:        r.status,
     desc:          r.descricao,
     contato:       r.contato        || null,
@@ -2270,9 +2235,7 @@ function mapRowToTicket(r) {
     tipoChamado:   r.tipo_chamado   || 'normal',
     dueDate:       r.due_date       || null,
     horaAgendada:  r.hora_agendada  || null,
-    finalizadoEm:  r.finalizado_em  ||
-                   // fallback: se resolvido sem data, usa created_at para não ficar fantasma
-                   (r.status === 'resolvido' ? (r.created_at || new Date().toISOString()) : null),
+    finalizadoEm:  r.finalizado_em  || null,
     finalizadoPor: r.finalizado_por || null,
     replies:       r.replies        || [],
     time:          new Date(r.created_at || Date.now()).getTime(),
@@ -2309,8 +2272,6 @@ async function addUser() {
 }
 
 async function deleteUser(username) {
-  if (currentUser?.role !== 'adm') { showNotif('🔒 Apenas ADM.','warn'); return; }
-  
   if (username === 'adm') { showNotif('⚠️ O usuário ADM não pode ser removido.', 'warn'); return; }
   if (!confirm(`Remover o usuário "${username}"?`)) return;
   try {
@@ -2336,7 +2297,7 @@ async function renderUsersTable() {
               ${currentUser?.role === 'adm' ? `<span class="${getUsuariosOnline().find(o=>o.username===u.username) ? 'user-online-dot' : 'user-offline-dot'}"></span>` : ''}
               ${u.username}
             </td>
-          <td><span class="tag ${u.role === 'adm' ? 'contrato' : u.role === 'leitor' ? 'n2' : 'n1'}">${u.role === 'leitor' ? '👁 LEITOR' : getRoleLabel(u.role)}</span></td>
+          <td><span class="tag ${u.role === 'adm' ? 'contrato' : u.role === 'leitor' ? 'n2' : 'n1'}">${u.role === 'leitor' ? '👁 LEITOR' : u.role.toUpperCase()}</span></td>
           <td style="color:var(--text2);font-size:12px">${new Date(u.created_at).toLocaleDateString('pt-BR')}</td>
           <td style="display:flex;gap:6px;align-items:center">
             <button onclick="abrirResetSenha('${u.username}')" style="background:rgba(255,204,0,0.1);border:1px solid rgba(255,204,0,0.3);color:var(--warn);border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:var(--sans)">🔑 Senha</button>
@@ -2354,27 +2315,9 @@ async function renderUsersTable() {
 }
 
 // ─── Tickets — Supabase ───────────────────────────────────────────────────────
-async function carregarTodosChamados() {
-  // Busca paginada — 1000 por página até trazer tudo
-  const CAMPOS = 'id,nome,empresa,cnpj,contato,sistema,prioridade,categoria,nivel,status,descricao,assigned_to,tipo_chamado,due_date,hora_agendada,finalizado_em,finalizado_por,from_trello,from_whatsapp,whatsapp_phone,trello_card_id,trello_list,trello_list_id,labels,created_at,updated_at';
-  let todos = [], offset = 0, PAGE = 1000;
-  while (true) {
-    const rows = await sbFetch(
-      `chamados?select=${CAMPOS}&order=created_at.desc&limit=${PAGE}&offset=${offset}`,
-      'GET', null,
-      { 'Range-Unit': 'items', 'Range': `${offset}-${offset + PAGE - 1}` }
-    );
-    if (!rows || rows.length === 0) break;
-    todos = todos.concat(rows);
-    if (rows.length < PAGE) break; // última página
-    offset += PAGE;
-  }
-  return todos;
-}
-
 async function loadTicketsFromDB() {
   try {
-    const rows = await carregarTodosChamados();
+    const rows = await sbFetch('chamados?select=*&order=created_at.desc');
     if (rows && rows.length > 0) {
       const dbTickets = rows.map(r => {
         const t = mapRowToTicket(r);
@@ -2389,35 +2332,10 @@ async function loadTicketsFromDB() {
         t.fromTrello &&
         !dbTickets.find(d => d.id === t.id || (d.trelloCardId && d.trelloCardId === t.trelloCardId))
       );
-      // Mesclar e deduplicar
+      // Mesclar e deduplicar — evita duplicatas entre DB e Realtime
       const merged = [...dbTickets, ...trelloOnly];
       tickets = merged.filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
 
-      // Atribuição automática por label — sem precisar do botão "Corrigir Atribuições"
-      const membros = getMembros ? getMembros() : ['Willian','Lucas','Alex','Julio'];
-      const paraAtribuir = tickets.filter(t => !t.assignedTo && Array.isArray(t.labels) && t.labels.length > 0);
-      const ticketsModificados = [];
-      for (const t of paraAtribuir) {
-        for (const label of t.labels) {
-          const ln = (label.name || label.color || '').toLowerCase().trim();
-          if (!ln) continue;
-          const membro = membros.find(m => {
-            const mn = m.toLowerCase();
-            return ln === mn || ln.includes(mn) || mn.includes(ln);
-          });
-          if (membro) {
-            t.assignedTo = membro;
-            if (t.status === 'resolvido' && !t.finalizadoPor) t.finalizadoPor = membro;
-            ticketsModificados.push(t);
-            break;
-          }
-        }
-      }
-      // Salvar atribuições no banco em paralelo (sem await — fire and forget)
-      if (ticketsModificados.length > 0) {
-        ticketsModificados.forEach(t => updateTicketInDB && updateTicketInDB(t));
-        console.log('Auto-atribuição: ' + ticketsModificados.length + ' chamado(s)');
-      }
     }
   } catch(e) {
     console.warn('Erro ao carregar chamados do DB:', e.message);
@@ -2477,21 +2395,16 @@ function updateTicketInDB(t) {
 async function _flushTicketToDB(t) {
   try {
     await sbFetch(`chamados?id=eq.${encodeURIComponent(t.id)}`, 'PATCH', {
-      status:         t.status,
-      descricao:      t.desc          || null,
-      replies:        t.replies        || [],
-      labels:         t.labels         || [],
-      assigned_to:    t.assignedTo     || null,
-      tipo_chamado:   t.tipoChamado    || 'normal',
-      due_date:       t.dueDate        || null,
-      hora_agendada:  t.horaAgendada   || null,
-      finalizado_em:  t.finalizadoEm   || null,
-      finalizado_por: t.finalizadoPor  || null,
-      sistema:        t.sistema        || null,
-      prioridade:     t.prioridade     || null,
-      categoria:      t.categoria      || null,
-      nivel:          t.nivel          || null,
-      updated_at:     new Date().toISOString(),
+      status:        t.status,
+      replies:       t.replies       || [],
+      labels:        t.labels        || [],
+      assigned_to:   t.assignedTo    || null,
+      tipo_chamado:  t.tipoChamado   || 'normal',
+      due_date:      t.dueDate       || null,
+      hora_agendada: t.horaAgendada  || null,
+      finalizado_em: t.finalizadoEm  || null,
+      finalizado_por: t.finalizadoPor || null,
+      updated_at:    new Date().toISOString(),
     });
   } catch(e) {
     console.warn('Erro ao atualizar chamado:', e.message);
@@ -2670,17 +2583,7 @@ async function syncFromTrello(silent = false) {
       TRELLO.listOrder.push({ id: l.id, name: l.name });
     });
 
-    // Buscar TODOS os cards incluindo arquivados — paginação via before=
-    let cards = [], lastId = null;
-    while (true) {
-      const url = `/boards/${TRELLO.board}/cards?fields=id,name,desc,idList,labels,dateLastActivity,due&filter=all&limit=1000` +
-                  (lastId ? `&before=${lastId}` : '');
-      const lote = await trelloGET(url);
-      if (!lote || lote.length === 0) break;
-      cards = cards.concat(lote);
-      if (lote.length < 1000) break; // última página
-      lastId = lote[lote.length - 1].id;
-    }
+    const cards = await trelloGET(`/boards/${TRELLO.board}/cards?fields=id,name,desc,idList,labels,dateLastActivity,due`);
 
     let novos = 0;
 
@@ -2756,8 +2659,8 @@ function startTrelloPolling() {
   if (trelloPollingInterval) { clearInterval(trelloPollingInterval); trelloPollingInterval = null; }
   if (_dbPollingInterval)    { clearInterval(_dbPollingInterval);    _dbPollingInterval    = null; }
 
-  // Realtime já iniciado no initApp — não reiniciar se canal ativo
-  if (!_realtimeChannel) startRealtimeSync();
+  // Apenas Realtime ativo
+  startRealtimeSync();
 }
 
 async function initTrello() {
@@ -2871,26 +2774,16 @@ let kbItems = [
 
 // ─── Anthropic API helper ─────────────────────────────────────────────────────
 async function groqFetch(body) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 30000); // 30s timeout
-  try {
-    const response = await fetch('/api/anthropic-proxy', {
-      method: 'POST',
-      signal: controller.signal,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error?.message || err.error || `HTTP ${response.status}`);
-    }
-    return response.json();
-  } catch(e) {
-    if (e.name === 'AbortError') throw new Error('IA: timeout após 30s');
-    throw e;
-  } finally {
-    clearTimeout(timer);
+  const response = await fetch('/api/anthropic-proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error?.message || err.error || `HTTP ${response.status}`);
   }
+  return response.json();
 }
 
 // ─── Bot AI Responses ─────────────────────────────────────────────────────────
@@ -2951,17 +2844,6 @@ function showView(name) {
   document.getElementById('view-' + name).classList.add('active');
   event?.currentTarget?.classList.add('active');
   renderAll();
-  // Para chamados: forçar render APÓS o browser pintar a view (evita cache de layout)
-  if (name === 'chamados') {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (typeof renderKanban === 'function') {
-          const tf = getTicketsFiltrados ? getTicketsFiltrados() : tickets;
-          renderKanban('full-kanban', tf);
-        }
-      });
-    });
-  }
   if (name === 'users')    renderUsersTable();
   if (name === 'config')   { renderMembrosConfig(); loadTrelloConfig(); }
   if (name === 'acl')      renderACL();
@@ -3018,9 +2900,7 @@ function renderStats() {
 
   // ── Cálculos corrigidos ───────────────────────────────────────────
   // Em aberto: qualquer status != resolvido
-  // emAberto = chamados ativos (excluindo resolvidos e agendados que não são emergência)
-  const statusAtivos = ['aberto','em-andamento','aguardando','agendado','pendencia','nao-atendido'];
-  const emAberto = tickets.filter(t => statusAtivos.includes(t.status));
+  const emAberto = tickets.filter(t => t.status !== 'resolvido');
 
   // Sem técnico: abertos sem responsável (todos, não só contratos)
   const semTecnico = emAberto.filter(t => !t.assignedTo);
@@ -3180,7 +3060,7 @@ function renderStats() {
   if (recentesEl) {
     const prioColors = { contrato:'var(--accent)', garantia:'var(--accent2)', avulso:'var(--text3)' };
     const recentes = [...tickets]
-      .filter(t => ['aberto','em-andamento','aguardando'].includes(t.status))
+      .filter(t => t.status !== 'resolvido')
       .sort((a,b) => (b.time||0) - (a.time||0))
       .slice(0, 6);
     recentesEl.innerHTML = recentes.length === 0
@@ -3230,10 +3110,10 @@ function updateNavCounts() {
   }
 }
 
-function makeColResolvido(resolvido, totalGeral) {
-  const total   = totalGeral ?? resolvido.length;
-  const visible = resolvido; // já fatiado no renderKanban
-  const extra   = total - 30;
+function makeColResolvido(resolvido) {
+  const limit   = window._verMaisResolvido ? resolvido.length : 20;
+  const visible = resolvido.slice(0, limit);
+  const extra   = resolvido.length - 20;
   const btnHtml = resolvido.length > 20
     ? '<div onclick="window._verMaisResolvido=!window._verMaisResolvido;renderAll()" style="text-align:center;padding:8px;font-size:11px;color:var(--text3);cursor:pointer;border-top:1px solid var(--border)">'
       + (window._verMaisResolvido ? '↑ Mostrar menos' : '↓ Ver mais ' + extra + ' resolvidos') + '</div>'
@@ -3312,13 +3192,21 @@ function renderKanban(containerId, data) {
   const agendados   = byAgendamento(data.filter(t => t.status === 'agendado')); // ordenado por data/hora
   const pendencias  = byPrio(data.filter(t => t.status === 'pendencia'));
   const naoAtendido = byPrio(data.filter(t => t.status === 'nao-atendido'));
-  // Resolvido: todos os resolvidos, ordenados pelo mais recente
-  // Limitado a 30 no kanban (histórico completo nos relatórios)
-  const todoResolvido = data.filter(t => t.status === 'resolvido')
-    .sort((a,b) => new Date(b.finalizadoEm||b.time||0) - new Date(a.finalizadoEm||a.time||0));
-  const resolvido = todoResolvido.slice(0, window._verMaisResolvido ? todoResolvido.length : 30);
+  // Resolvido: apenas do mês atual (reinicia todo mês; histórico fica nos relatórios)
+  const _agora     = new Date();
+  const _mesCurrent = _agora.getMonth();
+  const _anoCurrent = _agora.getFullYear();
+  const resolvido   = byPrio(data.filter(t => {
+    if (t.status !== 'resolvido') return false;
+    const ref = t.finalizadoEm ? new Date(t.finalizadoEm) : new Date(t.time || 0);
+    return ref.getMonth() === _mesCurrent && ref.getFullYear() === _anoCurrent;
+  }));
 
-  // Flexbox — sem necessidade de manipular display via JS
+  // Total de colunas para o grid
+  const nCols = 1 + membros.length + 3 + (resolvido.length > 0 ? 1 : 0);
+  container.style.gridTemplateColumns = `repeat(${nCols}, minmax(210px, 1fr))`;
+  container.style.overflowX = 'auto';
+  container.style.gap = '12px';
 
   // Salvar posição de scroll de cada coluna antes de re-renderizar
   const _scrollPositions = [];
@@ -3332,7 +3220,7 @@ function renderKanban(containerId, data) {
     makeCol('Agendados',   '#a855f7', agendados) +
     makeCol('Pendências',  '#ff6b35', pendencias) +
     makeCol('Não Atendido','#8a90a0', naoAtendido) +
-    makeColResolvido(resolvido, todoResolvido.length) // sempre mostra coluna resolvido;
+    (resolvido.length > 0 ? makeColResolvido(resolvido) : '');
 
   // Restaurar posição de scroll de cada coluna
   container.querySelectorAll('.kanban-cards').forEach((col, i) => {
@@ -3349,7 +3237,6 @@ function hexToRgb(hex) {
 }
 
 function renderTicketCard(t) {
-  try {
   const prioColor = { contrato: 'var(--accent)', garantia: 'var(--accent2)', avulso: 'var(--text3)' }[t.prioridade] || 'var(--text3)';
   const idx = t.assignedTo ? getMembros().indexOf(t.assignedTo) : -1;
   const memberColor = idx >= 0 ? MEMBER_COLORS[idx % MEMBER_COLORS.length] : 'var(--text3)';
@@ -3375,10 +3262,10 @@ function renderTicketCard(t) {
         })()}
       </div>
       <div class="tc-title">${getCategoryLabel(t.categoria)}</div>
-      <div class="tc-company">${escapeHtml(t.empresa||'—')}</div>
+      <div class="tc-company">${escapeHtml(t.empresa)}</div>
       <div class="tc-tags">
         <span class="tag ${t.prioridade}">${getPrioLabel(t.prioridade)}</span>
-        <span class="tag ${t.nivel||'n1'}">${(t.nivel||'N1').toUpperCase()}</span>
+        <span class="tag ${t.nivel}">${t.nivel.toUpperCase()}</span>
         <span style="font-size:9px;background:var(--surface3);color:var(--text2);padding:2px 7px;border-radius:3px;font-family:var(--mono)">${(t.sistema||'—').toLowerCase()}</span>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
@@ -3390,7 +3277,7 @@ function renderTicketCard(t) {
       </div>
         ${t.assignedTo
           ? `<div style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:var(--mono);color:${memberColor}">
-               <div style="width:16px;height:16px;border-radius:50%;background:${memberColor}22;border:1.5px solid ${memberColor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">${(t.assignedTo||'?').charAt(0).toUpperCase()}</div>
+               <div style="width:16px;height:16px;border-radius:50%;background:${memberColor}22;border:1.5px solid ${memberColor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">${t.assignedTo.charAt(0).toUpperCase()}</div>
                ${t.assignedTo}
              </div>`
           : `<div style="font-size:10px;color:var(--text3);font-family:var(--mono);opacity:0.6">sem responsável</div>`
@@ -3427,11 +3314,6 @@ function renderTicketCard(t) {
       </button>
     </div>
   </div>`;
-
-  } catch(e) {
-    console.error('renderTicketCard erro:', e, t);
-    return '<div class="ticket-card" style="border-left:3px solid #ff4757;padding:10px;font-size:11px;color:var(--text3)">Erro ao renderizar #' + (t?.id||'?') + '</div>';
-  }
 }
 
 // ─── KB AI Generation ─────────────────────────────────────────────────────────
@@ -3862,24 +3744,15 @@ async function alterarSenha() {
 async function getConfig(chave, fallback) {
   try {
     const rows = await sbFetch('configuracoes?chave=eq.' + encodeURIComponent(chave) + '&select=valor');
-    if (rows && rows.length > 0) {
-      const val = rows[0].valor;
-      // Suporta valor como JSONB (objeto) ou TEXT (string JSON)
-      if (typeof val === 'string') {
-        try { return JSON.parse(val); } catch { return val; }
-      }
-      return val;
-    }
+    if (rows && rows.length > 0) return rows[0].valor;
   } catch(e) { console.warn('getConfig:', e.message); }
   return fallback !== undefined ? fallback : null;
 }
 
 async function setConfig(chave, valor) {
   try {
-    // Serializa para JSON se for objeto (compatível com coluna TEXT ou JSONB)
-    const valorFinal = (typeof valor === 'object' && valor !== null) ? valor : valor;
     await sbFetch('configuracoes', 'POST',
-      { chave, valor: valorFinal, updated_at: new Date().toISOString() },
+      { chave, valor, updated_at: new Date().toISOString() },
       { 'Prefer': 'resolution=merge-duplicates,return=minimal' });
   } catch(e) { console.warn('setConfig:', e.message); }
 }
@@ -4846,7 +4719,7 @@ function createTicket() {
   }
 
   const newTicket = {
-    id: '#' + String(tickets.length + 1).padStart(3, '0') + '-' + Date.now().toString(36).slice(-3),
+    id: '#' + String(tickets.length + 1).padStart(3, '0'),
     nome, contato, empresa, cnpj, sistema,
     prioridade: selectedPriority,
     categoria: categoria || 'outro',
@@ -4883,11 +4756,6 @@ function clearForm() {
   const fHora = document.getElementById('f-hora-agend');
   if (fData) fData.value = '';
   if (fHora) fHora.value = '';
-  // Reset tipo de suporte e grupo de sistema
-  const fTipoSup = document.getElementById('f-tipo-suporte');
-  if (fTipoSup) fTipoSup.value = '';
-  const fSistGrp = document.getElementById('f-sistema-group');
-  if (fSistGrp) fSistGrp.style.display = 'none';
 }
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────
@@ -5463,20 +5331,10 @@ function showNotif(text, type='') {
   setTimeout(() => el.remove(), 4000);
 }
 
-async function showTicketDetail(id) {
-  _currentTicketId = id;
+function showTicketDetail(id) {
+  _currentTicketId = id; // guardar para re-renderizar se Realtime atualizar
   const t = tickets.find(x => x.id === id);
   if (!t) return;
-  // Lazy load de replies — só carrega ao abrir o modal
-  if (!t._repliesLoaded) {
-    try {
-      const rows = await sbFetch('chamados?id=eq.' + encodeURIComponent(id) + '&select=replies');
-      if (rows && rows.length > 0) {
-        t.replies = rows[0].replies || [];
-        t._repliesLoaded = true;
-      }
-    } catch(e) { /* usa replies em memória */ }
-  }
   if (!t.replies) t.replies = [];
   if (!t.currentStatus) t.currentStatus = t.status;
 
@@ -5709,7 +5567,7 @@ async function submitReply(isAI = false) {
     text,
     isAI
   };
-  t.replies.push(reply); t._repliesLoaded = true;
+  t.replies.push(reply);
   renderModalReplies(t);
   document.getElementById('modal-reply-text').value = '';
   updateTicketInDB(t);
@@ -6638,7 +6496,6 @@ function atualizarBotaoLimparFiltros() {
 }
 
 function getTicketsFiltrados() {
-  const busca = (_filtroBusca||'').toLowerCase().trim();
   return tickets.filter(t => {
     if (_filtroPrio !== 'todos' && t.prioridade !== _filtroPrio) return false;
     if (_filtroTecnico && t.assignedTo !== _filtroTecnico) return false;
@@ -6646,18 +6503,8 @@ function getTicketsFiltrados() {
       if (t.status === 'resolvido' || t.prioridade !== 'contrato') return false;
       if ((Date.now() - (t.time||0)) / 3600000 < 8) return false;
     }
-    if (busca) {
-      const campos = [t.id, t.empresa, t.nome, t.cnpj, t.desc, t.sistema, t.contato].join(' ').toLowerCase();
-      if (!campos.includes(busca)) return false;
-    }
     return true;
   });
-}
-
-function setFiltroBusca(val) {
-  _filtroBusca = val || '';
-  atualizarBotaoLimparFiltros();
-  renderAll();
 }
 
 function popularFiltroTecnico() {
@@ -6773,65 +6620,39 @@ async function initApp(user) {
   document.getElementById('main-app').style.display     = 'grid';
   document.getElementById('topbar-user').textContent    = `👤 ${getDisplayName(user.username)} (${user.role.toUpperCase()})`;
   if (user.role !== 'adm') {
+    // Oculta seção inteira de Administração
     ['nav-section-admin','nav-config','nav-acl','nav-users'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
   }
-  // Controle de menu por ACL — ocultar itens sem permissão
-  setTimeout(() => {
-    const acl   = getACL();
-    const perms = user.role === 'adm' ? ['*'] : (acl[user.role] || []);
-    const todos = perms.includes('*');
-    const mapa  = {
-      'nav-whatsapp': 'whatsapp',
-      'nav-relatorios': 'exportar',
-      'nav-kb': 'criar_kb',
-    };
-    Object.entries(mapa).forEach(([navId, permKey]) => {
-      const el = document.getElementById(navId);
-      if (el && !todos && !perms.includes(permKey)) el.style.display = 'none';
-    });
-  }, 300);
+  if (user.role === 'leitor') {
+    // Leitor vê todos os menus exceto Configurações e Usuários (já ocultos acima)
+    // Ações são bloqueadas via bloquearLeitor() em cada função
+  }
   marcarOnline();
   setInterval(marcarOnline, 60000);
   // Carrega todas as configurações do Supabase em paralelo
-  // Carregar TUDO em paralelo — de 8 requests sequenciais para 1 batch
-  // Carregar tudo em paralelo — máxima performance
   await Promise.all([
     loadKanbanCols(),
     getMembrosAsync(),
     loadCategoriasCustom(),
-    loadACL().then(() => setTimeout(renderACL, 200)),
+    loadACL(),
     loadClientes(),
-    getConfig('wa_config').then(v => {
-      if (v) { window._waConfigCache = v; localStorage.setItem(WA_CONFIG_KEY, JSON.stringify(v)); }
-    }),
-    loadCustomKBItems().then(kb => { if (kb) window._customKB = kb; }),
-    loadKBBaseOverrides(),
-    loadTicketsFromDB(),
+    getConfig('wa_config').then(v => { if (v) { window._waConfigCache = v; localStorage.setItem(WA_CONFIG_KEY, JSON.stringify(v)); } }),
   ]);
-  // Ativar view de chamados como padrão
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  const vcham = document.getElementById('view-chamados');
-  if (vcham) vcham.classList.add('active');
-  const navCham = document.getElementById('nav-chamados');
-  if (navCham) navCham.classList.add('active');
-  const kanbanEl = document.getElementById('full-kanban');
-  if (kanbanEl) kanbanEl.style.display = 'grid';
+  // Carrega KB customizada do Supabase
+  window._customKB = await loadCustomKBItems();
+  await loadKBBaseOverrides(); // Aplica edições permanentes aos itens base
+  // Carrega chamados do Supabase
+  await loadTicketsFromDB();
   renderAll();
-  // Deferir tudo que não é crítico para após o primeiro render
-  // Realtime inicia imediatamente — independente do Trello
-  startRealtimeSync();
-  // Carregamentos secundários adiados
-  setTimeout(() => {
-    loadTrelloConfig();
-    atualizarBotaoPause();
-    selectChat(0);
-    popularSelectCategorias('f-categoria');
-    initTrello();
-    loadGlobalApiKey();
-  }, 200);
+  loadTrelloConfig();
+  atualizarBotaoPause();
+  selectChat(0);
+  popularSelectCategorias('f-categoria');
+  initTrello();
+  setTimeout(loadGlobalApiKey, 400);
   const waConf = loadWAConfig();
   if (waConf) {
     setTimeout(() => {
@@ -7052,8 +6873,6 @@ function formatarCnpjCliente(input) {
 }
 
 async function salvarCliente() {
-  if (bloquearLeitor('editar clientes')) return;
-  
   const empresa = document.getElementById('fc-empresa').value.trim();
   const cnpj    = document.getElementById('fc-cnpj').value.trim();
   if (!empresa || !cnpj) { showNotif('⚠️ Razão Social e CNPJ são obrigatórios.','warn'); return; }
@@ -7093,8 +6912,6 @@ async function salvarCliente() {
 }
 
 async function excluirCliente(id) {
-  if (bloquearLeitor('excluir clientes')) return;
-  
   const c = getClientes().find(x => x.id === id);
   if (!c || !confirm(`Excluir o cliente "${c.empresa}"?`)) return;
   try {
@@ -7159,40 +6976,14 @@ const ACL_MODULOS = [
 ];
 
 const ACL_DEFAULT = {
-  tecnico:   ['criar_chamado','editar_chamado','finalizar_chamado','responder','sugerir_ia','criar_kb','desbloqueio','clientes','whatsapp','exportar'],
-  comercial: ['criar_chamado','editar_chamado','desbloqueio','clientes'],
-  leitor:    []
+  tecnico: ['criar_chamado','editar_chamado','finalizar_chamado','responder','sugerir_ia','criar_kb','desbloqueio','clientes','whatsapp','exportar'],
+  leitor:  []
 };
-
-// Nomes amigáveis dos roles customizáveis (salvo no banco)
-let _roleLabels = { tecnico: 'Técnico de Suporte', comercial: 'Comercial', leitor: 'Leitor' };
-
-async function loadRoleLabels() {
-  const saved = await getConfig('role_labels', null);
-  if (saved) _roleLabels = { ...{ tecnico: 'Técnico de Suporte', comercial: 'Comercial', leitor: 'Leitor' }, ...saved };
-}
-function getRoleLabel(role) {
-  if (role === 'adm') return 'ADM';
-  return _roleLabels[role] || role;
-}
-async function saveRoleLabels() {
-  await setConfig('role_labels', _roleLabels);
-}
-// Retorna todos os roles customizáveis (exceto adm)
-function getRolesCustom() {
-  const acl = getACL();
-  return Object.keys(acl);
-}
 let _aclCache = null;
 
 async function loadACL() {
   const saved = await getConfig('acl_permissoes', ACL_DEFAULT);
   _aclCache = saved || ACL_DEFAULT;
-  // Garantir que roles padrão existem
-  if (!_aclCache.tecnico)   _aclCache.tecnico   = ACL_DEFAULT.tecnico;
-  if (!_aclCache.comercial) _aclCache.comercial  = ACL_DEFAULT.comercial;
-  if (!_aclCache.leitor)    _aclCache.leitor     = ACL_DEFAULT.leitor;
-  await loadRoleLabels();
   return _aclCache;
 }
 
@@ -7201,125 +6992,26 @@ function getACL() {
 }
 
 async function saveACL(acl) {
-  if (currentUser?.role !== 'adm') return;
-  
   _aclCache = acl;
   await setConfig('acl_permissoes', acl);
 }
 
-async function toggleACL(role, modulo, checked) {
-  const acl = getACL();
-  if (!acl[role]) acl[role] = [];
-  if (checked) { if (!acl[role].includes(modulo)) acl[role].push(modulo); }
-  else         { acl[role] = acl[role].filter(m => m !== modulo); }
-  await saveACL(acl);
-  showNotif('✅ Permissão atualizada');
-}
-
-async function criarNovoRole() {
-  const nome = prompt('Nome do novo tipo de usuário (ex: Comercial, Suporte L2):');
-  if (!nome || !nome.trim()) return;
-  const key = nome.trim().toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
-  if (!key) { showNotif('Nome inválido.','warn'); return; }
-  const acl = getACL();
-  if (acl[key]) { showNotif('Já existe um tipo com esse nome.','warn'); return; }
-  acl[key] = [];
-  _roleLabels[key] = nome.trim();
-  await saveACL(acl);
-  await saveRoleLabels();
-  renderACL();
-  atualizarSelectsRole();
-  showNotif('✅ Tipo "' + nome.trim() + '" criado!');
-}
-
-async function renomearRole(role) {
-  const atual = getRoleLabel(role);
-  const novo = prompt('Novo nome para "' + atual + '":', atual);
-  if (!novo || !novo.trim() || novo.trim() === atual) return;
-  _roleLabels[role] = novo.trim();
-  await saveRoleLabels();
-  renderACL();
-  atualizarSelectsRole();
-  showNotif('✅ Renomeado para "' + novo.trim() + '"');
-}
-
-async function excluirRole(role) {
-  if (!confirm('Excluir o tipo "' + getRoleLabel(role) + '"? Usuários com esse tipo ficarão como Leitor.')) return;
-  const acl = getACL();
-  delete acl[role];
-  delete _roleLabels[role];
-  await saveACL(acl);
-  await saveRoleLabels();
-  renderACL();
-  atualizarSelectsRole();
-  showNotif('✅ Tipo excluído');
-}
-
-function atualizarSelectsRole() {
-  // Atualiza todos os <select> de role no sistema
-  const acl    = getACL();
-  const roles  = getRolesCustom();
-  const opts   = roles.map(r => '<option value="' + r + '">' + getRoleLabel(r) + '</option>').join('');
-  const optsFull = '<option value="adm">ADM</option>' + opts;
-  document.querySelectorAll('[data-role-select]').forEach(sel => {
-    const val = sel.value;
-    sel.innerHTML = sel.dataset.roleSelect === 'full' ? optsFull : opts;
-    if ([...sel.options].some(o => o.value === val)) sel.value = val;
-  });
-  // Atualizar o select fixo new-role (criação de usuário)
-  const selNewRole = document.getElementById('new-role');
-  if (selNewRole) {
-    const val = selNewRole.value;
-    selNewRole.innerHTML = optsFull;
-    if ([...selNewRole.options].some(o => o.value === val)) selNewRole.value = val;
-  }
-}
-
 function renderACL() {
-  const acl      = getACL();
-  const roles    = getRolesCustom(); // ['tecnico','comercial','leitor', ...]
-  const modulos  = ACL_MODULOS;
-  const container = document.getElementById('acl-container');
-  if (!container) return;
-
-  container.innerHTML = roles.map(role => {
-    const label = getRoleLabel(role);
-    const perms = acl[role] || [];
-    const isFixed = role === 'leitor'; // leitor sempre existe mas pode ter perms alteradas
-    return `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:13px;font-weight:700;color:var(--text)">${label}</span>
-          <code style="font-size:10px;color:var(--text3);background:var(--surface3);padding:1px 6px;border-radius:4px">${role}</code>
-        </div>
-        <div style="display:flex;gap:6px">
-          <button onclick="renomearRole('${role}')" style="font-size:11px;padding:3px 10px;border-radius:5px;border:1px solid var(--border);color:var(--text2);background:none;cursor:pointer">✏️ Renomear</button>
-          ${role !== 'tecnico' && role !== 'leitor' ? `<button onclick="excluirRole('${role}')" style="font-size:11px;padding:3px 10px;border-radius:5px;border:1px solid rgba(255,71,87,.3);color:var(--danger);background:none;cursor:pointer">✕ Excluir</button>` : ''}
-        </div>
-      </div>
-      <div style="padding:14px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px" id="acl-${role}">
-        ${modulos.map(m => `
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:6px 8px;border-radius:6px;background:var(--surface2)">
-            <input type="checkbox" id="acl-${role}-${m.key}" ${perms.includes(m.key) ? 'checked' : ''}
-              onchange="toggleACL('${role}','${m.key}',this.checked)"
-              style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent)"/>
-            ${m.label}
-          </label>
-        `).join('')}
-      </div>
-    </div>`;
-  }).join('') + `
-  <button onclick="criarNovoRole()" style="width:100%;padding:10px;border-radius:8px;border:1px dashed var(--accent);color:var(--accent);background:rgba(0,229,160,0.05);cursor:pointer;font-size:13px;font-weight:600">
-    ＋ Criar novo tipo de usuário
-  </button>`;
+  const acl = getACL();
+  ['tecnico','leitor'].forEach(role => {
+    const el = document.getElementById('acl-' + role);
+    if (!el) return;
+    el.innerHTML = ACL_MODULOS.map(m => `
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="acl-${role}-${m.key}" ${acl[role]?.includes(m.key) ? 'checked' : ''}
+          style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent)"/>
+        ${m.label}
+      </label>
+    `).join('');
+  });
 }
 
 async function salvarACL() {
-  if (currentUser?.role !== 'adm') { showNotif('🔒 Apenas ADM.','warn'); return; }
-  
   const acl = { tecnico: [], leitor: [] };
   ['tecnico','leitor'].forEach(role => {
     ACL_MODULOS.forEach(m => {
@@ -7363,16 +7055,5 @@ if (savedSession) {
   initApp(JSON.parse(savedSession));
 }
 </script>
-  <script>
-    // Carrega supabase-js de forma assíncrona — não bloqueia a página
-    (function() {
-      var s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-      s.async = true;
-      s.onload = function() { console.log('✅ Supabase JS carregado'); };
-      s.onerror = function() { console.warn('⚠️ Supabase JS falhou — Realtime indisponível'); };
-      document.head.appendChild(s);
-    })();
-  </script>
 </body>
 </html>
