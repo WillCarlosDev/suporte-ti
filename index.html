@@ -635,47 +635,18 @@
     <!-- ACL — PERMISSÕES -->
     <div class="view" id="view-acl">
       <div class="page-header">
-        <div class="page-title">🔐 Gestão de Permissões</div>
-        <div class="page-sub">Controle o que cada perfil pode acessar e executar</div>
+        <div>
+          <div class="page-title">🔐 Gestão de Permissões</div>
+          <div class="page-sub">Controle o que cada perfil pode acessar e executar</div>
+        </div>
+        <button onclick="salvarACL()" class="btn-primary" style="font-size:12px;padding:8px 16px">💾 Salvar Permissões</button>
       </div>
       <div style="background:rgba(255,204,0,0.07);border:1px solid rgba(255,204,0,0.25);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--text2)">
-        ⚠️ <strong>Atenção:</strong> alterações aqui afetam todos os usuários do perfil correspondente. O perfil <strong>ADM (Desenvolvedor)</strong> nunca pode ser restringido.
+        ⚠️ <strong>Atenção:</strong> alterações aqui afetam todos os usuários do perfil correspondente. O perfil <strong>ADM</strong> nunca pode ser restringido.
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:14px;max-width:700px">
-        <!-- ADM -->
-        <div style="background:var(--surface);border:1px solid rgba(0,229,160,0.3);border-radius:12px;overflow:hidden">
-          <div style="background:rgba(0,229,160,0.08);padding:12px 16px;display:flex;align-items:center;gap:10px">
-            <span class="tag contrato">ADM</span>
-            <span style="font-size:13px;font-weight:700">Administrador</span>
-            <span style="font-size:11px;color:var(--text3);margin-left:auto">Acesso total — não pode ser alterado</span>
-          </div>
-          <div style="padding:12px 16px;font-size:12px;color:var(--text2)">
-            ✅ Todos os módulos · ✅ Configurações · ✅ Usuários · ✅ Permissões · ✅ Exportar dados
-          </div>
-        </div>
-
-        <!-- TÉCNICO -->
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-          <div style="background:var(--surface2);padding:12px 16px;display:flex;align-items:center;gap:10px">
-            <span class="tag n1">TÉCNICO</span>
-            <span style="font-size:13px;font-weight:700">Técnico de Suporte</span>
-          </div>
-          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px" id="acl-tecnico">
-          </div>
-        </div>
-
-        <!-- LEITOR -->
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-          <div style="background:var(--surface2);padding:12px 16px;display:flex;align-items:center;gap:10px">
-            <span class="tag n2">LEITOR</span>
-            <span style="font-size:13px;font-weight:700">Leitor (Somente Visualização)</span>
-          </div>
-          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px" id="acl-leitor">
-          </div>
-        </div>
-
-        <button class="btn-primary" onclick="salvarACL()" style="max-width:200px">💾 Salvar Permissões</button>
+      <div style="display:flex;flex-direction:column;gap:14px;max-width:740px" id="acl-container">
+        <!-- Preenchido dinamicamente por renderACL() -->
       </div>
     </div>
 
@@ -897,6 +868,29 @@
         <div class="stat-card">
           <div class="stat-num" id="stat-total" style="color:var(--text3)">0</div>
           <div class="stat-label">📋 Total geral</div>
+        </div>
+      </div>
+
+      <!-- Linha 3: Atenção -->
+      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:2px;margin-bottom:10px">ATENÇÃO</div>
+      <div class="stats-row">
+        <div class="stat-card warn">
+          <div class="stat-num" id="d-sem-tec" style="color:var(--warn)">0</div>
+          <div class="stat-label">Sem técnico</div>
+          <div id="d-sem-tec-sub" style="font-size:10px;color:var(--text3);margin-top:2px">0 neste mês</div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-num" id="d-sla-critico" style="color:var(--danger)">0</div>
+          <div class="stat-label">🔴 SLA crítico</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">Contrato + 8h s/ técnico</div>
+        </div>
+        <div class="stat-card" style="--accent-line:var(--accent)">
+          <div class="stat-num" id="d-concluidos-hoje" style="color:var(--accent)">0</div>
+          <div class="stat-label">✅ Concluídos hoje</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-num" id="d-resolvidos-mes" style="color:var(--accent2)">0</div>
+          <div class="stat-label">📅 Resolvidos no mês</div>
         </div>
       </div>
     </div>
@@ -1357,7 +1351,11 @@
             <div class="status-dot" id="trello-status-dot"></div>
             <span id="trello-status-text">Não conectado — configure as credenciais acima</span>
           </div>
-          <button class="btn-primary" style="width:fit-content" onclick="saveTrello()">Salvar e Testar Conexão</button>
+          <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+            <button class="btn-primary" style="flex:1;min-width:140px" onclick="saveTrello()">💾 Salvar e Conectar</button>
+            <button onclick="syncFromTrello(true)" id="btn-sync-trello" style="padding:8px 16px;border-radius:8px;border:1px solid var(--accent);color:var(--accent);background:transparent;cursor:pointer;font-size:13px;transition:all 0.15s" title="Sincronização manual imediata">🔄 Sync Manual</button>
+            <button id="btn-trello-pause" onclick="toggleTrelloPause()" style="display:none;padding:8px 14px;border-radius:8px;border:1px solid var(--border);color:var(--text3);background:transparent;cursor:pointer;font-size:13px;transition:all 0.15s;align-items:center;gap:6px" title="Pausar sincronização automática com o Trello">⏸</button>
+          </div>
         </div>
         <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.7">
           🔒 <strong>Modo somente leitura</strong> — O painel apenas importa e categoriza os cards existentes no seu board.<br>
@@ -1396,6 +1394,7 @@
               <label class="form-label">Perfil</label>
               <select class="form-select" id="new-role">
                 <option value="tecnico">Técnico</option>
+                <option value="comercial">Comercial (atendimento/clientes)</option>
                 <option value="leitor">Leitor (somente visualização)</option>
                 <option value="adm">ADM</option>
               </select>
@@ -1877,6 +1876,59 @@ function doLogout() {
   document.getElementById('login-error').classList.remove('show');
 }
 
+function toggleTrelloPause() {
+  if (currentUser?.role !== 'adm') {
+    showNotif('🔒 Apenas ADM pode pausar a sincronização.', 'warn');
+    return;
+  }
+  trelloPaused = !trelloPaused;
+  const btn       = document.getElementById('btn-trello-pause');
+  const syncBtn   = document.getElementById('btn-sync-trello');
+  const statusTxt = document.getElementById('trello-status-text');
+
+  if (trelloPaused) {
+    stopTrelloPolling();
+    if (btn) {
+      btn.textContent      = '▶';
+      btn.title            = 'Retomar sincronização automática com o Trello';
+      btn.style.borderColor = 'var(--warn)';
+      btn.style.color       = 'var(--warn)';
+    }
+    if (syncBtn) { syncBtn.style.opacity = '0.4'; syncBtn.style.pointerEvents = 'none'; syncBtn.title = 'Sincronização pausada pelo ADM'; }
+    if (statusTxt) statusTxt.textContent = '⏸ Sincronização pausada pelo ADM';
+    showNotif('⏸ Sync Trello pausado. Clique em ▶ para retomar.');
+  } else {
+    if (btn) {
+      btn.textContent       = '⏸';
+      btn.title             = 'Pausar sincronização automática com o Trello';
+      btn.style.borderColor = 'var(--border)';
+      btn.style.color       = 'var(--text3)';
+    }
+    if (syncBtn) { syncBtn.style.opacity = ''; syncBtn.style.pointerEvents = ''; syncBtn.title = ''; }
+    // Fazer sync imediato ao retomar
+    syncFromTrello(false).then(() => startTrelloPolling());
+    showNotif('▶ Sync Trello retomado!');
+  }
+}
+
+function atualizarBotaoPause() {
+  const btn = document.getElementById('btn-trello-pause');
+  if (!btn) return;
+  // Visível apenas para ADM quando o Trello está configurado
+  const trelloAtivo = TRELLO.key && TRELLO.board;
+  btn.style.display = (currentUser?.role === 'adm' && trelloAtivo) ? 'inline-flex' : 'none';
+  // Refletir estado atual de pause
+  if (trelloPaused) {
+    btn.textContent       = '▶';
+    btn.style.borderColor = 'var(--warn)';
+    btn.style.color       = 'var(--warn)';
+  } else {
+    btn.textContent       = '⏸';
+    btn.style.borderColor = 'var(--border)';
+    btn.style.color       = 'var(--text3)';
+  }
+}
+
 function stopTrelloPolling() {
   if (trelloPollingInterval) { clearInterval(trelloPollingInterval); trelloPollingInterval = null; }
   if (_dbPollingInterval)    { clearInterval(_dbPollingInterval);    _dbPollingInterval    = null; }
@@ -2219,6 +2271,7 @@ function mapearStatus(listName) {
 
 // ─── Trello Sync Bidirecional ─────────────────────────────────────────────────
 let trelloPollingInterval = null;
+let trelloPaused          = false;
 let lastTrelloSync        = null;
 let isSyncing             = false;
 
@@ -2808,6 +2861,42 @@ function renderStats() {
   if (el('stat-month-label'))   el('stat-month-label').textContent   = `Em aberto — ${mesLabel}`;
   if (el('dash-mes-label'))     el('dash-mes-label').textContent     = `${mesLabel.toUpperCase()}`;
   if (el('dash-sub'))           el('dash-sub').textContent           = `Hoje é ${diaStr}`;
+
+  // ── Stats linha 3 do dashboard ─────────────────────────────────────────
+  // Sem técnico: mês vs total
+  const semTecAll = tickets.filter(t => !t.assignedTo && t.status !== 'resolvido');
+  const semTecMes = semTecAll.filter(t => {
+    const d = new Date(t.time || 0);
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+  });
+  if (el('d-sem-tec'))     el('d-sem-tec').textContent     = semTecAll.length;
+  if (el('d-sem-tec-sub')) el('d-sem-tec-sub').textContent = semTecMes.length + ' neste mês';
+
+  // SLA crítico: contrato sem técnico há +8h, não agendado/pendente/resolvido
+  const slaVio = tickets.filter(t =>
+    t.prioridade === 'contrato' && !t.assignedTo &&
+    !['agendado','pendencia','nao-atendido','resolvido'].includes(t.status) &&
+    (Date.now() - (t.time || 0)) / 3600000 >= 8
+  ).length;
+  if (el('d-sla-critico')) el('d-sla-critico').textContent = slaVio;
+
+  // Concluídos hoje (finalizadoEm = hoje)
+  const concluidosHoje = tickets.filter(t => {
+    if (t.status !== 'resolvido') return false;
+    const fim = t.finalizadoEm ? new Date(t.finalizadoEm) : null;
+    if (!fim || isNaN(fim.getTime())) return false;
+    return fim.toLocaleDateString('pt-BR') === diaStr;
+  }).length;
+  if (el('d-concluidos-hoje')) el('d-concluidos-hoje').textContent = concluidosHoje;
+
+  // Resolvidos no mês (finalizadoEm dentro do mês atual)
+  const resolvidosMes = tickets.filter(t => {
+    if (t.status !== 'resolvido') return false;
+    const fim = t.finalizadoEm ? new Date(t.finalizadoEm) : null;
+    if (!fim || isNaN(fim.getTime())) return false;
+    return fim.getMonth() === mesAtual && fim.getFullYear() === anoAtual;
+  }).length;
+  if (el('d-resolvidos-mes')) el('d-resolvidos-mes').textContent = resolvidosMes;
 }
 
 function updateNavCounts() {
@@ -4260,12 +4349,37 @@ function createTicket() {
 }
 
 function clearForm() {
-  ['f-nome','f-contato','f-empresa','f-cnpj','f-descricao'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('f-sistema').value = '';
-  document.getElementById('f-categoria').value = '';
-  document.getElementById('f-nivel').value = 'n1';
+  ['f-nome','f-contato','f-empresa','f-cnpj','f-descricao'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const fSis = document.getElementById('f-sistema');   if (fSis)  fSis.value  = '';
+  const fCat = document.getElementById('f-categoria'); if (fCat)  fCat.value  = '';
+  const fNiv = document.getElementById('f-nivel');     if (fNiv)  fNiv.value  = 'n1';
+  const fTip = document.getElementById('f-tipo-suporte'); if (fTip) fTip.value = 'tecnico';
+  // Limpar agendamento
+  const fData = document.getElementById('f-data-agenda');
+  const fHora = document.getElementById('f-hora-agenda');
+  if (fData) fData.value = '';
+  if (fHora) fHora.value = '';
+  const fAgSec = document.getElementById('form-agendamento-section');
+  if (fAgSec) fAgSec.style.display = 'none';
+  // Reset prioridade
   selectedPriority = '';
-  ['contrato','garantia','avulso'].forEach(x => document.getElementById('pb-'+x).className = 'priority-btn');
+  ['contrato','garantia','avulso'].forEach(x => {
+    const el = document.getElementById('pb-'+x);
+    if (el) el.className = 'priority-btn';
+  });
+}
+
+function limparAgendamento() {
+  const fData = document.getElementById('f-data-agenda');
+  const fHora = document.getElementById('f-hora-agenda');
+  if (fData) fData.value = '';
+  if (fHora) fHora.value = '';
+  const fAgSec = document.getElementById('form-agendamento-section');
+  if (fAgSec) fAgSec.style.display = 'none';
+  showNotif('📅 Agendamento removido.');
 }
 
 // ─── Chat Dinâmico ────────────────────────────────────────────────────────────
@@ -5800,30 +5914,54 @@ function temPermissao(modulo) {
 }
 
 function renderACL() {
+  const container = document.getElementById('acl-container');
+  if (!container) return;
   const acl = getACL();
-  ['tecnico','leitor'].forEach(role => {
-    const el = document.getElementById('acl-' + role);
-    if (!el) return;
-    el.innerHTML = ACL_MODULOS.map(m => `
-      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
-        <input type="checkbox" id="acl-${role}-${m.key}" ${acl[role]?.includes(m.key) ? 'checked' : ''}
-          style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent)"/>
-        ${m.label}
-      </label>
-    `).join('');
-  });
+  const roleNames = { adm: 'Administrador', tecnico: 'Técnico de Suporte', comercial: 'Comercial', leitor: 'Leitor' };
+  const roleColors = { adm: 'var(--accent)', tecnico: 'var(--accent2)', comercial: 'var(--accent3)', leitor: 'var(--text3)' };
+  const roles = ['adm', 'tecnico', 'comercial', 'leitor'];
+  const userRoles = roles.filter(r => r === 'adm' || acl[r] !== undefined);
+  // Adicionar roles que estão no ACL mas não na lista padrão
+  Object.keys(acl).forEach(r => { if (!userRoles.includes(r)) userRoles.push(r); });
+
+  container.innerHTML = userRoles.map(role => {
+    const isAdm  = role === 'adm';
+    const label  = roleNames[role] || role.charAt(0).toUpperCase() + role.slice(1);
+    const cor    = roleColors[role] || 'var(--text2)';
+    const perms  = acl[role] || [];
+    return `
+    <div style="background:var(--surface);border:1px solid ${isAdm ? 'rgba(0,229,160,0.3)' : 'var(--border)'};border-radius:12px;overflow:hidden">
+      <div style="background:${isAdm ? 'rgba(0,229,160,0.08)' : 'var(--surface2)'};padding:12px 16px;display:flex;align-items:center;gap:10px">
+        <span class="tag" style="background:rgba(0,0,0,0.2);color:${cor};border:1px solid ${cor}">${role.toUpperCase()}</span>
+        <span style="font-size:13px;font-weight:700">${label}</span>
+        ${isAdm ? '<span style="font-size:11px;color:var(--text3);margin-left:auto">Acesso total — não pode ser alterado</span>' : ''}
+      </div>
+      ${isAdm
+        ? '<div style="padding:12px 16px;font-size:12px;color:var(--text2)">✅ Todos os módulos · ✅ Configurações · ✅ Usuários · ✅ Permissões · ✅ Exportar dados</div>'
+        : `<div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+            ${ACL_MODULOS.map(m => `
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+                <input type="checkbox" id="acl-${role}-${m.key}" ${perms.includes(m.key) ? 'checked' : ''} onchange="toggleACL('${role}','${m.key}',this.checked)" style="width:15px;height:15px;accent-color:var(--accent)">
+                <span>${m.label}</span>
+              </label>`).join('')}
+          </div>`
+      }
+    </div>`;
+  }).join('');
+}
+
+function toggleACL(role, modulo, ativo) {
+  const acl = getACL();
+  if (!acl[role]) acl[role] = [];
+  if (ativo && !acl[role].includes(modulo)) acl[role].push(modulo);
+  if (!ativo) acl[role] = acl[role].filter(m => m !== modulo);
+  _aclCache = acl;
 }
 
 async function salvarACL() {
-  const acl = { tecnico: [], leitor: [] };
-  ['tecnico','leitor'].forEach(role => {
-    ACL_MODULOS.forEach(m => {
-      const cb = document.getElementById('acl-' + role + '-' + m.key);
-      if (cb?.checked) acl[role].push(m.key);
-    });
-  });
+  const acl = getACL(); // já atualizado pelo toggleACL
   await saveACL(acl);
-  showNotif('✅ Permissões salvas com sucesso!');
+  showNotif('✅ Permissões salvas!');
 }
 
 
