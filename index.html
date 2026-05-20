@@ -534,7 +534,7 @@
     <div class="view" id="view-clientes">
       <div class="page-header">
         <div>
-          <div class="page-title">🏢 Cadastro de Clientes</div>
+          <div class="page-title">Cadastro de Clientes</div>
           <div class="page-sub">Gerencie os clientes e contratos de suporte</div>
         </div>
         <button class="btn-primary" onclick="abrirFormCliente()" id="btn-novo-cliente">＋ Novo Cliente</button>
@@ -597,7 +597,7 @@
             <label class="form-label">Status</label>
             <select class="form-select" id="fc-status">
               <option value="ativo">✅ Ativo</option>
-              <option value="suspenso">⚠️ Suspenso</option>
+              <option value="suspenso"> Suspenso</option>
               <option value="cancelado">❌ Cancelado</option>
             </select>
           </div>
@@ -607,7 +607,7 @@
           </div>
           <div class="form-group full">
             <div class="btn-row">
-              <button class="btn-primary" onclick="salvarCliente()">💾 Salvar Cliente</button>
+              <button class="btn-primary" onclick="salvarCliente()">Salvar Cliente</button>
               <button class="btn-ghost" onclick="fecharFormCliente()">Cancelar</button>
             </div>
           </div>
@@ -620,7 +620,7 @@
         <select class="form-select" id="clientes-filtro-status" onchange="renderClientesTabela()" style="width:160px">
           <option value="">Todos os status</option>
           <option value="ativo">✅ Ativos</option>
-          <option value="suspenso">⚠️ Suspensos</option>
+          <option value="suspenso"> Suspensos</option>
           <option value="cancelado">❌ Cancelados</option>
         </select>
         <select class="form-select" id="clientes-filtro-tipo" onchange="renderClientesTabela()" style="width:160px">
@@ -638,13 +638,13 @@
     <div class="view" id="view-acl">
       <div class="page-header">
         <div>
-          <div class="page-title">🔐 Gestão de Permissões</div>
+          <div class="page-title">Gestão de Permissões</div>
           <div class="page-sub">Controle o que cada perfil pode acessar e executar</div>
         </div>
-        <button onclick="salvarACL()" class="btn-primary" style="font-size:12px;padding:8px 16px">💾 Salvar Permissões</button>
+        <button onclick="salvarACL()" class="btn-primary" style="font-size:12px;padding:8px 16px">Salvar Permissões</button>
       </div>
       <div style="background:rgba(255,204,0,0.07);border:1px solid rgba(255,204,0,0.25);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--text2)">
-        ⚠️ <strong>Atenção:</strong> alterações aqui afetam todos os usuários do perfil correspondente. O perfil <strong>ADM</strong> nunca pode ser restringido.
+        <strong>Atenção:</strong> alterações aqui afetam todos os usuários do perfil correspondente. O perfil <strong>ADM</strong> nunca pode ser restringido.
       </div>
 
       <div style="display:flex;flex-direction:column;gap:14px;max-width:740px" id="acl-container">
@@ -655,7 +655,7 @@
     <!-- ONBOARDING / MANUAL -->
     <div class="view" id="view-onboarding">
       <div class="page-header">
-        <div class="page-title">📖 Manual da Plataforma</div>
+        <div class="page-title">Manual da Plataforma</div>
         <div class="page-sub">Guia passo a passo para novos usuários</div>
       </div>
       <div style="max-width:720px;display:flex;flex-direction:column;gap:16px">
@@ -704,7 +704,7 @@
             O kanban mostra todos os chamados organizados por coluna (status).<br><br>
             <strong>Mover um chamado:</strong> Clique no card e use os botões de status dentro do chamado, ou use os botões rápidos <strong>⏳ Pendência</strong> e <strong>🚫 Não Atendido</strong> diretamente no card.<br><br>
             <strong>Finalizar um chamado:</strong> Abra o chamado e clique em <strong>"✅ Finalizar"</strong>. Você pode registrar uma resposta antes de finalizar.<br><br>
-            <strong>Gerenciar colunas:</strong> Clique no botão <strong>"⚙ Gerenciar Colunas"</strong> no topo da tela de Chamados para adicionar, renomear ou reordenar colunas.
+            <strong>Gerenciar colunas:</strong> Clique no botão <strong>"Gerenciar Colunas"</strong> no topo da tela de Chamados para adicionar, renomear ou reordenar colunas.
           </div>
         </details>
 
@@ -718,8 +718,8 @@
             <strong>Criar um procedimento com IA:</strong><br>
             <strong>1.</strong> Vá em <strong>"Base de Conhecimento"</strong>.<br>
             <strong>2.</strong> Preencha o título do problema e descreva o que o cliente relatou.<br>
-            <strong>3.</strong> Clique em <strong>"✨ Gerar com IA"</strong> — a IA vai criar um passo a passo completo.<br>
-            <strong>4.</strong> Revise o procedimento e clique em <strong>"💾 Salvar na Base"</strong>.<br><br>
+            <strong>3.</strong> Clique em <strong>"Gerar com IA"</strong> — a IA vai criar um passo a passo completo.<br>
+            <strong>4.</strong> Revise o procedimento e clique em <strong>"Salvar na Base"</strong>.<br><br>
             <strong>Dica:</strong> Quanto mais detalhada for a sua descrição, melhor será o procedimento gerado.
           </div>
         </details>
@@ -731,7 +731,7 @@
           <div style="padding:0 16px 16px;font-size:13px;color:var(--text2);line-height:1.9;border-top:1px solid var(--border)">
             <br>
             <strong>1.</strong> Vá em <strong>"Configurações"</strong> no menu lateral (apenas ADM e Técnico).<br>
-            <strong>2.</strong> Localize a seção <strong>"🔑 Alterar Senha"</strong>.<br>
+            <strong>2.</strong> Localize a seção <strong>"Alterar Senha"</strong>.<br>
             <strong>3.</strong> Digite sua senha atual, a nova senha e confirme.<br>
             <strong>4.</strong> Clique em <strong>"Alterar Senha"</strong>.<br><br>
             Se você esqueceu sua senha, peça ao Administrador para redefini-la na tela de <strong>Usuários</strong>.
@@ -745,7 +745,7 @@
     <div class="view" id="view-desbloqueio">
       <div class="page-header">
         <div>
-          <div class="page-title">🔓 Desbloqueio de REP</div>
+          <div class="page-title">Desbloqueio de REP</div>
           <div class="page-sub">Abertura rápida de chamados de senha e desbloqueio</div>
         </div>
       </div>
@@ -814,7 +814,7 @@
           </div>
           <div class="form-group full">
             <div class="btn-row">
-              <button class="btn-primary" onclick="criarChamadoDesbloqueio()">🔓 Abrir Chamado</button>
+              <button class="btn-primary" onclick="criarChamadoDesbloqueio()">Abrir Chamado</button>
               <button class="btn-ghost" onclick="fecharDesbloqueio()">Cancelar</button>
             </div>
           </div>
@@ -924,13 +924,13 @@
           <div class="page-title">Chamados</div>
           <div class="page-sub">Gerencie e acompanhe todos os atendimentos</div>
         </div>
-        <button class="btn-ghost" onclick="toggleGerenciarColunas()" id="btn-gerenciar-cols" style="font-size:12px">⚙ Gerenciar Colunas</button>
+        <button class="btn-ghost" onclick="toggleGerenciarColunas()" id="btn-gerenciar-cols" style="font-size:12px">Gerenciar Colunas</button>
       </div>
 
       <!-- Painel de gerenciar colunas -->
       <div id="painel-colunas" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <div style="font-size:13px;font-weight:700">⚙ Gerenciar Colunas do Kanban</div>
+          <div style="font-size:13px;font-weight:700">Gerenciar Colunas do Kanban</div>
           <button onclick="toggleGerenciarColunas()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px">✕</button>
         </div>
         <div id="colunas-lista" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
@@ -1087,7 +1087,7 @@
           <button onclick="novoChatSimulador()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1px solid var(--accent);color:var(--accent);background:rgba(0,229,160,0.07);cursor:pointer;font-size:12px;font-weight:600">
             <span style="font-size:14px">＋</span> Nova conversa
           </button>
-          <button onclick="limparChatAtual()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);color:var(--text3);background:none;cursor:pointer;font-size:12px" title="Limpar mensagens desta conversa">🗑 Limpar</button>
+          <button onclick="limparChatAtual()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);color:var(--text3);background:none;cursor:pointer;font-size:12px" title="Limpar mensagens desta conversa">Limpar</button>
         </div>
       </div>
       <div class="chat-layout">
@@ -1116,7 +1116,7 @@
             <div class="qr-btn" onclick="sendQuick('Inserir ponto manual')">✏️ Ponto manual</div>
             <div class="qr-btn" onclick="sendQuick('Ponto em feriado')">📅 Feriado</div>
             <div class="qr-btn" onclick="sendQuick('Relatório errado')">📊 Relatório</div>
-            <div class="qr-btn" onclick="sendQuick('Integração folha')">🔗 Integração</div>
+            <div class="qr-btn" onclick="sendQuick('Integração folha')">Integração</div>
           </div>
           <div class="chat-input-area">
             <textarea class="chat-input" id="chat-input" placeholder="Simule uma mensagem do cliente..." rows="1" onkeydown="chatKeyDown(event)"></textarea>
@@ -1128,7 +1128,7 @@
       <!-- Modal: nova conversa -->
       <div id="modal-novo-chat" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center">
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:380px;max-width:90vw">
-          <div style="font-size:15px;font-weight:700;margin-bottom:20px">💬 Nova conversa</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:20px">Nova conversa</div>
           <div class="form-group" style="margin-bottom:14px">
             <label class="form-label">Nome do cliente</label>
             <input class="form-input" id="nc-nome" placeholder="Ex: João Silva" onkeydown="if(event.key==='Enter')criarChatSimulador();if(event.key==='Escape')fecharModalNovoChat()"/>
@@ -1176,7 +1176,7 @@
 
       <!-- AI Generator -->
       <div class="config-box" style="max-width:100%;margin-bottom:24px;border-color:rgba(0,229,160,0.2);background:rgba(0,229,160,0.03)">
-        <h3 style="color:var(--accent)">🤖 Gerar novo procedimento com IA</h3>
+        <h3 style="color:var(--accent)">Gerar novo procedimento com IA</h3>
         <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Descreva um problema que você atende e a IA cria o procedimento passo a passo e salva na base automaticamente.</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
           <div class="form-group">
@@ -1205,7 +1205,7 @@
           <textarea class="form-textarea" id="kb-ai-desc" placeholder="Ex: Cliente liga dizendo que o relógio marca horário errado, os registros estão saindo com 1 hora de diferença. Isso acontece especialmente após mudança de horário de verão ou troca de servidor..."></textarea>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
-          <button class="btn-primary" id="kb-ai-btn" onclick="generateKBItem()">✨ Gerar com IA</button>
+          <button class="btn-primary" id="kb-ai-btn" onclick="generateKBItem()">Gerar com IA</button>
           <span id="kb-ai-status" style="font-size:12px;color:var(--text2)"></span>
         </div>
 
@@ -1214,7 +1214,7 @@
           <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:10px;font-family:var(--mono)">✅ PROCEDIMENTO GERADO — REVISE E SALVE</div>
           <div id="kb-ai-result" style="background:var(--surface2);border-radius:8px;padding:14px;font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap;margin-bottom:12px;max-height:320px;overflow-y:auto"></div>
           <div style="display:flex;gap:10px">
-            <button class="btn-primary" onclick="saveGeneratedKB()">💾 Salvar na Base</button>
+            <button class="btn-primary" onclick="saveGeneratedKB()">Salvar na Base</button>
             <button class="btn-ghost" onclick="discardGeneratedKB()">Descartar</button>
           </div>
         </div>
@@ -1268,7 +1268,7 @@
       <div id="report-grid-wrap">
         <div class="report-card" id="rc-equipe-card" style="margin-bottom:20px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-            <h3 style="margin:0">👥 Desempenho da Equipe</h3>
+            <h3 style="margin:0">Desempenho da Equipe</h3>
             <span id="report-team-total" style="font-size:12px;color:var(--text3);font-family:var(--mono)"></span>
           </div>
           <div id="report-team"></div>
@@ -1303,7 +1303,7 @@
 
       <!-- Alterar Senha -->
       <div class="config-box" style="border-color:rgba(255,204,0,0.2);background:rgba(255,204,0,0.03)">
-        <h3 style="color:var(--warn)">🔑 Alterar Senha</h3>
+        <h3 style="color:var(--warn)">Alterar Senha</h3>
         <div style="font-size:12px;color:var(--text2);margin-bottom:16px">
           Altere a senha da sua conta atual. ADM pode alterar a senha de qualquer usuário na aba Usuários.
         </div>
@@ -1322,14 +1322,14 @@
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
-          <button class="btn-primary" onclick="alterarSenha()" style="background:var(--warn);color:#000">🔑 Alterar Senha</button>
+          <button class="btn-primary" onclick="alterarSenha()" style="background:var(--warn);color:#000">Alterar Senha</button>
           <span id="senha-status" style="font-size:12px;color:var(--text2)"></span>
         </div>
       </div>
 
       <!-- Membros da Equipe -->
       <div class="config-box" style="border-color:rgba(0,144,255,0.2);background:rgba(0,144,255,0.03)">
-        <h3 style="color:var(--accent2)">👥 Membros da Equipe</h3>
+        <h3 style="color:var(--accent2)">Membros da Equipe</h3>
         <div style="font-size:12px;color:var(--text2);margin-bottom:14px">
           Defina quem são os membros da equipe. O relatório de desempenho usará apenas esses nomes,
           ignorando colunas como "Finalizados", "Não Atende", etc.
@@ -1344,7 +1344,7 @@
 
       <!-- IA via Groq no Vercel -->
       <div class="config-box" style="border-color:rgba(0,229,160,0.3);background:rgba(0,229,160,0.03)">
-        <h3 style="color:var(--accent)">✨ Inteligência Artificial — Configuração</h3>
+        <h3 style="color:var(--accent)">Inteligência Artificial — Configuração</h3>
         <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.8">
           As funções de IA rodam via <strong>proxy seguro no servidor Vercel</strong> usando o <strong>Groq (LLaMA)</strong> — gratuito e sem exposição de chaves.<br><br>
           ✅ Para atualizar a chave, acesse o painel do Vercel → <strong>Settings → Environment Variables</strong> e edite:<br>
@@ -1355,7 +1355,7 @@
       </div>
 
       <div class="config-box">
-        <h3>🟦 Integração Trello <span style="font-size:11px;font-weight:400;color:var(--accent2);font-family:var(--mono);background:rgba(0,144,255,0.1);padding:2px 8px;border-radius:4px;margin-left:8px">SOMENTE LEITURA</span></h3>
+        <h3>Integração Trello <span style="font-size:11px;font-weight:400;color:var(--accent2);font-family:var(--mono);background:rgba(0,144,255,0.1);padding:2px 8px;border-radius:4px;margin-left:8px">SOMENTE LEITURA</span></h3>
         <div style="display:flex;flex-direction:column;gap:12px">
           <div class="form-group">
             <label class="form-label">Trello API Key</label>
@@ -1374,8 +1374,8 @@
             <span id="trello-status-text">Não conectado — configure as credenciais acima</span>
           </div>
           <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
-            <button class="btn-primary" style="flex:1;min-width:140px" onclick="saveTrello()">💾 Salvar e Conectar</button>
-            <button onclick="syncFromTrello(true)" id="btn-sync-trello" style="padding:8px 16px;border-radius:8px;border:1px solid var(--accent);color:var(--accent);background:transparent;cursor:pointer;font-size:13px;transition:all 0.15s" title="Sincronização manual imediata">🔄 Sync Manual</button>
+            <button class="btn-primary" style="flex:1;min-width:140px" onclick="saveTrello()">Salvar e Conectar</button>
+            <button onclick="syncFromTrello(true)" id="btn-sync-trello" style="padding:8px 16px;border-radius:8px;border:1px solid var(--accent);color:var(--accent);background:transparent;cursor:pointer;font-size:13px;transition:all 0.15s" title="Sincronização manual imediata">Sync Manual</button>
             <button id="btn-trello-pause" onclick="toggleTrelloPause()" style="display:none;padding:8px 14px;border-radius:8px;border:1px solid var(--border);color:var(--text3);background:transparent;cursor:pointer;font-size:13px;transition:all 0.15s;align-items:center;gap:6px" title="Pausar sincronização automática com o Trello">⏸</button>
           </div>
         </div>
@@ -1386,7 +1386,7 @@
         </div>
       </div>
       <div class="config-box">
-        <h3>📱 Integração WhatsApp (Baileys)</h3>
+        <h3>Integração WhatsApp (Baileys)</h3>
         <div style="font-size:13px;color:var(--text2);line-height:1.7">
           Para conectar ao WhatsApp, use o código do bot gerado anteriormente.<br>
           Configure a variável <code style="background:var(--surface3);padding:1px 6px;border-radius:4px;color:var(--accent)">GROQ_API_KEY</code> no arquivo <code style="background:var(--surface3);padding:1px 6px;border-radius:4px;color:var(--accent)">.env</code>.
@@ -1402,7 +1402,7 @@
       </div>
       <div style="max-width:640px">
         <div class="config-box" style="margin-bottom:20px">
-          <h3>➕ Novo Usuário</h3>
+          <h3>Novo Usuário</h3>
           <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
             <div class="form-group">
               <label class="form-label">Usuário</label>
@@ -1428,7 +1428,7 @@
           </div>
         </div>
         <div class="config-box">
-          <h3>👥 Usuários Cadastrados</h3>
+          <h3>Usuários Cadastrados</h3>
           <table class="users-table" id="users-table"></table>
 
           <!-- Reset de senha ADM -->
@@ -1450,9 +1450,9 @@
             </div>
           </div>
           <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn-ghost" style="font-size:12px" onclick="exportUsers()">📤 Exportar usuários</button>
+            <button class="btn-ghost" style="font-size:12px" onclick="exportUsers()">Exportar usuários</button>
             <label class="btn-ghost" style="font-size:12px;cursor:pointer">
-              📥 Importar usuários
+              📥 Importar
               <input type="file" accept=".json" style="display:none" onchange="importUsers(event)"/>
             </label>
             <span style="font-size:11px;color:var(--text3);align-self:center">Use exportar/importar para sincronizar usuários entre dispositivos</span>
@@ -1468,7 +1468,7 @@
 <div class="modal-overlay hidden" id="modal-solucao" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1001;align-items:center;justify-content:center">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:460px;max-width:92vw;box-shadow:0 16px 48px rgba(0,0,0,0.5)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <div style="font-size:15px;font-weight:700;color:var(--accent)">✅ Finalizar Chamado</div>
+      <div style="font-size:15px;font-weight:700;color:var(--accent)">Finalizar Chamado</div>
       <button onclick="fecharModalSolucao()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px">✕</button>
     </div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6">Registre como o problema foi resolvido. Isso alimenta a base de conhecimento do bot.</div>
@@ -1478,10 +1478,10 @@
     </div>
     <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.2);border-radius:8px;margin-bottom:18px">
       <input type="checkbox" id="solucao-kb" style="width:16px;height:16px;accent-color:var(--accent);flex-shrink:0">
-      <label for="solucao-kb" style="font-size:12px;color:var(--text2);cursor:pointer">📚 Salvar na Base de Conhecimento para o bot aprender</label>
+      <label for="solucao-kb" style="font-size:12px;color:var(--text2);cursor:pointer">Salvar na Base de Conhecimento</label>
     </div>
     <div style="display:flex;gap:10px">
-      <button onclick="confirmarFinalizacao()" class="btn-primary" style="flex:1">✅ Finalizar chamado</button>
+      <button onclick="confirmarFinalizacao()" class="btn-primary" style="flex:1">Finalizar chamado</button>
       <button onclick="fecharModalSolucao()" class="btn-ghost" style="padding:0 18px">Cancelar</button>
     </div>
   </div>
@@ -1600,7 +1600,7 @@ document.querySelector('.main').insertAdjacentHTML('beforeend', `
     </div>
     <div class="wa-layout">
       <div class="wa-setup">
-        <h3>⚙ Configuração</h3>
+        <h3>Configuração</h3>
         <div class="form-group">
           <div style="font-size:12px;color:var(--accent);background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.2);border-radius:8px;padding:10px 12px;">
             🔒 IA configurada via servidor (Groq) — nenhuma chave necessária aqui.
@@ -1627,10 +1627,10 @@ Para iniciar, informe:
             <option value="triage">Só triagem — escalonar tudo para humano</option>
           </select>
         </div>
-        <button class="btn-primary" onclick="saveWAConfig()" style="width:100%">💾 Salvar Configurações</button>
+        <button class="btn-primary" onclick="saveWAConfig()" style="width:100%">Salvar Configurações</button>
 
         <div style="border-top:1px solid var(--border);padding-top:14px">
-          <h3>📊 Estatísticas</h3>
+          <h3>Estatísticas</h3>
           <div style="display:flex;flex-direction:column;gap:8px;font-size:12px">
             <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Atendimentos hoje</span><span id="wa-stat-today" style="font-family:var(--mono);color:var(--accent)">0</span></div>
             <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Resolvidos pela IA</span><span id="wa-stat-resolved" style="font-family:var(--mono);color:var(--accent)">0</span></div>
@@ -1639,7 +1639,7 @@ Para iniciar, informe:
         </div>
 
         <div style="border-top:1px solid var(--border);padding-top:14px">
-          <h3>🔗 Integração</h3>
+          <h3>Integração</h3>
           <div style="font-size:12px;color:var(--text2);line-height:1.7">
             Para conectar ao WhatsApp:<br>
             1. Baixe o bot Node.js gerado anteriormente<br>
@@ -1654,7 +1654,7 @@ Para iniciar, informe:
           <span style="font-weight:700;font-size:14px">Log de Atendimentos</span>
           <div style="display:flex;gap:8px">
             <button class="btn-ghost" style="font-size:11px;padding:5px 12px" onclick="simulateWAMessage()">▶ Simular Mensagem</button>
-            <button class="btn-ghost" style="font-size:11px;padding:5px 12px" onclick="clearWALog()">🗑 Limpar Log</button>
+            <button class="btn-ghost" style="font-size:11px;padding:5px 12px" onclick="clearWALog()">Limpar Log</button>
           </div>
         </div>
         <div class="wa-log" id="wa-log">
@@ -1677,7 +1677,7 @@ Para iniciar, informe:
 function saveGlobalApiKey() {
   const key = document.getElementById('global-api-key')?.value.trim();
   if (!key || !key.startsWith('sk-ant-')) {
-    showNotif('⚠️ Chave inválida — deve começar com sk-ant-', 'warn');
+    showNotif(' Chave inválida — deve começar com sk-ant-', 'warn');
     return;
   }
   localStorage.setItem('suporte_ti_api_key', key);
@@ -1824,7 +1824,7 @@ function startRealtimeSync() {
     })
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') console.log('✅ Supabase Realtime ativo');
-      else if (status === 'CHANNEL_ERROR') console.warn('⚠️ Realtime com erro — usando polling');
+      else if (status === 'CHANNEL_ERROR') console.warn(' Realtime com erro — usando polling');
     });
 }
 
@@ -1854,7 +1854,7 @@ async function doLogin() {
   const _rl = JSON.parse(sessionStorage.getItem('_login_rl') || '{"c":0,"t":0}');
   if (Date.now() - _rl.t < 30000 && _rl.c >= 5) {
     const wait = Math.ceil((30000 - (Date.now() - _rl.t)) / 1000);
-    errEl.textContent = `⚠️ Muitas tentativas. Aguarde ${wait}s.`;
+    errEl.textContent = ` Muitas tentativas. Aguarde ${wait}s.`;
     errEl.classList.add('show'); return;
   }
   btn.textContent = 'Entrando...';
@@ -1965,8 +1965,8 @@ async function addUser() {
   const username = document.getElementById('new-username').value.trim();
   const password = document.getElementById('new-password').value;
   const role     = document.getElementById('new-role').value;
-  if (!username || !password) { showNotif('⚠️ Preencha usuário e senha.', 'warn'); return; }
-  if (password.length < 6)    { showNotif('⚠️ Senha deve ter ao menos 6 caracteres.', 'warn'); return; }
+  if (!username || !password) { showNotif(' Preencha usuário e senha.', 'warn'); return; }
+  if (password.length < 6)    { showNotif(' Senha deve ter ao menos 6 caracteres.', 'warn'); return; }
   try {
     await sbFetch('rpc/criar_usuario', 'POST', { p_username: username, p_password: password, p_role: role });
     document.getElementById('new-username').value = '';
@@ -1979,7 +1979,7 @@ async function addUser() {
 }
 
 async function deleteUser(username) {
-  if (username === 'adm') { showNotif('⚠️ O usuário ADM não pode ser removido.', 'warn'); return; }
+  if (username === 'adm') { showNotif(' O usuário ADM não pode ser removido.', 'warn'); return; }
   if (!confirm(`Remover o usuário "${username}"?`)) return;
   try {
     await sbFetch('rpc/deletar_usuario', 'POST', { p_username: username });
@@ -2007,7 +2007,7 @@ async function renderUsersTable() {
           <td><span class="tag ${u.role === 'adm' ? 'contrato' : u.role === 'leitor' ? 'n2' : 'n1'}">${u.role === 'leitor' ? '👁 LEITOR' : u.role.toUpperCase()}</span></td>
           <td style="color:var(--text2);font-size:12px">${new Date(u.created_at).toLocaleDateString('pt-BR')}</td>
           <td style="display:flex;gap:6px;align-items:center">
-            <button onclick="abrirResetSenha('${u.username}')" style="background:rgba(255,204,0,0.1);border:1px solid rgba(255,204,0,0.3);color:var(--warn);border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:var(--sans)">🔑 Senha</button>
+            <button onclick="abrirResetSenha('${u.username}')" style="background:rgba(255,204,0,0.1);border:1px solid rgba(255,204,0,0.3);color:var(--warn);border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:var(--sans)">Senha</button>
             ${u.username === currentUser?.username
               ? '<span style="font-size:11px;color:var(--text3)">você</span>'
               : `<button class="btn-danger" onclick="deleteUser('${u.username}')">Remover</button>`
@@ -2342,7 +2342,7 @@ async function updateTrelloCard(t, newStatus) {
       text: `[Painel Suporte] *${currentUser?.username || 'técnico'}* → *${statusLabel}* — ${new Date().toLocaleString('pt-BR')}`
     });
   } catch(e) {
-    showNotif('⚠️ Erro ao atualizar Trello: ' + e.message, 'warn');
+    showNotif(' Erro ao atualizar Trello: ' + e.message, 'warn');
   }
 }
 
@@ -2495,8 +2495,8 @@ async function initTrello() {
     await syncFromTrello(false);
     startTrelloPolling();
   } catch(e) {
-    document.getElementById('trello-status-text').textContent = '⚠️ Falha na conexão com Trello.';
-    showNotif('⚠️ Trello: ' + e.message, 'warn');
+    document.getElementById('trello-status-text').textContent = ' Falha na conexão com Trello.';
+    showNotif(' Trello: ' + e.message, 'warn');
   }
 }
 const defaultTickets = [
@@ -2529,7 +2529,7 @@ const chatHistories = [
     { role:'user', text:'Pedro Alves, Distribuidora XYZ, 98.765.432/0001-11, iPonto', time:'09:31' },
     { role:'bot', text:'✅ Olá **Pedro**! Empresa **Distribuidora XYZ** está na **garantia** — atendimento com prioridade intermediária.\n\nQual o problema?', time:'09:31' },
     { role:'user', text:'preciso inserir ponto manual de um funcionário', time:'09:32' },
-    { role:'bot', text:'✏️ **Inserção de ponto manual** — iPonto.\n\n📋 Passo a passo:\n\n**1.** Acesse o painel: *Gestão → Marcações*\n**2.** Selecione o funcionário\n**3.** Clique em *"Inserir marcação manual"*\n**4.** Informe data, hora e justificativa\n**5.** Salve e solicite assinatura do responsável\n\n⚠️ Lembre de registrar a justificativa por escrito para conformidade.', time:'09:32' },
+    { role:'bot', text:'✏️ **Inserção de ponto manual** — iPonto.\n\n📋 Passo a passo:\n\n**1.** Acesse o painel: *Gestão → Marcações*\n**2.** Selecione o funcionário\n**3.** Clique em *"Inserir marcação manual"*\n**4.** Informe data, hora e justificativa\n**5.** Salve e solicite assinatura do responsável\n\n Lembre de registrar a justificativa por escrito para conformidade.', time:'09:32' },
   ],
   [
     { role:'bot', text:'👋 Olá! Assistente de suporte. Informe: **nome**, **empresa**, **CNPJ** e **sistema**.', time:'09:15' },
@@ -2961,7 +2961,7 @@ function renderStats() {
         </div>`;
       }).join('') + (abertosPorTec['__sem__'].total > 0 ? `
         <div style="display:flex;align-items:center;gap:10px;background:rgba(255,204,0,0.06);border:1px solid rgba(255,204,0,0.2);border-radius:10px;padding:10px 14px;min-width:160px;flex:1">
-          <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,204,0,0.12);border:2px solid var(--warn);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">⚠️</div>
+          <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,204,0,0.12);border:2px solid var(--warn);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0"></div>
           <div>
             <div style="font-size:12px;font-weight:600;color:var(--warn)">Sem técnico</div>
             <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">${abertosPorTec['__sem__'].total} chamado${abertosPorTec['__sem__'].total!==1?'s':''}</div>
@@ -3162,7 +3162,7 @@ async function generateKBItem() {
   const sistema = document.getElementById('kb-ai-sistema').value;
   const nivel   = document.getElementById('kb-ai-nivel').value;
 
-  if (!title || !desc) { showNotif('⚠️ Preencha o título e a descrição.', 'warn'); return; }
+  if (!title || !desc) { showNotif(' Preencha o título e a descrição.', 'warn'); return; }
 
   const btn    = document.getElementById('kb-ai-btn');
   const status = document.getElementById('kb-ai-status');
@@ -3215,7 +3215,7 @@ Use entre 5 e 10 passos. Seja específico. Não inclua markdown ou texto fora do
     status.textContent = 'Erro — tente novamente.';
   } finally {
     btn.disabled = false;
-    btn.textContent = '✨ Gerar com IA';
+    btn.textContent = 'Gerar com IA';
   }
 }
 
@@ -3242,7 +3242,7 @@ async function editarKBItem(dbId, realIdx) {
 
   const novoTitulo = prompt('Título do procedimento:', item.title);
   if (novoTitulo === null) return;
-  if (!novoTitulo.trim()) { showNotif('⚠️ Título não pode ser vazio.', 'warn'); return; }
+  if (!novoTitulo.trim()) { showNotif(' Título não pode ser vazio.', 'warn'); return; }
   const novoSub = prompt('Descrição resumida:', item.sub || '');
   if (novoSub === null) return;
 
@@ -3455,9 +3455,9 @@ async function confirmarResetSenha() {
   const nova     = document.getElementById('reset-nova-senha').value;
   const confirma = document.getElementById('reset-confirma-senha').value;
 
-  if (!nova) { showNotif('⚠️ Digite a nova senha.', 'warn'); return; }
-  if (nova.length < 4) { showNotif('⚠️ Senha deve ter ao menos 4 caracteres.', 'warn'); return; }
-  if (nova !== confirma) { showNotif('⚠️ As senhas não coincidem.', 'warn'); return; }
+  if (!nova) { showNotif(' Digite a nova senha.', 'warn'); return; }
+  if (nova.length < 4) { showNotif(' Senha deve ter ao menos 4 caracteres.', 'warn'); return; }
+  if (nova !== confirma) { showNotif(' As senhas não coincidem.', 'warn'); return; }
 
   try {
     await sbFetch('rpc/alterar_senha', 'POST', {
@@ -3465,7 +3465,7 @@ async function confirmarResetSenha() {
       p_nova_senha: nova
     });
     fecharResetSenha();
-    showNotif(`🔑 Senha de "${username}" redefinida com sucesso!`);
+    showNotif(`Senha de "${username}" redefinida com sucesso!`);
   } catch(e) {
     showNotif('❌ Erro ao redefinir: ' + e.message, 'warn');
   }
@@ -3479,15 +3479,15 @@ async function alterarSenha() {
   const status   = document.getElementById('senha-status');
 
   if (!atual || !nova || !confirma) {
-    status.textContent = '⚠️ Preencha todos os campos.';
+    status.textContent = ' Preencha todos os campos.';
     status.style.color = 'var(--warn)'; return;
   }
   if (nova.length < 4) {
-    status.textContent = '⚠️ A nova senha deve ter ao menos 4 caracteres.';
+    status.textContent = ' A nova senha deve ter ao menos 4 caracteres.';
     status.style.color = 'var(--warn)'; return;
   }
   if (nova !== confirma) {
-    status.textContent = '⚠️ As senhas não coincidem.';
+    status.textContent = ' As senhas não coincidem.';
     status.style.color = 'var(--danger)'; return;
   }
 
@@ -3515,7 +3515,7 @@ async function alterarSenha() {
     ['senha-atual','senha-nova','senha-confirma'].forEach(id => document.getElementById(id).value = '');
     status.textContent = '✅ Senha alterada com sucesso!';
     status.style.color = 'var(--accent)';
-    showNotif('🔑 Senha alterada com sucesso!');
+    showNotif('Senha alterada com sucesso!');
     setTimeout(() => { status.textContent = ''; }, 4000);
   } catch(e) {
     status.textContent = '❌ Erro: ' + e.message;
@@ -3610,10 +3610,10 @@ function renderMembrosConfig() {
 async function adicionarMembro() {
   const input = document.getElementById('novo-membro-nome');
   const nome = input.value.trim();
-  if (!nome) { showNotif('⚠️ Digite o nome do membro.', 'warn'); return; }
+  if (!nome) { showNotif(' Digite o nome do membro.', 'warn'); return; }
   const lista = getMembros();
   if (lista.find(m => m.toLowerCase() === nome.toLowerCase())) {
-    showNotif('⚠️ Membro já cadastrado.', 'warn'); return;
+    showNotif(' Membro já cadastrado.', 'warn'); return;
   }
   lista.push(nome);
   await saveMembros(lista);
@@ -3809,10 +3809,10 @@ function selectColColor(c) {
 
 function adicionarColuna() {
   const nome = document.getElementById('nova-col-nome').value.trim();
-  if (!nome) { showNotif('⚠️ Digite o nome da coluna.','warn'); return; }
+  if (!nome) { showNotif(' Digite o nome da coluna.','warn'); return; }
   const cols = getKanbanCols();
   const key = nome.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
-  if (cols.find(c => c.key === key)) { showNotif('⚠️ Já existe uma coluna com esse nome.','warn'); return; }
+  if (cols.find(c => c.key === key)) { showNotif(' Já existe uma coluna com esse nome.','warn'); return; }
   cols.splice(cols.length - 1, 0, { key, label: nome, color: selectedColColor }); // insere antes de Resolvido
   saveKanbanCols();
   document.getElementById('nova-col-nome').value = '';
@@ -4043,7 +4043,7 @@ function populateCategoriaSelect(selectId = 'f-categoria') {
 
 function salvarNovaCategoria() {
   const nome = document.getElementById('nova-cat-nome').value.trim();
-  if (!nome) { showNotif('⚠️ Digite o nome da categoria.', 'warn'); return; }
+  if (!nome) { showNotif(' Digite o nome da categoria.', 'warn'); return; }
   const key = nome.toLowerCase().replace(/[^a-z0-9]/gi,'-').replace(/-+/g,'-') + '-' + Date.now();
   const lista = getCategoriasCustom();
   lista.push({ value: key, label: nome });
@@ -4210,7 +4210,7 @@ async function criarChamadoDesbloqueio() {
   const equip   = document.getElementById('desb-equip').value;
   const obs     = document.getElementById('desb-obs').value.trim();
   if (!nome || !empresa || !cnpj || !equip) {
-    showNotif('⚠️ Preencha todos os campos obrigatórios.', 'warn'); return;
+    showNotif(' Preencha todos os campos obrigatórios.', 'warn'); return;
   }
   // Monta etiquetas: tipo de desbloqueio + atendentes
   const labelsDesb = [
@@ -4399,7 +4399,7 @@ function createTicket() {
   const desc     = document.getElementById('f-descricao').value.trim();
 
   if (!nome || !contato || !empresa || !cnpj || !sistema || !selectedPriority) {
-    showNotif('⚠️ Preencha: Nome, Contato, Razão Social, CNPJ, Suporte e Prioridade.', 'warn');
+    showNotif(' Preencha: Nome, Contato, Razão Social, CNPJ, Suporte e Prioridade.', 'warn');
     return;
   }
 
@@ -4476,7 +4476,7 @@ function criarChatSimulador() {
   const sub   = (document.getElementById('nc-sub')?.value || '').trim() || 'Novo contato';
   const prio  = document.getElementById('nc-prioridade')?.value || 'contrato';
   const nivel = document.getElementById('nc-nivel')?.value || 'N1';
-  if (!nome) { showNotif('⚠️ Digite o nome do cliente.', 'warn'); return; }
+  if (!nome) { showNotif(' Digite o nome do cliente.', 'warn'); return; }
   chatProfiles.push({ name: nome, sub, priority: prio, level: nivel });
   chatHistories.push([]);
   fecharModalNovoChat();
@@ -4494,7 +4494,7 @@ function apagarChat(idx) {
   if (chatProfiles.length === 0) {
     currentChat = -1;
     const msgs = document.getElementById('chat-messages');
-    if (msgs) msgs.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);gap:10px"><div style="font-size:32px">💬</div><div style="font-size:13px">Clique em <strong>＋ Nova conversa</strong> para começar</div></div>';
+    if (msgs) msgs.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);gap:10px"><div style="font-size:32px">💬</div><div style="font-size:13px">Clique em <strong>+ Nova conversa</strong> para começar</div></div>';
     ['chat-input-area','quick-replies'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     const btn = document.getElementById('btn-apagar-chat');
     if (btn) btn.style.display = 'none';
@@ -4515,7 +4515,7 @@ function apagarChatAtual() {
 }
 
 function limparChatAtual() {
-  if (currentChat < 0) { showNotif('⚠️ Nenhuma conversa selecionada.', 'warn'); return; }
+  if (currentChat < 0) { showNotif(' Nenhuma conversa selecionada.', 'warn'); return; }
   if (!confirm('Limpar todas as mensagens desta conversa?')) return;
   chatHistories[currentChat] = [];
   renderChatMessages();
@@ -4529,7 +4529,7 @@ function renderChatList() {
   const cnt = document.getElementById('chat-count');
   if (cnt) cnt.textContent = chatProfiles.length + ' conversa' + (chatProfiles.length !== 1 ? 's' : '');
   if (chatProfiles.length === 0) {
-    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Nenhuma conversa.<br>Clique em ＋ Nova conversa.</div>';
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Nenhuma conversa.<br>Clique em + Nova conversa.</div>';
     return;
   }
   el.innerHTML = chatProfiles.map((p, i) => {
@@ -4868,7 +4868,7 @@ async function createAndAddLabel() {
   if (bloquearLeitor('criar etiquetas')) return;
   const name = document.getElementById('new-label-name').value.trim();
   const color = document.getElementById('new-label-color').value;
-  if (!name) { showNotif('⚠️ Digite um nome para a etiqueta.','warn'); return; }
+  if (!name) { showNotif(' Digite um nome para a etiqueta.','warn'); return; }
   let trelloId = null;
   try {
     const res = await trelloPOST(`/boards/${TRELLO.board}/labels`,{name,color});
@@ -5110,7 +5110,7 @@ async function submitReply(isAI = false) {
   const modalId = document.getElementById('ticket-modal')._currentId;
   const t = tickets.find(x => x.id === modalId);
   const text = document.getElementById('modal-reply-text').value.trim();
-  if (!t || !text) { showNotif('⚠️ Digite uma resposta primeiro.', 'warn'); return; }
+  if (!t || !text) { showNotif(' Digite uma resposta primeiro.', 'warn'); return; }
   if (!t.replies) t.replies = [];
 
   const reply = {
@@ -5149,7 +5149,7 @@ async function generateAIReply() {
   const waConf = loadWAConfig();
   const apiKey = waConf?.apiKey || '';
   if (!apiKey) {
-    showNotif('⚠️ Configure a chave API em "Agente WhatsApp" primeiro.', 'warn');
+    showNotif(' Configure a chave API em "Agente WhatsApp" primeiro.', 'warn');
     return;
   }
 
@@ -5566,7 +5566,7 @@ function saveTrello() {
       showNotif('✅ Trello configurado com sucesso!');
     }, 1500);
   } else {
-    showNotif('⚠️ Preencha a API Key e o Token.', 'warn');
+    showNotif(' Preencha a API Key e o Token.', 'warn');
   }
 }
 
@@ -5857,7 +5857,7 @@ async function salvarCliente() {
   if (bloquearLeitor('editar clientes')) return;
   const empresa = document.getElementById('fc-empresa').value.trim();
   const cnpj    = document.getElementById('fc-cnpj').value.trim();
-  if (!empresa || !cnpj) { showNotif('⚠️ Razão Social e CNPJ são obrigatórios.','warn'); return; }
+  if (!empresa || !cnpj) { showNotif(' Razão Social e CNPJ são obrigatórios.','warn'); return; }
   const lista = getClientes();
   const cliente = {
     id:         clienteEditId || 'cli-' + Date.now(),
@@ -5921,7 +5921,7 @@ function renderClientesTabela() {
     el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:20px;text-align:center">Nenhum cliente encontrado.</div>';
     return;
   }
-  const statusLabel = { ativo:'✅ Ativo', suspenso:'⚠️ Suspenso', cancelado:'❌ Cancelado' };
+  const statusLabel = { ativo:'✅ Ativo', suspenso:' Suspenso', cancelado:'❌ Cancelado' };
   const prioColor   = { contrato:'var(--accent)', garantia:'var(--accent2)', avulso:'var(--accent3)' };
   el.innerHTML = `<table class="clientes-table">
     <tr><th>Cliente</th><th>CNPJ</th><th>Sistema</th><th>Contrato</th><th>Status</th><th>Vencimento</th><th></th></tr>
