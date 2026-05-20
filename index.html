@@ -5300,7 +5300,7 @@ async function quickDelete(ticketId) {
   if (!t) return;
   if (!confirm(`Excluir o chamado ${t.id}? Esta ação não pode ser desfeita.`)) return;
   try {
-    await sbFetch(`tickets?id=eq.${t.dbId}`, 'DELETE');
+    await sbFetch(`chamados?id=eq.${encodeURIComponent(t.id)}`, 'DELETE');
     tickets = tickets.filter(x => x.id !== ticketId);
     renderAll();
     showNotif(`🗑️ Chamado ${t.id} excluído!`);
@@ -5870,7 +5870,7 @@ async function salvarCliente() {
     vencimento: document.getElementById('fc-vencimento').value,
     status:     document.getElementById('fc-status').value,
     obs:        document.getElementById('fc-obs').value.trim(),
-    updatedAt:  new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
   if (clienteEditId) {
     const idx = lista.findIndex(c => c.id === clienteEditId);
@@ -5880,7 +5880,9 @@ async function salvarCliente() {
   }
   try {
     if (clienteEditId) {
-      await sbFetch(`clientes?id=eq.${clienteEditId}`, 'PATCH', cliente);
+      // PATCH sem o 'id' no body — a URL já filtra pelo id
+      const { id: _omit, ...patchData } = cliente;
+      await sbFetch(`clientes?id=eq.${clienteEditId}`, 'PATCH', patchData);
       const idx = _clientesCache.findIndex(c => c.id === clienteEditId);
       if (idx >= 0) _clientesCache[idx] = cliente;
     } else {
