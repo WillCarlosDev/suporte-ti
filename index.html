@@ -871,24 +871,23 @@
         </div>
       </div>
 
-      <!-- Linha 3: Atenção -->
-      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:2px;margin-bottom:10px">ATENÇÃO</div>
-      <div class="stats-row">
-        <div class="stat-card warn">
+      <!-- Linha 3: Acompanhamento -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+        <div class="stat-card warn" style="flex:1;min-width:140px">
           <div class="stat-num" id="d-sem-tec" style="color:var(--warn)">0</div>
-          <div class="stat-label">Sem técnico</div>
-          <div id="d-sem-tec-sub" style="font-size:10px;color:var(--text3);margin-top:2px">0 neste mês</div>
+          <div class="stat-label">⚠️ Sem técnico</div>
+          <div id="d-sem-tec-sub" style="font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--mono)">0 neste mês</div>
         </div>
-        <div class="stat-card danger">
+        <div class="stat-card danger" style="flex:1;min-width:140px">
           <div class="stat-num" id="d-sla-critico" style="color:var(--danger)">0</div>
           <div class="stat-label">🔴 SLA crítico</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px">Contrato + 8h s/ técnico</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:3px">Contrato +8h s/ técnico</div>
         </div>
-        <div class="stat-card" style="--accent-line:var(--accent)">
+        <div class="stat-card" style="flex:1;min-width:140px;--accent-line:var(--accent)">
           <div class="stat-num" id="d-concluidos-hoje" style="color:var(--accent)">0</div>
           <div class="stat-label">✅ Concluídos hoje</div>
         </div>
-        <div class="stat-card blue">
+        <div class="stat-card blue" style="flex:1;min-width:140px">
           <div class="stat-num" id="d-resolvidos-mes" style="color:var(--accent2)">0</div>
           <div class="stat-label">📅 Resolvidos no mês</div>
         </div>
@@ -1220,9 +1219,9 @@
       <!-- Filtros -->
       <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
         <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">PERÍODO:</span>
-        <button class="btn-ghost rep-period active" onclick="setReportPeriod('mes')"   id="rp-mes">Este mês</button>
+        <button class="btn-ghost rep-period"        onclick="setReportPeriod('mes')"   id="rp-mes">Este mês</button>
         <button class="btn-ghost rep-period"        onclick="setReportPeriod('sem')"   id="rp-sem">Esta semana</button>
-        <button class="btn-ghost rep-period"        onclick="setReportPeriod('todos')" id="rp-todos">Todos</button>
+        <button class="btn-ghost rep-period active"  onclick="setReportPeriod('todos')" id="rp-todos">Todos</button>
         <span style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:12px">TIPO:</span>
         <button class="btn-ghost rep-period active" onclick="setReportTipo('todos')"   id="rt-todos">Todos</button>
         <button class="btn-ghost rep-period"        onclick="setReportTipo('contrato')" id="rt-contrato">Contrato</button>
@@ -2813,6 +2812,22 @@ function renderStats() {
 
   const naoResolvido = s => s !== 'resolvido';
 
+  // Utilitário: parsear finalizadoEm em vários formatos (ISO ou pt-BR dd/mm/yyyy...)
+  function parseFim(val) {
+    if (!val) return null;
+    // ISO: 2025-05-15T... ou 2025-05-15
+    if (/^\d{4}-\d{2}-\d{2}/.test(val)) return new Date(val);
+    // pt-BR: 15/05/2025 ou 15/05/2025, 12:00:00 ou 15/05/2025 12:00:00
+    const parts = val.split('/');
+    if (parts.length >= 3) {
+      const dia  = parseInt(parts[0], 10);
+      const mes  = parseInt(parts[1], 10) - 1;
+      const anoR = parseInt(parts[2], 10);
+      if (!isNaN(dia) && !isNaN(mes) && !isNaN(anoR)) return new Date(anoR, mes, dia);
+    }
+    return null;
+  }
+
   // Abertos HOJE — criados hoje com status em aberto
   const abertosHoje = tickets.filter(t => {
     const d = new Date(t.time || 0);
@@ -2829,25 +2844,53 @@ function renderStats() {
     return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
   });
   // Abertos no mês = criados este mês e ainda não resolvidos
-  const abertosNoMes  = doMes.filter(t => naoResolvido(t.status)).length;
-  // Concluídos no mês = resolvidos independente de quando foram criados
+  const abertosNoMes = doMes.filter(t => naoResolvido(t.status)).length;
+  // Concluídos no mês = finalizados neste mês (ISO ou pt-BR)
   const concluidosMes = tickets.filter(t => {
     if (t.status !== 'resolvido') return false;
-    // Usa finalizadoEm se disponível, senão usa time
-    if (t.finalizadoEm) {
-      const parts = t.finalizadoEm.split('/');
-      if (parts.length >= 3) {
-        const mes = parseInt(parts[1]) - 1;
-        const ano = parseInt(parts[2]);
-        return mes === mesAtual && ano === anoAtual;
-      }
+    const fim = parseFim(t.finalizadoEm);
+    if (fim && !isNaN(fim.getTime())) {
+      return fim.getMonth() === mesAtual && fim.getFullYear() === anoAtual;
     }
+    // Fallback: usa data de criação
     const d = new Date(t.time || 0);
     return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
   }).length;
 
   // Contratos ativos (em aberto agora)
   const contratosAtivos = tickets.filter(t => t.prioridade === 'contrato' && naoResolvido(t.status)).length;
+
+  // Concluídos HOJE (finalizadoEm = hoje)
+  const concluidosHoje = tickets.filter(t => {
+    if (t.status !== 'resolvido') return false;
+    const fim = parseFim(t.finalizadoEm);
+    if (!fim || isNaN(fim.getTime())) return false;
+    return fim.toLocaleDateString('pt-BR') === diaStr;
+  }).length;
+
+  // Sem técnico: total e neste mês
+  const semTecAll = tickets.filter(t => !t.assignedTo && naoResolvido(t.status));
+  const semTecMes = semTecAll.filter(t => {
+    const d = new Date(t.time || 0);
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+  }).length;
+
+  // SLA crítico: contrato sem técnico há +8h, não agendado/pendente/resolvido
+  const slaVio = tickets.filter(t =>
+    t.prioridade === 'contrato' && !t.assignedTo &&
+    !['agendado','pendencia','nao-atendido','resolvido'].includes(t.status) &&
+    (Date.now() - (t.time || 0)) / 3600000 >= 8
+  ).length;
+
+  // Resolvidos no mês
+  const resolvidosMes = tickets.filter(t => {
+    if (t.status !== 'resolvido') return false;
+    const fim = parseFim(t.finalizadoEm);
+    if (fim && !isNaN(fim.getTime())) {
+      return fim.getMonth() === mesAtual && fim.getFullYear() === anoAtual;
+    }
+    return false;
+  }).length;
 
   const el = id => document.getElementById(id);
   if (el('stat-contrato-dia'))  el('stat-contrato-dia').textContent  = contratoDia;
@@ -2861,42 +2904,12 @@ function renderStats() {
   if (el('stat-month-label'))   el('stat-month-label').textContent   = `Em aberto — ${mesLabel}`;
   if (el('dash-mes-label'))     el('dash-mes-label').textContent     = `${mesLabel.toUpperCase()}`;
   if (el('dash-sub'))           el('dash-sub').textContent           = `Hoje é ${diaStr}`;
-
-  // ── Stats linha 3 do dashboard ─────────────────────────────────────────
-  // Sem técnico: mês vs total
-  const semTecAll = tickets.filter(t => !t.assignedTo && t.status !== 'resolvido');
-  const semTecMes = semTecAll.filter(t => {
-    const d = new Date(t.time || 0);
-    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
-  });
-  if (el('d-sem-tec'))     el('d-sem-tec').textContent     = semTecAll.length;
-  if (el('d-sem-tec-sub')) el('d-sem-tec-sub').textContent = semTecMes.length + ' neste mês';
-
-  // SLA crítico: contrato sem técnico há +8h, não agendado/pendente/resolvido
-  const slaVio = tickets.filter(t =>
-    t.prioridade === 'contrato' && !t.assignedTo &&
-    !['agendado','pendencia','nao-atendido','resolvido'].includes(t.status) &&
-    (Date.now() - (t.time || 0)) / 3600000 >= 8
-  ).length;
-  if (el('d-sla-critico')) el('d-sla-critico').textContent = slaVio;
-
-  // Concluídos hoje (finalizadoEm = hoje)
-  const concluidosHoje = tickets.filter(t => {
-    if (t.status !== 'resolvido') return false;
-    const fim = t.finalizadoEm ? new Date(t.finalizadoEm) : null;
-    if (!fim || isNaN(fim.getTime())) return false;
-    return fim.toLocaleDateString('pt-BR') === diaStr;
-  }).length;
-  if (el('d-concluidos-hoje')) el('d-concluidos-hoje').textContent = concluidosHoje;
-
-  // Resolvidos no mês (finalizadoEm dentro do mês atual)
-  const resolvidosMes = tickets.filter(t => {
-    if (t.status !== 'resolvido') return false;
-    const fim = t.finalizadoEm ? new Date(t.finalizadoEm) : null;
-    if (!fim || isNaN(fim.getTime())) return false;
-    return fim.getMonth() === mesAtual && fim.getFullYear() === anoAtual;
-  }).length;
-  if (el('d-resolvidos-mes')) el('d-resolvidos-mes').textContent = resolvidosMes;
+  // Cards linha 3
+  if (el('d-sem-tec'))          el('d-sem-tec').textContent          = semTecAll.length;
+  if (el('d-sem-tec-sub'))      el('d-sem-tec-sub').textContent      = semTecMes + ' neste mês';
+  if (el('d-sla-critico'))      el('d-sla-critico').textContent      = slaVio;
+  if (el('d-concluidos-hoje'))  el('d-concluidos-hoje').textContent  = concluidosHoje;
+  if (el('d-resolvidos-mes'))   el('d-resolvidos-mes').textContent   = resolvidosMes;
 }
 
 function updateNavCounts() {
@@ -3292,7 +3305,7 @@ function toggleKB(i) {
   if (el) el.classList.toggle('open');
 }
 
-let reportPeriod = 'mes';
+let reportPeriod = 'todos';
 
 function toggleRepSection(sec) {
   const btn = document.getElementById('rs-' + sec);
@@ -3645,6 +3658,9 @@ function renderReports() {
     }).join('');
 
     if (teamTotalEl) teamTotalEl.textContent = `${totalAtribuido} atribuídos · ${total} total no período`;
+    if (total === 0 && teamEl) {
+      teamEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Sem chamados no período selecionado. Tente o filtro <strong>Todos</strong>.</div>';
+    }
   }
 
   // ── Problemas frequentes ──────────────────────────────────────────
