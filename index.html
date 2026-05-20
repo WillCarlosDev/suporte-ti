@@ -402,6 +402,8 @@
   .status-dot.on { background: var(--accent); }
 
   @media (max-width: 900px) {
+  #view-dashboard .page-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  #view-dashboard > div:nth-child(2) { grid-template-columns: 1fr !important; }
     .app { grid-template-columns: 1fr; }
     .sidebar { display: none; }
     .stats-row { grid-template-columns: 1fr 1fr; }
@@ -822,74 +824,95 @@
 
     <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
-      <div class="page-header">
+      <div class="page-header" style="margin-bottom:20px">
         <div>
           <div class="page-title">Dashboard</div>
-          <div class="page-sub" id="dash-sub">Visão geral dos atendimentos</div>
+          <div class="page-sub" id="dash-sub">—</div>
+        </div>
+        <button onclick="showView('chamados')" class="btn-primary" style="font-size:12px;padding:8px 16px">
+          Ver Kanban →
+        </button>
+      </div>
+
+      <!-- Grid principal: 2 colunas em desktop -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+
+        <!-- Coluna 1: Stats do dia -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px">
+          <div style="font-size:10px;font-family:var(--mono);letter-spacing:2px;color:var(--text3);margin-bottom:14px">HOJE</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="background:var(--surface2);border-radius:10px;padding:14px 16px">
+              <div class="stat-num" id="stat-contrato-dia" style="color:var(--accent);margin-bottom:4px">0</div>
+              <div class="stat-label">Contratos</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:10px;padding:14px 16px">
+              <div class="stat-num" id="stat-garantia-dia" style="color:var(--accent2);margin-bottom:4px">0</div>
+              <div class="stat-label">Garantias</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:10px;padding:14px 16px">
+              <div class="stat-num" id="stat-avulso-dia" style="color:var(--accent3);margin-bottom:4px">0</div>
+              <div class="stat-label">Sem garantia</div>
+            </div>
+            <div style="background:rgba(255,204,0,0.08);border:1px solid rgba(255,204,0,0.2);border-radius:10px;padding:14px 16px">
+              <div class="stat-num" id="stat-open" style="color:var(--warn);margin-bottom:4px">0</div>
+              <div class="stat-label">Total abertos</div>
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.2);border-radius:10px;padding:14px 16px">
+              <div class="stat-num" id="d-concluidos-hoje" style="color:var(--accent);margin-bottom:4px">0</div>
+              <div class="stat-label">Concluídos hoje</div>
+            </div>
+            <div style="background:rgba(255,71,87,0.06);border:1px solid rgba(255,71,87,0.2);border-radius:10px;padding:14px 16px">
+              <div class="stat-num" id="d-sla-critico" style="color:var(--danger);margin-bottom:4px">0</div>
+              <div class="stat-label">SLA crítico</div>
+              <div style="font-size:9px;color:var(--text3);margin-top:2px;font-family:var(--mono)">contrato +8h s/ técnico</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coluna 2: Stats do mês -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div style="font-size:10px;font-family:var(--mono);letter-spacing:2px;color:var(--text3)" id="dash-mes-label">ESTE MÊS</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="background:rgba(0,144,255,0.07);border:1px solid rgba(0,144,255,0.2);border-radius:10px;padding:14px 16px">
+              <div class="stat-num" id="stat-month" style="color:var(--accent2);margin-bottom:4px">0</div>
+              <div class="stat-label" id="stat-month-label">Abertos no mês</div>
+            </div>
+            <div style="background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.2);border-radius:10px;padding:14px 16px">
+              <div class="stat-num" id="stat-resolved" style="color:var(--accent);margin-bottom:4px">0</div>
+              <div class="stat-label">Concluídos</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:10px;padding:14px 16px">
+              <div class="stat-num" id="d-resolvidos-mes" style="color:var(--accent);margin-bottom:4px">0</div>
+              <div class="stat-label">Resolvidos (finalizados)</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:10px;padding:14px 16px">
+              <div class="stat-num" id="stat-urgent" style="color:var(--accent2);margin-bottom:4px">0</div>
+              <div class="stat-label">Contratos ativos</div>
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="background:rgba(255,204,0,0.06);border:1px solid rgba(255,204,0,0.2);border-radius:10px;padding:14px 16px">
+              <div class="stat-num" id="d-sem-tec" style="color:var(--warn);margin-bottom:4px">0</div>
+              <div class="stat-label">Sem técnico</div>
+              <div id="d-sem-tec-sub" style="font-size:9px;color:var(--text3);margin-top:2px;font-family:var(--mono)">0 neste mês</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:10px;padding:14px 16px">
+              <div class="stat-num" id="stat-total" style="color:var(--text3);margin-bottom:4px">0</div>
+              <div class="stat-label">Total geral</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Linha 1: Abertura do dia por tipo -->
-      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:2px;margin-bottom:10px">ABERTOS HOJE</div>
-      <div class="stats-row" style="margin-bottom:20px">
-        <div class="stat-card" style="--accent-line:var(--accent)">
-          <div class="stat-num" id="stat-contrato-dia" style="color:var(--accent)">0</div>
-          <div class="stat-label">Contrato</div>
-        </div>
-        <div class="stat-card" style="--accent-line:var(--accent2)">
-          <div class="stat-num" id="stat-garantia-dia" style="color:var(--accent2)">0</div>
-          <div class="stat-label">Garantia</div>
-        </div>
-        <div class="stat-card" style="--accent-line:var(--accent3)">
-          <div class="stat-num" id="stat-avulso-dia" style="color:var(--accent3)">0</div>
-          <div class="stat-label">Sem Garantia</div>
-        </div>
-        <div class="stat-card warn">
-          <div class="stat-num" id="stat-open" style="color:var(--warn)">0</div>
-          <div class="stat-label">⏳ Total abertos hoje</div>
-        </div>
-      </div>
-
-      <!-- Linha 2: Mês -->
-      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:2px;margin-bottom:10px" id="dash-mes-label">ESTE MÊS</div>
-      <div class="stats-row" style="margin-bottom:8px">
-        <div class="stat-card blue">
-          <div class="stat-num" id="stat-month" style="color:var(--accent2)">0</div>
-          <div class="stat-label" id="stat-month-label">📅 Abertos no mês</div>
-        </div>
-        <div class="stat-card" style="--accent-line:var(--accent)">
-          <div class="stat-num" id="stat-resolved" style="color:var(--accent)">0</div>
-          <div class="stat-label">✅ Concluídos no mês</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="stat-urgent" style="color:var(--text2)">0</div>
-          <div class="stat-label">Contratos ativos</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="stat-total" style="color:var(--text3)">0</div>
-          <div class="stat-label">📋 Total geral</div>
-        </div>
-      </div>
-
-      <!-- Linha 3: Acompanhamento -->
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
-        <div class="stat-card warn" style="flex:1;min-width:140px">
-          <div class="stat-num" id="d-sem-tec" style="color:var(--warn)">0</div>
-          <div class="stat-label">⚠️ Sem técnico</div>
-          <div id="d-sem-tec-sub" style="font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--mono)">0 neste mês</div>
-        </div>
-        <div class="stat-card danger" style="flex:1;min-width:140px">
-          <div class="stat-num" id="d-sla-critico" style="color:var(--danger)">0</div>
-          <div class="stat-label">🔴 SLA crítico</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:3px">Contrato +8h s/ técnico</div>
-        </div>
-        <div class="stat-card" style="flex:1;min-width:140px;--accent-line:var(--accent)">
-          <div class="stat-num" id="d-concluidos-hoje" style="color:var(--accent)">0</div>
-          <div class="stat-label">✅ Concluídos hoje</div>
-        </div>
-        <div class="stat-card blue" style="flex:1;min-width:140px">
-          <div class="stat-num" id="d-resolvidos-mes" style="color:var(--accent2)">0</div>
-          <div class="stat-label">📅 Resolvidos no mês</div>
+      <!-- Linha inferior: Desempenho da equipe (mini) -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px">
+        <div style="font-size:10px;font-family:var(--mono);letter-spacing:2px;color:var(--text3);margin-bottom:14px">EQUIPE — ABERTOS EM ABERTO</div>
+        <div id="dash-equipe" style="display:flex;flex-wrap:wrap;gap:10px">
+          <div style="color:var(--text3);font-size:12px">Carregando...</div>
         </div>
       </div>
     </div>
@@ -2179,9 +2202,7 @@ async function deleteCustomKBFromDB(dbId) {
   await sbFetch(`kb_custom?id=eq.${dbId}`, 'DELETE');
 }
 
-function getAllKBItems() {
-  return [...kbItems, ...(window._customKB || [])];
-}
+
 
 // ─── Trello — SOMENTE LEITURA ────────────────────────────────────────────────
 // Apenas importa cards existentes. Nunca cria, move ou altera nada no Trello.
@@ -2904,12 +2925,50 @@ function renderStats() {
   if (el('stat-month-label'))   el('stat-month-label').textContent   = `Em aberto — ${mesLabel}`;
   if (el('dash-mes-label'))     el('dash-mes-label').textContent     = `${mesLabel.toUpperCase()}`;
   if (el('dash-sub'))           el('dash-sub').textContent           = `Hoje é ${diaStr}`;
-  // Cards linha 3
+  // Cards linha 3 / 4
   if (el('d-sem-tec'))          el('d-sem-tec').textContent          = semTecAll.length;
   if (el('d-sem-tec-sub'))      el('d-sem-tec-sub').textContent      = semTecMes + ' neste mês';
   if (el('d-sla-critico'))      el('d-sla-critico').textContent      = slaVio;
   if (el('d-concluidos-hoje'))  el('d-concluidos-hoje').textContent  = concluidosHoje;
   if (el('d-resolvidos-mes'))   el('d-resolvidos-mes').textContent   = resolvidosMes;
+
+  // ── Equipe mini (dash-equipe) ───────────────────────────────────────────
+  const equipeEl = el('dash-equipe');
+  if (equipeEl) {
+    const membros = getMembros();
+    if (!membros.length) {
+      equipeEl.innerHTML = '<span style="color:var(--text3);font-size:12px">Nenhum técnico cadastrado</span>';
+    } else {
+      const abertosPorTec = {};
+      membros.forEach(m => { abertosPorTec[m] = { total:0, contrato:0 }; });
+      abertosPorTec['__sem__'] = { total:0, contrato:0 };
+      tickets.filter(t => t.status !== 'resolvido').forEach(t => {
+        const key = t.assignedTo && membros.includes(t.assignedTo) ? t.assignedTo : '__sem__';
+        abertosPorTec[key].total++;
+        if (t.prioridade === 'contrato') abertosPorTec[key].contrato++;
+      });
+      equipeEl.innerHTML = membros.map((m, i) => {
+        const d = abertosPorTec[m];
+        const cor = MEMBER_COLORS[i % MEMBER_COLORS.length];
+        return `<div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:10px;padding:10px 14px;min-width:160px;flex:1">
+          <div style="width:34px;height:34px;border-radius:50%;background:${cor}22;border:2px solid ${cor};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:${cor};flex-shrink:0">${m.charAt(0).toUpperCase()}</div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--text)">${m}</div>
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">
+              ${d.total} em aberto${d.contrato>0 ? ' · <span style="color:var(--accent)">'+d.contrato+' contrato</span>' : ''}
+            </div>
+          </div>
+        </div>`;
+      }).join('') + (abertosPorTec['__sem__'].total > 0 ? `
+        <div style="display:flex;align-items:center;gap:10px;background:rgba(255,204,0,0.06);border:1px solid rgba(255,204,0,0.2);border-radius:10px;padding:10px 14px;min-width:160px;flex:1">
+          <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,204,0,0.12);border:2px solid var(--warn);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">⚠️</div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--warn)">Sem técnico</div>
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">${abertosPorTec['__sem__'].total} chamado${abertosPorTec['__sem__'].total!==1?'s':''}</div>
+          </div>
+        </div>` : '');
+    }
+  }
 }
 
 function updateNavCounts() {
@@ -4858,7 +4917,7 @@ async function showTicketDetail(id) {
   if (!t.currentStatus) t.currentStatus = t.status;
 
   document.getElementById('modal-ticket-id').textContent = `${t.id} — ${getCategoryLabel(t.categoria)}`;
-  document.getElementById('modal-ticket-sub').textContent = `${t.empresa} · ${t.sistema.toUpperCase()} · ${getPrioLabel(t.prioridade)}`;
+  document.getElementById('modal-ticket-sub').textContent = `${t.empresa} · ${(t.sistema||'—').toUpperCase()} · ${getPrioLabel(t.prioridade)}`;
 
   // Meta
   document.getElementById('modal-meta').innerHTML = [
@@ -4867,7 +4926,7 @@ async function showTicketDetail(id) {
     { label:'CNPJ', value: t.cnpj },
     { label:'SISTEMA', value: `<span class="tag ${t.sistema}">${t.sistema}</span>` },
     { label:'PRIORIDADE', value: `<span class="tag ${t.prioridade}">${getPrioLabel(t.prioridade)}</span>` },
-    { label:'NÍVEL', value: `<span class="tag ${t.nivel}">${t.nivel.toUpperCase()}</span>` },
+    { label:'NÍVEL', value: `<span class="tag ${t.nivel}">${(t.nivel||'N1').toUpperCase()}</span>` },
     { label:'DESCRIÇÃO', value: t.desc || '—' },
     { label:'ORIGEM', value: t.fromTrello ? `Trello · ${t.trelloList || ''}` : 'Painel' },
     { label:'RESPONSÁVEL', value: t.assignedTo || '—' },
@@ -5198,18 +5257,20 @@ async function confirmarFinalizacao() {
       isSolucao: true,
     });
     // Adicionar à KB se marcado
-    if (addToKB) {
-      const novoItem = {
-        icon: '✅', title: getCategoryLabel(t.categoria) || t.categoria,
-        sub: 'Solução registrada em atendimento',
-        badge: (t.nivel||'n1').toUpperCase(),
-        sistema: t.sistema || '',
-        nivel: t.nivel || 'n1',
-        steps: [{ num: '01', text: solucao }],
-      };
-      await saveCustomKBItems(novoItem);
-      window._customKB = await loadCustomKBItems();
-      showNotif('📚 Solução salva na base de conhecimento!');
+    if (addToKB && solucao) {
+      try {
+        await sbFetch('kb_custom', 'POST', {
+          icon:    '✅',
+          title:   getCategoryLabel(t.categoria) || t.categoria || 'Solução',
+          sub:     (t.empresa ? t.empresa + ' — ' : '') + (t.sistema || ''),
+          badge:   (t.nivel || 'n1').toUpperCase(),
+          sistema: t.sistema || '',
+          nivel:   t.nivel   || 'n1',
+          steps:   [{ num: '01', text: solucao }],
+        }, { 'Prefer': 'return=minimal' });
+        window._customKB = await loadCustomKBItems();
+        showNotif('📚 Solução salva na base de conhecimento!');
+      } catch(e) { console.warn('KB save error:', e.message); }
     }
   }
 
@@ -5253,9 +5314,10 @@ async function deleteTicket() {
   const modalId = document.getElementById('ticket-modal')._currentId;
   const t = tickets.find(x => x.id === modalId);
   if (!t) return;
-  if (!confirm(`Tem certeza que deseja excluir o chamado ${t.id}? Esta ação não pode ser desfeita.`)) return;
+  if (!confirm(`Tem certeza que deseja excluir o chamado ${t.id}?\nEsta ação não pode ser desfeita.`)) return;
   try {
-    await sbFetch(`tickets?id=eq.${t.dbId}`, 'DELETE');
+    // Tabela correta: chamados | ID correto: t.id (UUID/string)
+    await sbFetch(`chamados?id=eq.${encodeURIComponent(t.id)}`, 'DELETE');
     tickets = tickets.filter(x => x.id !== modalId);
     closeModal();
     renderAll();
