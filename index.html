@@ -1725,6 +1725,26 @@ function getDisplayName(username) {
          (username.charAt(0).toUpperCase() + username.slice(1));
 }
 
+// ─── Segurança: escapa HTML antes de interpolar em innerHTML ──────────────────
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ─── Geração de ID robusta: usa o MAIOR id existente, não o length do array ────
+function nextTicketId(prefix = '#') {
+  const max = tickets.reduce((m, t) => {
+    const n = parseInt(String(t.id).replace(/\D/g, ''), 10);
+    return isNaN(n) ? m : Math.max(m, n);
+  }, 0);
+  return prefix + String(max + 1).padStart(3, '0');
+}
+
 // ─── mapRowToTicket: mapeamento centralizado (evita repetição) ────────────────
 function mapRowToTicket(r) {
   return {
@@ -2427,7 +2447,7 @@ function trelloCardCreatedAt(cardId) {
         const horaMatch = (card.name + ' ' + (card.desc||'')).match(/\b([0-1]?\d|2[0-3]):[0-5]\d\b/);
         const horaAgendada = horaMatch ? horaMatch[0] : null;
         const newT = {
-          id: `#T${String(tickets.length + 1).padStart(3,'0')}`,
+          id: nextTicketId('#T'),
           nome, empresa, cnpj, sistema, prioridade, categoria, nivel,
           status: statusTrello,
           desc: card.desc || card.name,
@@ -3093,19 +3113,19 @@ function renderTicketCard(t) {
         ${t.fromTrello ? '<span style="font-size:9px;background:rgba(0,144,255,0.12);color:var(--accent2);padding:1px 5px;border-radius:3px;font-family:var(--mono)">TRL</span>' : ''}
         ${t.fromWhatsApp ? '<span style="font-size:9px;background:rgba(0,229,160,0.12);color:var(--accent);padding:1px 5px;border-radius:3px;font-family:var(--mono)">WA</span>' : ''}
       </div>
-      <div class="tc-title">${getCategoryLabel(t.categoria)}</div>
-      <div class="tc-company">${t.empresa}</div>
+      <div class="tc-title">${escapeHtml(getCategoryLabel(t.categoria))}</div>
+      <div class="tc-company">${escapeHtml(t.empresa)}</div>
       <div class="tc-tags">
         <span class="tag ${t.prioridade}">${getPrioLabel(t.prioridade)}</span>
         <span class="tag ${t.nivel||'n1'}">${(t.nivel||'N1').toUpperCase()}</span>
-        <span class="tag ${t.sistema}">${t.sistema}</span>
+        <span class="tag ${escapeHtml(t.sistema)}">${escapeHtml(t.sistema)}</span>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
         <div class="tc-time">${timeAgo(t.time)}</div>
         ${t.assignedTo
           ? `<div style="display:flex;align-items:center;gap:4px;font-size:10px;font-family:var(--mono);color:${memberColor}">
-               <div style="width:16px;height:16px;border-radius:50%;background:${memberColor}22;border:1.5px solid ${memberColor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">${(t.assignedTo||'?').charAt(0).toUpperCase()}</div>
-               ${t.assignedTo}
+               <div style="width:16px;height:16px;border-radius:50%;background:${memberColor}22;border:1.5px solid ${memberColor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">${escapeHtml((t.assignedTo||'?').charAt(0).toUpperCase())}</div>
+               ${escapeHtml(t.assignedTo)}
              </div>`
           : `<div style="font-size:10px;color:var(--text3);font-family:var(--mono);opacity:0.6">sem responsável</div>`
         }
@@ -4218,7 +4238,7 @@ async function criarChamadoDesbloqueio() {
     ...deskAtendentes.map(a => ({ name: a, color: 'green', trelloId: null }))
   ];
   const newTicket = {
-    id: '#' + String(tickets.length + 1).padStart(3, '0'),
+    id: nextTicketId('#'),
     nome, empresa, cnpj,
     sistema: equip,
     prioridade: 'avulso',
@@ -4404,7 +4424,7 @@ function createTicket() {
   }
 
   const newTicket = {
-    id: '#' + String(tickets.length + 1).padStart(3, '0'),
+    id: nextTicketId('#'),
     nome, contato, empresa, cnpj, sistema,
     prioridade: selectedPriority,
     categoria: categoria || 'outro',
@@ -4921,15 +4941,15 @@ async function showTicketDetail(id) {
 
   // Meta
   document.getElementById('modal-meta').innerHTML = [
-    { label:'SOLICITANTE', value: t.nome },
-    { label:'EMPRESA', value: t.empresa },
-    { label:'CNPJ', value: t.cnpj },
-    { label:'SISTEMA', value: `<span class="tag ${t.sistema}">${t.sistema}</span>` },
+    { label:'SOLICITANTE', value: escapeHtml(t.nome) },
+    { label:'EMPRESA', value: escapeHtml(t.empresa) },
+    { label:'CNPJ', value: escapeHtml(t.cnpj) },
+    { label:'SISTEMA', value: `<span class="tag ${escapeHtml(t.sistema)}">${escapeHtml(t.sistema)}</span>` },
     { label:'PRIORIDADE', value: `<span class="tag ${t.prioridade}">${getPrioLabel(t.prioridade)}</span>` },
     { label:'NÍVEL', value: `<span class="tag ${t.nivel}">${(t.nivel||'N1').toUpperCase()}</span>` },
-    { label:'DESCRIÇÃO', value: t.desc || '—' },
-    { label:'ORIGEM', value: t.fromTrello ? `Trello · ${t.trelloList || ''}` : 'Painel' },
-    { label:'RESPONSÁVEL', value: t.assignedTo || '—' },
+    { label:'DESCRIÇÃO', value: escapeHtml(t.desc) || '—' },
+    { label:'ORIGEM', value: t.fromTrello ? `Trello · ${escapeHtml(t.trelloList || '')}` : 'Painel' },
+    { label:'RESPONSÁVEL', value: escapeHtml(t.assignedTo) || '—' },
   ].map(m => `
     <div class="ticket-meta-item" style="${m.label==='DESCRIÇÃO'?'grid-column:1/-1':''}">
       <div class="ticket-meta-label">${m.label}</div>
@@ -5017,15 +5037,43 @@ async function puxarChamado(ticketId) {
   const meuNome = currentUser?.username || '';
   const meuMembro = getMembros().find(m => m.toLowerCase() === meuNome.toLowerCase()) || meuNome;
 
-  t.assignedTo = meuMembro;
-  // Se o chamado estava em "aberto", move para "em-andamento" automaticamente
-  if (t.status === 'aberto') {
-    t.status = 'em-andamento';
-    t.currentStatus = 'em-andamento';
+  // Atribuição CONDICIONAL e ATÔMICA: só grava se ninguém pegou antes (evita race).
+  // O filtro assigned_to=is.null garante no banco que só o primeiro clique vence.
+  // Quando o usuário confirma "puxar mesmo assim", caímos no caminho não-condicional.
+  const novoStatus = t.status === 'aberto' ? 'em-andamento' : t.status;
+  try {
+    let rows;
+    if (!t.assignedTo) {
+      rows = await sbFetch(
+        `chamados?id=eq.${encodeURIComponent(ticketId)}&assigned_to=is.null`,
+        'PATCH',
+        { assigned_to: meuMembro, status: novoStatus, updated_at: new Date().toISOString() },
+        { 'Prefer': 'return=representation' }
+      );
+      if (!rows || rows.length === 0) {
+        // Outro técnico pegou primeiro — recarrega o estado real
+        showNotif('⚠️ Esse chamado acabou de ser puxado por outra pessoa.', 'warn');
+        await carregarTodosChamados();
+        renderAll();
+        return;
+      }
+    } else {
+      rows = await sbFetch(
+        `chamados?id=eq.${encodeURIComponent(ticketId)}`,
+        'PATCH',
+        { assigned_to: meuMembro, status: novoStatus, updated_at: new Date().toISOString() },
+        { 'Prefer': 'return=representation' }
+      );
+    }
+    // Sincroniza o estado local a partir do que o banco confirmou
+    t.assignedTo    = meuMembro;
+    t.status        = novoStatus;
+    t.currentStatus = novoStatus;
+    renderAll();
+    showNotif(`↙ Chamado ${t.id} puxado para ${meuMembro}!`);
+  } catch(e) {
+    showNotif('❌ Erro ao puxar chamado: ' + e.message, 'warn');
   }
-  await updateTicketInDB(t);
-  renderAll();
-  showNotif(`↙ Chamado ${t.id} puxado para ${meuMembro}!`);
 }
 
 async function atribuirChamado(membro) {
@@ -5070,11 +5118,11 @@ function renderModalReplies(t) {
   container.innerHTML = t.replies.map(r => `
     <div class="reply-item" style="border-left:2px solid ${r.isAI ? 'var(--accent)' : 'var(--accent2)'}; padding-left:10px; margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-        <span class="reply-author" style="font-size:11px;font-weight:700">${r.author}</span>
+        <span class="reply-author" style="font-size:11px;font-weight:700">${escapeHtml(r.author)}</span>
         ${r.isAI ? '<span style="font-size:9px;color:var(--accent);background:rgba(0,229,160,0.12);padding:1px 6px;border-radius:4px;font-family:var(--mono)">✨ IA</span>' : ''}
-        <span class="reply-time" style="font-size:10px;color:var(--text3);margin-left:auto">${r.time}</span>
+        <span class="reply-time" style="font-size:10px;color:var(--text3);margin-left:auto">${escapeHtml(r.time)}</span>
       </div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.6">${r.text}</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6">${escapeHtml(r.text)}</div>
     </div>
   `).join('');
   container.scrollTop = container.scrollHeight;
@@ -5418,7 +5466,7 @@ async function processWAMessage(fromNumber, messageText) {
   const config = loadWAConfig();
   if (!config) { waLog('error', 'Agente WhatsApp não configurado.'); return; }
 
-  waLog('incoming', `📲 <strong>${fromNumber}</strong>: ${messageText}`);
+  waLog('incoming', `📲 <strong>${escapeHtml(fromNumber)}</strong>: ${escapeHtml(messageText)}`);
   waStats.today++;
   updateWAStats();
 
@@ -5483,7 +5531,7 @@ CHAMADO: <categoria>|<sistema>|<n1 ou n2>|<empresa>|<cnpj>|<nome do cliente>`,
     const chamadoLine = lines.find(l => l.startsWith('CHAMADO:'));
     const replyText = lines.filter(l => !l.startsWith('CHAMADO:')).join('\n').trim();
 
-    waLog('outgoing', `🤖 <strong>Agente</strong>: ${replyText.substring(0, 200)}${replyText.length > 200 ? '...' : ''}`);
+    waLog('outgoing', `🤖 <strong>Agente</strong>: ${escapeHtml(replyText.substring(0, 200))}${replyText.length > 200 ? '...' : ''}`);
 
     // Atualiza histórico com a nova troca
     const updatedHistory = [
@@ -5500,7 +5548,7 @@ CHAMADO: <categoria>|<sistema>|<n1 ou n2>|<empresa>|<cnpj>|<nome do cliente>`,
       if (cnpj?.trim()) clienteCNPJ = cnpj.trim().replace(/\D/g,'');
 
       const newTicket = {
-        id: '#W' + String(tickets.length + 1).padStart(3, '0'),
+        id: nextTicketId('#W'),
         nome: nomeCliente?.trim() || fromNumber,
         empresa: clienteEmpresa || 'Via WhatsApp',
         cnpj: clienteCNPJ ? clienteCNPJ.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : '—',
